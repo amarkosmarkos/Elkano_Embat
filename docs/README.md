@@ -2,12 +2,9 @@
 
 | Doc | Qué es |
 |---|---|
-| [reto-xray.md](reto-xray.md) | Enunciado del reto X Ray: seis preguntas, requisitos obligatorios/bonus, criterios de evaluación, ideas de producto, qué pone la organización. |
-| [salud-financiera.md](salud-financiera.md) | Qué se mira para saber si una empresa está sana (ratios clásicos, cash-flow lending), mapeo señal → columna, definición operativa, diseño del score y preguntas abiertas. |
-| [estrategias-score.md](estrategias-score.md) | Rating de contrapartes (lo útil del ELO), métricas de estrés como etiqueta proxy, features más relevantes con su cálculo, otras estrategias y recomendación en 3 capas. |
-| [validacion-score.md](validacion-score.md) | Cómo validar el score como en banca: evento de default proxy con nuestras columnas, tabla observación/ventana, reglas anti-leakage, Gini/KS, out-of-sample por grupo, out-of-time, plan de ejecución. |
-| [arquitectura-score.md](arquitectura-score.md) | Generador de score y evaluador como módulos separados: contratos de `scores.csv`, `events.csv`, `splits.csv`, `report.json`; qué calcula el evaluador; layout en el repo y CLI. |
-| [data-map.md](data-map.md) | Mapa de datos medido sobre los CSV: relaciones y claves, volúmenes, tipos por columna, avisos de calidad. |
-| [data-map.html](data-map.html) | Versión visual del mapa de datos (diagrama ER + fichas por tabla). Abrir en el navegador. Publicada también en https://claude.ai/artifact/G9RrCFnm5ys4UvDaMmujut |
+| [reto-xray.md](reto-xray.md) | Enunciado del reto X Ray: seis preguntas, requisitos obligatorios/bonus, criterios de evaluación, ideas de producto. |
+| [data-map.md](data-map.md) · [data-map.html](data-map.html) | Mapa de datos medido sobre los CSV: relaciones y claves, volúmenes, tipos por columna, avisos de calidad. |
+| [salud.md](salud.md) | Métricas de salud financiera con fórmula y columnas: pago, liquidez, caja, deuda, concentración, trayectoria, eventos de estrés, y cómo se combinan en el score. |
+| [validacion_salud.md](validacion_salud.md) | Cómo validar el score: evento de impago, tabla de validación, reglas anti-leakage, Gini/KS/lead time/OOS/OOT/PSI con fórmulas, criterios de aceptación. |
+| [arquitectura-score.md](arquitectura-score.md) | Generador y evaluador como módulos separados: contratos de `scores.csv`, `events.csv`, `splits.csv`, `report.json`; layout y CLI. |
 | `../output/data_dictionary.md` | Diccionario oficial campo a campo (viene en el zip; no está en el repo). |
-| [../eda/report.html](../eda/report.html) | **EDA de primer nivel**: ~70 gráficos, resumen ejecutivo, cruces factura↔banco y 20 avisos de calidad. Regenerar con `./eda/run.sh` ([cómo](../eda/README.md)). |

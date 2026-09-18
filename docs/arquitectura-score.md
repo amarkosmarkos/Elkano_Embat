@@ -58,7 +58,7 @@ Una fila por empresa y mes.
 |---|---|---|
 | `company_id` | str | |
 | `month` | `YYYY-MM` | |
-| `D1` … `D4` | 0/1 | cada regla de [validacion-score.md §1](validacion-score.md) |
+| `D1` … `D4` | 0/1 | cada regla de [validacion_salud.md §1](validacion_salud.md) |
 | `event` | 0/1 | `max(D1..D4)` |
 | `cure` | 0/1 | estuvo en evento ≥ 2 meses y lleva ≥ 3 sin ninguno |
 
