@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elkano EDA</title>
+<meta name="description" content="Análisis exploratorio del dataset sintético de tesorería del Track Embat (HackSpain 2026).">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10); --wash:rgba(11,11,11,.04);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --seq1:#cde2fb; --seq2:#9ec5f4; --seq3:#6da7ec; --seq4:#3987e5; --seq5:#256abf; --seq6:#184f95; --seq7:#0d366b;
+  --neutral:#b8b7b0; --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b; --good-text:#006300;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --wash:rgba(255,255,255,.05);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --seq1:#184f95; --seq2:#1c5cab; --seq3:#256abf; --seq4:#2a78d6; --seq5:#3987e5; --seq6:#5598e7; --seq7:#86b6ef;
+  --neutral:#55554f; --good-text:#0ca30c;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --wash:rgba(255,255,255,.05);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --seq1:#184f95; --seq2:#1c5cab; --seq3:#256abf; --seq4:#2a78d6; --seq5:#3987e5; --seq6:#5598e7; --seq7:#86b6ef;
+  --neutral:#55554f; --good-text:#0ca30c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+a{color:var(--s1);text-decoration:none}a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:var(--wash);padding:1px 5px;border-radius:4px}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.12;letter-spacing:-.02em;margin:0;font-weight:700}
+h2{font-size:24px;letter-spacing:-.01em;margin:0 0 4px;font-weight:650}
+h3{font-size:15px;margin:0 0 2px;font-weight:600}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--s1);font-weight:600}
+.lede{color:var(--ink-2);max-width:72ch;margin-top:10px;font-size:16px}
+.sub{color:var(--ink-2);font-size:14px;max-width:80ch;margin:0 0 16px}
+.note{font-size:13px;color:var(--ink-3);margin-top:8px;max-width:80ch}
+.wrap{max-width:1240px;margin:0 auto;padding:36px 24px 96px}
+nav.toc{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);margin:0 -24px 28px;padding:10px 24px;display:flex;gap:4px;flex-wrap:wrap;font-size:13px}
+nav.toc a{color:var(--ink-2);padding:4px 10px;border-radius:999px}
+nav.toc a:hover{background:var(--wash);text-decoration:none;color:var(--ink)}
+section{margin-top:64px;scroll-margin-top:64px}
+.hero{font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-top:20px}
+.hero small{font-size:16px;font-weight:500;color:var(--ink-2);letter-spacing:0;margin-left:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--ink-3)}
+.kpi .v{font-size:26px;font-weight:650;letter-spacing:-.02em;margin-top:2px}
+.kpi .d{font-size:12px;color:var(--ink-2);margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px 14px;grid-column:span 6;min-width:0;display:flex;flex-direction:column}
+.card.w4{grid-column:span 4}.card.w3{grid-column:span 3}.card.w8{grid-column:span 8}.card.w12{grid-column:span 12}
+.card h3{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.card h3 small{font-weight:400;color:var(--ink-3);font-size:12px;white-space:nowrap}
+.card .desc{font-size:13px;color:var(--ink-2);margin-bottom:10px}
+.card .plot{flex:1;min-height:200px;position:relative}
+.card .foot{font-size:12.5px;color:var(--ink-2);margin-top:10px;border-top:1px solid var(--grid);padding-top:8px}
+.card .foot b{color:var(--ink);font-weight:600}
+.findings{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:16px}
+.finding{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--s1);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--ink-2)}
+.finding b{color:var(--ink);display:block;margin-bottom:3px;font-weight:600}
+.finding.warn{border-left-color:var(--serious)}
+.finding.bad{border-left-color:var(--critical)}
+.finding.good{border-left-color:var(--good)}
+svg{display:block;width:100%;height:auto;overflow:visible;font-family:var(--sans)}
+svg text{fill:var(--ink-2);font-size:11px}
+svg .tick{fill:var(--ink-3);font-size:11px;font-variant-numeric:tabular-nums}
+svg .grid line{stroke:var(--grid);stroke-width:1}
+svg .axis{stroke:var(--axis);stroke-width:1}
+svg .lbl{fill:var(--ink);font-size:11.5px;font-weight:500}
+svg .lbl.in{fill:#fff}
+svg .val{fill:var(--ink-2);font-size:11px;font-variant-numeric:tabular-nums}
+svg .bar{stroke:var(--surface);stroke-width:2}
+svg .hit{fill:transparent;cursor:crosshair}
+svg .hit:hover+.hl, svg g:hover .hl{opacity:1}
+svg .hl{opacity:0}
+svg .line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+svg .area{opacity:.10}
+svg .dot{stroke:var(--surface);stroke-width:2}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);margin:6px 0 2px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tip{position:fixed;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transition:opacity .08s;max-width:320px;line-height:1.4}
+.tip b{font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);vertical-align:top;white-space:nowrap}
+th{font-size:11.5px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td code{font-size:12px}
+.tbl{overflow:auto}
+.qual{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px}
+.q{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13.5px;color:var(--ink-2);display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.q .sev{width:10px;height:10px;border-radius:50%;margin-top:6px}
+.q .sev.c{background:var(--critical)}.q .sev.s{background:var(--serious)}.q .sev.w{background:var(--warn)}.q .sev.i{background:var(--s1)}
+.q b{color:var(--ink);font-weight:600}
+.q .fix{grid-column:2;font-size:12.5px;color:var(--ink-3)}
+.q .fix::before{content:"→ ";color:var(--s1)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:999px;background:var(--wash);color:var(--ink-2)}
+.meter{height:8px;background:var(--seq1);border-radius:4px;overflow:hidden;margin:6px 0}
+.meter b{display:block;height:100%;background:var(--seq5)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.card,.card.w4,.card.w3,.card.w8{grid-column:span 12}.split{grid-template-columns:1fr}.wrap{padding-inline:16px}nav.toc{margin-inline:-16px;padding-inline:16px}.hero{font-size:40px}}
+@media print{nav.toc{display:none}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="tip" id="tip"></div>
+<div class="wrap">
+<nav class="toc">
+  <a href="#resumen">Resumen</a><a href="#universo">Universo</a><a href="#productos">Productos</a><a href="#deuda">Deuda</a>
+  <a href="#saldos">Saldos</a><a href="#tx">Transacciones</a><a href="#facturas">Facturas</a><a href="#cruces">Cruces</a><a href="#generador">Generador</a>
+  <a href="#calidad">Calidad</a><a href="#metodo">Método</a>
+</nav>
+
+<p class="eyebrow">HackSpain 2026 · Track Embat · Elkano</p>
+<h1>EDA de primer nivel: tesorería de 1.286 empresas</h1>
+<p class="lede">Análisis exploratorio completo de <code>output_hackspain_data.zip</code>: qué hay, cómo se distribuye, dónde está la señal para un producto de tesorería y qué hay que limpiar antes de tocarlo. Todas las cifras se calculan sobre los 8 CSV completos (3,47 M filas) con DuckDB; nada es muestreado.</p>
+<div class="hero" id="hero"></div>
+<div class="kpis" id="kpis"></div>
+
+<section id="resumen">
+  <h2>Resumen ejecutivo</h2>
+  <p class="sub">Lo que un equipo debería saber tras leer este informe, en orden de importancia para construir producto.</p>
+  <div class="findings" id="findings"></div>
+</section>
+
+<section id="universo">
+  <h2>Universo: grupos y empresas</h2>
+  <p class="sub">Quién está en el dataset, en qué moneda opera, qué ERP usa y cuánta información tenemos de cada uno.</p>
+  <div class="grid">
+    <div class="card w4"><h3>Tamaño de los grupos <small>empresas por grupo</small></h3><p class="desc">La mayoría de grupos son una única empresa; la cola llega a 22 filiales.</p><div class="plot" id="c_groupsize"></div></div>
+    <div class="card w4"><h3>Moneda de la empresa</h3><p class="desc">EUR domina; el resto es cola larga (28 monedas).</p><div class="plot" id="c_currency"></div></div>
+    <div class="card w4"><h3>País (normalizado)</h3><p class="desc">El 82 % no informa país. <code>ES</code>, <code>ESPAÑA</code> y <code>España</code> se unifican aquí.</p><div class="plot" id="c_country"></div></div>
+    <div class="card"><h3>ERP declarado por la empresa</h3><p class="desc">20 ERP distintos; el 42 % no declara ninguno. Sin ERP no hay facturas sincronizadas.</p><div class="plot" id="c_erp"></div></div>
+    <div class="card"><h3>Onboarding acumulado <small>empresas por fecha de alta</small></h3><p class="desc">Ritmo de altas en la plataforma. Nótese que muchas empresas se dan de alta dentro del periodo de datos: no todas tienen 24 meses de historia.</p><div class="plot" id="c_onboard"></div></div>
+    <div class="card"><h3>Cobertura de datos por empresa</h3><p class="desc">Cuántas empresas aparecen en cada fichero. El embudo importa: solo 785 tienen facturas y 378 deuda.</p><div class="plot" id="c_coverage"></div></div>
+    <div class="card"><h3>Perfil de cobertura</h3><p class="desc">Combinación facturas × deuda. Para casos de uso «factura ↔ banco» solo cuentan las empresas con ERP.</p><div class="plot" id="c_combo"></div><div class="foot" id="f_combo"></div></div>
+  </div>
+</section>
+
+<section id="productos">
+  <h2>Productos bancarios</h2>
+  <p class="sub">5.987 cuentas, tarjetas y otros productos conectados. Qué tipos hay, en qué bancos y cuántos usa cada empresa.</p>
+  <div class="grid">
+    <div class="card w4"><h3>Tipo de producto</h3><div class="plot" id="c_bptype"></div></div>
+    <div class="card w8"><h3>Bancos con más productos conectados <small id="s_banks"></small></h3><p class="desc">La banca española concentra la conexión; <code>Other (customer-defined)</code> son productos manuales (intercompany, prepago…).</p><div class="plot" id="c_banks"></div></div>
+    <div class="card w4"><h3>Productos por empresa</h3><p class="desc" id="d_ppc"></p><div class="plot" id="c_ppc"></div></div>
+    <div class="card w4"><h3>Actividad por tipo <small>con movimientos vs. total</small></h3><p class="desc">Productos que tienen al menos una transacción en los 24 meses.</p><div class="plot" id="c_bpactive"></div></div>
+    <div class="card w4"><h3>Alta de productos por trimestre</h3><p class="desc">Cuándo se conectaron las cuentas.</p><div class="plot" id="c_bpcreated"></div></div>
+  </div>
+</section>
+
+<section id="deuda">
+  <h2>Financiación</h2>
+  <p class="sub">2.239 productos de deuda en 378 empresas. Signo invertido (importes negativos) en <code>debt_products</code>; aquí todo se muestra en valor absoluto y se excluyen los ±300 M anómalos.</p>
+  <div class="grid">
+    <div class="card w8"><h3>Tipo de financiación <small>nº productos · concedido · dispuesto</small></h3><div class="plot" id="c_debttype"></div></div>
+    <div class="card w4"><h3>Dispuesto por producto</h3><p class="desc">Distribución del <code>outstanding</code> en valor absoluto.</p><div class="plot" id="c_debthist"></div></div>
+    <div class="card"><h3>Bancos por saldo dispuesto <small>top 12</small></h3><div class="plot" id="c_debtbank"></div></div>
+    <div class="card"><h3>Uso de las líneas de crédito <small>dispuesto / concedido</small></h3><p class="desc" id="d_util"></p><div class="plot" id="c_util"></div></div>
+    <div class="card w4"><h3>Alta de deuda por trimestre</h3><div class="plot" id="c_debtcreated"></div></div>
+    <div class="card w4"><h3>Empresas más endeudadas <small>top 10 por dispuesto</small></h3><div class="plot" id="c_debtcomp"></div></div>
+    <div class="card w4"><h3>Signo de <code>outstanding</code></h3><p class="desc">Convención: la deuda es negativa. Los positivos son la excepción a revisar.</p><div class="plot" id="c_debtsign"></div></div>
+  </div>
+  <h3 style="margin-top:28px;font-size:18px">Cuadro de amortización (87 préstamos)</h3>
+  <p class="sub">Solo 87 de 2.239 productos de deuda tienen términos formales. Es la única fuente de tipos de interés y calendarios.</p>
+  <div class="grid">
+    <div class="card w4"><h3>Tipo de interés anual <small>fijo vs. variable (spread)</small></h3><div class="plot" id="c_rate"></div><div class="foot" id="f_rate"></div></div>
+    <div class="card w4"><h3>Número de cuotas</h3><div class="plot" id="c_periods"></div></div>
+    <div class="card w4"><h3>Principal pendiente / concedido</h3><p class="desc">Cuánto queda por amortizar.</p><div class="plot" id="c_remaining"></div></div>
+    <div class="card w8"><h3>Próximo vencimiento <small>next_payment_date por mes</small></h3><p class="desc" id="d_next"></p><div class="plot" id="c_next"></div></div>
+    <div class="card w4"><h3>Consistencia con debt_products</h3><div class="plot" id="c_dsc_consist"></div></div>
+  </div>
+</section>
+
+<section id="saldos">
+  <h2>Saldos a 2026-09-01</h2>
+  <p class="sub">7.996 fotos de saldo, una por producto. Solo <code>balance</code> es fiable: <code>available</code> está vacío al 100 %.</p>
+  <div class="grid">
+    <div class="card w8"><h3>Distribución del saldo <small>escala log, por tramos</small></h3><p class="desc">Saldo por producto. Los tramos negativos son descubiertos, tarjetas y deuda.</p><div class="plot" id="c_balhist"></div></div>
+    <div class="card w4"><h3>Cuantiles del saldo <small>sin outliers ≥ 1 B</small></h3><div class="plot" id="c_balq"></div></div>
+    <div class="card"><h3>Concentración <small>curva de Lorenz, saldos positivos</small></h3><p class="desc" id="d_lorenz"></p><div class="plot" id="c_lorenz"></div></div>
+    <div class="card"><h3>Saldo por tipo de producto</h3><p class="desc">Mediana y suma por tipo. Las cuentas checking concentran casi todo.</p><div class="tbl" id="t_baltype"></div></div>
+    <div class="card"><h3>Tesorería total por empresa <small>suma de productos bancarios</small></h3><p class="desc" id="d_ctot"></p><div class="plot" id="c_ctot"></div></div>
+    <div class="card"><h3>Outliers de saldo <small>|balance| ≥ 1.000 M</small></h3><p class="desc">Valores claramente sintéticos/erróneos que hay que excluir antes de agregar.</p><div class="tbl" id="t_balout"></div></div>
+  </div>
+</section>
+
+<section id="tx">
+  <h2>Transacciones bancarias</h2>
+  <p class="sub">2,56 M movimientos en 24 meses. Se excluyen de los agregados en importe las
+  <span id="s_txout"></span> transacciones con |importe| ≥ 100 M (claramente anómalas).</p>
+  <div class="grid">
+    <div class="card w12"><h3>Movimientos por mes <small>número de transacciones</small></h3><p class="desc">El volumen crece con el onboarding: cada mes hay más empresas y productos activos. Los primeros meses no son comparables con los últimos sin normalizar por empresa.</p><div class="plot" id="c_txmonthly"></div></div>
+    <div class="card"><h3>Entradas y salidas por mes <small>importe agregado</small></h3><div class="plot" id="c_txflow"></div></div>
+    <div class="card"><h3>Empresas y productos activos por mes</h3><p class="desc">Base sobre la que hay que normalizar cualquier serie temporal.</p><div class="plot" id="c_txactive"></div></div>
+    <div class="card w4"><h3>Día de la semana</h3><p class="desc">Sábado y domingo tienen ~10 veces menos movimientos: es fecha contable, no fecha real.</p><div class="plot" id="c_weekday"></div></div>
+    <div class="card w8"><h3>Día del mes <small>nº movimientos · importes en el tooltip</small></h3><p class="desc">Picos de actividad los días 1, 5, 10, 20, 27 y 30; por importe, las salidas se disparan del 20 al 30 (nóminas, impuestos, recibos). Base para un calendario de pagos predictivo.</p><div class="plot" id="c_dom"></div></div>
+    <div class="card"><h3>Distribución del importe <small>escala log · entradas vs. salidas</small></h3><p class="desc" id="d_txamt"></p><div class="plot" id="c_txamt"></div></div>
+    <div class="card"><h3>Movimientos por empresa activa <small>serie normalizada</small></h3><p class="desc">Aun descontando el onboarding, la actividad por empresa sube (~95 → ~150/mes), con salto en marzo de 2026: no hay estacionalidad limpia que extraer sin controlar por producto conectado.</p><div class="plot" id="c_moy"></div></div>
+    <div class="card w8"><h3>Categoría automática <small>nº movimientos · importe neto</small></h3><p class="desc">El 25 % está sin categorizar (<code>-</code>). <code>collection</code> y <code>payment</code> son las dos grandes; el neto de <code>transfer</code> positivo sugiere traspasos intra-grupo mal clasificados.</p><div class="plot" id="c_cat"></div></div>
+    <div class="card w4"><h3>Sin categorizar por mes</h3><p class="desc">% de movimientos con categoría <code>-</code>.</p><div class="plot" id="c_uncat"></div></div>
+    <div class="card w12"><h3>Mezcla de categorías por mes <small>% sobre las 6 categorías principales</small></h3><div class="plot" id="c_catmonthly"></div></div>
+    <div class="card w4"><h3>Estado bancario</h3><div class="plot" id="c_status"></div></div>
+    <div class="card w4"><h3>Estado contable <small>conciliación</small></h3><p class="desc">Vacío en el 62 %: la conciliación solo está activa en parte de las empresas.</p><div class="plot" id="c_accst"></div></div>
+    <div class="card w4"><h3>Empresas según uso de conciliación</h3><p class="desc">% de sus movimientos con <code>accounting_status</code> informado.</p><div class="plot" id="c_accbyc"></div></div>
+    <div class="card"><h3>Contraparte: id vs. texto</h3><p class="desc">Solo el 9,8 % lleva <code>counterparty_id</code>, pero el 25 % menciona <code>COUNTERPARTY_xxxxx</code> en la descripción. Son dos espacios de id distintos (columna = por empresa; texto = token de nombre global), ver sección «Generador».</p><div class="plot" id="c_cpcov"></div></div>
+    <div class="card"><h3>Cobertura de contraparte por categoría</h3><p class="desc">Con id (barra) vs. con id o mención en texto (marcador).</p><div class="plot" id="c_cpcat"></div></div>
+    <div class="card w4"><h3>Placeholders en la descripción</h3><p class="desc">% de movimientos que contienen cada token de anonimización.</p><div class="plot" id="c_ph"></div></div>
+    <div class="card w8"><h3>Descripciones más frecuentes <small id="s_desc"></small></h3><div class="tbl" id="t_desc"></div></div>
+    <div class="card w4"><h3>Movimientos por empresa</h3><p class="desc" id="d_txpc"></p><div class="plot" id="c_txpc"></div></div>
+    <div class="card w4"><h3>Meses con actividad por empresa</h3><p class="desc">Cuántos de los 25 meses tiene movimientos cada empresa.</p><div class="plot" id="c_span"></div></div>
+    <div class="card w4"><h3>Primer y último mes con movimientos</h3><p class="desc">Entradas (primer mes) vs. salidas (último mes) de empresas.</p><div class="plot" id="c_firstlast"></div></div>
+    <div class="card"><h3>Fecha valor − fecha contable <small>días</small></h3><p class="desc">El 88 % coincide; la cola negativa (valor anterior) es típica de tarjetas y remesas.</p><div class="plot" id="c_lag"></div><div class="foot" id="f_lag"></div></div>
+    <div class="card"><h3>Movimientos anómalos <small>|importe| ≥ 100 M, top 10</small></h3><div class="tbl" id="t_txout"></div></div>
+  </div>
+</section>
+
+<section id="facturas">
+  <h2>Facturas (ERP)</h2>
+  <p class="sub">897.894 documentos de 785 empresas. Hipótesis de signo: importe positivo = cobro (cliente), negativo = pago (proveedor); el cruce con transacciones la confirma en un 98 %.</p>
+  <div class="grid">
+    <div class="card w12"><h3>Facturas emitidas por mes <small>número de documentos y empresas con ERP activas</small></h3><div class="plot" id="c_invmonthly"></div></div>
+    <div class="card"><h3>Importe por cobrar vs. por pagar por mes</h3><div class="plot" id="c_invflow"></div></div>
+    <div class="card"><h3>Tipo de documento</h3><p class="desc">85 % son facturas; el resto son documentos de pago, notas, depósitos y agrupaciones.</p><div class="plot" id="c_doctype"></div></div>
+    <div class="card w4"><h3>Estado</h3><p class="desc" id="d_invst"></p><div class="plot" id="c_invstatus"></div></div>
+    <div class="card w4"><h3>Signo por tipo de documento</h3><p class="desc">Cobrar (positivo) vs. pagar (negativo).</p><div class="plot" id="c_invsign"></div></div>
+    <div class="card w4"><h3>Distribución del importe <small>escala log</small></h3><div class="plot" id="c_invamt"></div></div>
+    <div class="card"><h3>Plazo de pago pactado <small>vencimiento − emisión, días · solo invoice</small></h3><p class="desc" id="d_terms"></p><div class="plot" id="c_terms"></div></div>
+    <div class="card"><h3>Días hasta el cobro/pago real <small>payment_date − issuance_date · pagadas</small></h3><p class="desc" id="d_dso"></p><div class="plot" id="c_dso"></div></div>
+    <div class="card"><h3>Puntualidad <small>payment_date − due_date · pagadas</small></h3><p class="desc" id="d_late"></p><div class="plot" id="c_late"></div></div>
+    <div class="card"><h3>Antigüedad de la deuda vencida <small>días desde vencimiento a 2026-09-01</small></h3><p class="desc">Facturas en estado <code>overdue</code>: número e importe pendiente.</p><div class="plot" id="c_aging"></div></div>
+    <div class="card"><h3>% vencidas y % pagadas por mes de emisión</h3><p class="desc">Las facturas recientes aún no han tenido tiempo de cobrarse: efecto de censura a la derecha.</p><div class="plot" id="c_ovmonthly"></div></div>
+    <div class="card"><h3>Empresas por tasa de vencidas <small>≥ 20 facturas</small></h3><div class="plot" id="c_ovcomp"></div></div>
+    <div class="card w4"><h3>Facturas por empresa</h3><p class="desc" id="d_invpc"></p><div class="plot" id="c_invpc"></div></div>
+    <div class="card w4"><h3>Facturas por contraparte</h3><p class="desc" id="d_cpinv"></p><div class="plot" id="c_cpinv"></div></div>
+    <div class="card w4"><h3>Moneda de la factura</h3><p class="desc" id="d_invcur"></p><div class="plot" id="c_invcur"></div></div>
+    <div class="card w4"><h3>Día de la semana de emisión</h3><div class="plot" id="c_invwd"></div></div>
+    <div class="card w8"><h3>Día del mes de emisión</h3><p class="desc">Facturación concentrada en los cierres de mes.</p><div class="plot" id="c_invdom"></div></div>
+    <div class="card w4"><h3>Placeholders en el concepto</h3><div class="plot" id="c_invph"></div></div>
+    <div class="card w8"><h3>Conceptos más frecuentes</h3><div class="tbl" id="t_concept"></div></div>
+    <div class="card w12"><h3>Coherencia de <code>pending_amount</code> por estado</h3><p class="desc">% con pendiente = 0 y % con pendiente mayor que el importe.</p><div class="tbl" id="t_pend"></div></div>
+  </div>
+</section>
+
+<section id="cruces">
+  <h2>Cruces entre ficheros</h2>
+  <p class="sub">El valor del dataset está en unir factura y movimiento bancario por contraparte, empresa e importe. Esto mide cuánto es posible.</p>
+  <div class="grid">
+    <div class="card w4"><h3>Contrapartes comunes</h3><p class="desc">Ids de contraparte por fuente.</p><div class="plot" id="c_cpoverlap"></div><div class="foot" id="f_cpoverlap"></div></div>
+    <div class="card w8"><h3>Emparejamiento factura ↔ movimiento</h3><p class="desc">Facturas pagadas (<code>invoice</code>, con contraparte) que tienen al menos un movimiento de la misma empresa, misma contraparte y mismo importe entre −30 y +365 días de la emisión.</p><div class="plot" id="c_match"></div><div class="foot" id="f_match"></div></div>
+    <div class="card"><h3>Desfase movimiento − vencimiento <small>en las emparejadas, días</small></h3><p class="desc">Negativo = se pagó antes del vencimiento. Cobros (positivo) vs. pagos (negativo).</p><div class="plot" id="c_matchlag"></div></div>
+    <div class="card"><h3>Empresas con más movimientos <small>perfil completo, top 15</small></h3><div class="tbl" id="t_profile"></div></div>
+  </div>
+</section>
+
+<section id="generador">
+  <h2>Ingeniería inversa del «generador»</h2>
+  <p class="sub">Hipótesis a contrastar: cada empresa se generó con un arquetipo de trayectoria (estable, mejora, deterioro, estacional…) y ese parámetro sería la verdad oculta de un scoring. Se construye un vector de tendencias por empresa (874 empresas con ≥ 12 meses activos) y se buscan clases latentes; en paralelo se buscan huellas de datos reales.</p>
+  <div class="findings" id="probe_findings"></div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card w8"><h3>Pendiente mensual por empresa <small>log(entradas), log(salidas), log(nº mov.) · % por mes</small></h3><p class="desc">Si hubiera arquetipos discretos (p. ej. −5 % / 0 / +5 % al mes) veríamos varios picos. Hay uno solo, centrado en ~0 y con colas largas.</p><div class="plot" id="c_slopes"></div><div class="foot" id="f_slopes"></div></div>
+    <div class="card w4"><h3>R² de la tendencia lineal</h3><p class="desc">Cuánto de la serie explica una recta. Un generador con tendencia determinista daría R² altos.</p><div class="plot" id="c_r2"></div><div class="foot" id="f_r2"></div></div>
+    <div class="card"><h3>Selección de modelo <small>GMM sobre 7 rasgos estandarizados</small></h3><p class="desc">BIC baja monótonamente (no hay un k «natural») y la silueta cae desde k = 2: no hay grupos separados, es un continuo.</p><div class="tbl" id="t_gmm"></div></div>
+    <div class="card"><h3>Qué separa la partición k = 2</h3><p class="desc">Ruido de la serie y tamaño, no la pendiente: divide «series ruidosas/parciales» de «series estables», no «mejora» de «deterioro».</p><div class="tbl" id="t_gmm2"></div></div>
+    <div class="card w4"><h3>Ley de Benford <small>primer dígito del importe</small></h3><p class="desc">Los importes siguen Benford con precisión de ±0,5 pp: distribución natural, no muestreada de una paramétrica.</p><div class="plot" id="c_benford"></div></div>
+    <div class="card w8"><h3>Festivos nacionales <small>movimientos ese día / media de laborables ±7 días</small></h3><p class="desc">Navidad al 8 %, Viernes Santo al 13–16 %, Reyes al 38 %. Las fechas son reales y no están desplazadas.</p><div class="plot" id="c_holidays"></div></div>
+    <div class="card"><h3>Tipo de cambio implícito USD/EUR por mes</h3><p class="desc">Sigue el mercado real: 1,11 en sep-24, mínimo 1,04 en ene-feb 25, 1,17 a finales de 2025. Un generador no reproduce esto.</p><div class="plot" id="c_fx"></div></div>
+    <div class="card"><h3>Formatos de <code>transaction_id</code></h3><p class="desc">Conviven md5, sha256, ids de PayPal (17 alfanuméricos), «XXXX-XXXX-Settled-fee» de un PSP y base64: son ids de proveedor reales que sobrevivieron a la anonimización.</p><div class="plot" id="c_idfmt"></div><div class="foot" id="f_idfmt"></div></div>
+    <div class="card w4"><h3>Alta en plataforma vs. primer movimiento <small>días</small></h3><p class="desc">El 60 % de las empresas tiene movimientos de 1–6 meses antes de su <code>created_at</code>: histórico importado al conectar el banco, patrón de plataforma real.</p><div class="plot" id="c_created"></div></div>
+    <div class="card w8"><h3>Dos espacios de id de contraparte</h3><p class="desc">La columna <code>counterparty_id</code> nunca se comparte entre empresas (resolución por empresa). El token <code>COUNTERPARTY_xxxxx</code> del texto sí (hasta 392 empresas): es un token de <em>nombre</em> (Booking, AEAT, Zettle, un banco…). Cuando ambos existen, solo coinciden el 41 %.</p><div class="plot" id="c_cpspace"></div><div class="foot" id="f_cpspace"></div></div>
+    <div class="card w12"><h3>Tokens de texto más transversales</h3><div class="tbl" id="t_cptop"></div></div>
+  </div>
+</section>
+
+<section id="calidad">
+  <h2>Calidad de datos</h2>
+  <p class="sub">Todo lo medido que puede romper un análisis o un join. Ordenado por severidad; cada aviso lleva una acción sugerida.</p>
+  <div class="qual" id="qual"></div>
+</section>
+
+<section id="metodo">
+  <h2>Método y reproducción</h2>
+  <div class="grid">
+    <div class="card w12">
+      <p class="desc">
+        <b>Fuente.</b> Los 8 CSV de <code>output/</code> (646 MB, 3.472.176 filas) leídos íntegros con DuckDB 1.x en un contenedor <code>python:3.12-slim</code>; el JSON de resultados se incrusta en esta página, que no necesita servidor ni red.<br><br>
+        <b>Filtros.</b> Para los agregados en importe se excluyen movimientos y facturas con |importe| ≥ 100 M y saldos con |balance| ≥ 1.000 M. Los histogramas de importe y todos los recuentos usan el fichero completo. Las fechas fuera del rango 2020–2030 se excluyen de los cálculos de plazo.<br><br>
+        <b>Signo de las facturas.</b> Se asume positivo = por cobrar y negativo = por pagar; el cruce con transacciones (mismo signo en el 98 % de los emparejamientos) lo respalda, pero el diccionario no lo documenta.<br><br>
+        <b>Reproducir.</b> <code>./eda/run.sh</code> regenera <code>eda_data.json</code>, <code>probe_data.json</code> y <code>report.html</code>. Código en <code>eda/eda.py</code> (consultas), <code>eda/panel.py</code> + <code>eda/generator_probe.py</code> (sección Generador) y <code>eda/build_report.py</code> (plantilla). Generado: <span id="gen"></span>.
+      </p>
+    </div>
+  </div>
+</section>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script id="probe" type="application/json">__PROBE__</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const $ = id => document.getElementById(id);
+const S = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)','var(--s7)','var(--s8)'];
+const SEQ = ['var(--seq1)','var(--seq2)','var(--seq3)','var(--seq4)','var(--seq5)','var(--seq6)','var(--seq7)'];
+const fmt = n => n==null?'–':Math.round(n).toLocaleString('es-ES');
+const fmt1 = n => n==null?'–':n.toLocaleString('es-ES',{maximumFractionDigits:1,minimumFractionDigits:0});
+const pct = (n,d=1) => n==null?'–':(n*100).toLocaleString('es-ES',{maximumFractionDigits:d})+' %';
+const money = n => { if(n==null) return '–'; const a=Math.abs(n), s=n<0?'−':'';
+  if(a>=1e9) return s+(a/1e9).toLocaleString('es-ES',{maximumFractionDigits:2})+' B';
+  if(a>=1e6) return s+(a/1e6).toLocaleString('es-ES',{maximumFractionDigits:1})+' M';
+  if(a>=1e3) return s+(a/1e3).toLocaleString('es-ES',{maximumFractionDigits:1})+' K';
+  return s+a.toLocaleString('es-ES',{maximumFractionDigits:0}); };
+const compact = n => { const a=Math.abs(n); if(a>=1e6) return (n/1e6).toLocaleString('es-ES',{maximumFractionDigits:1})+' M';
+  if(a>=1e3) return (n/1e3).toLocaleString('es-ES',{maximumFractionDigits:1})+' K'; return n.toLocaleString('es-ES',{maximumFractionDigits:0}); };
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sum = a => a.reduce((x,y)=>x+(y||0),0);
+const WD = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MOY = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ---------------------------------------------------------------- tooltip
+const tip = $('tip');
+function showTip(html, ev){ tip.innerHTML = html; tip.style.opacity = 1; moveTip(ev); }
+function moveTip(ev){ const w = tip.offsetWidth, h = tip.offsetHeight; let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14; if (y + h > innerHeight - 8) y = ev.clientY - h - 14; tip.style.left = x+'px'; tip.style.top = y+'px'; }
+function hideTip(){ tip.style.opacity = 0; }
+function bindTips(svg){ svg.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', e => showTip(el.dataset.tip, e)); el.addEventListener('mousemove', moveTip); el.addEventListener('mouseleave', hideTip); }); }
+
+function svgEl(w, h){ const s = document.createElementNS('http://www.w3.org/2000/svg','svg'); s.setAttribute('viewBox',`0 0 ${w} ${h}`); s.setAttribute('width', w); s.setAttribute('height', h); return s; }
+function niceTicks(max, n=4){ if (max<=0) return [0]; const raw = max/n, p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw/p; const step = (m<1.5?1:m<3?2:m<7?5:10)*p; const t=[]; for(let v=0; v<=max+1e-9; v+=step) t.push(v); return t; }
+function legend(el, items){ const d = document.createElement('div'); d.className='legend'; d.innerHTML = items.map(([n,c])=>`<span><i style="background:${c}"></i>${esc(n)}</span>`).join(''); el.appendChild(d); }
+function measure(el){ return Math.max(280, el.clientWidth || el.parentElement.clientWidth || 400); }
+
+// ---------------------------------------------------------------- horizontal bars
+// data: [{k, v, tip?, c?}], opts: {fmt, color, maxLabel, share}
+function barH(el, data, o={}){
+  const W = measure(el), lw = o.labelW ?? Math.min(180, Math.max(...data.map(d=>String(d.k).length))*6.6+12);
+  const rowH = o.rowH ?? 24, H = data.length*rowH + 6, x0 = lw, pw = W - lw - 64;
+  const max = o.max ?? Math.max(...data.map(d=>Math.abs(d.v)), 1e-9);
+  const svg = svgEl(W, H); const f = o.fmt ?? fmt; const tot = sum(data.map(d=>d.v));
+  let h = '';
+  data.forEach((d,i)=>{ const y = i*rowH+3, bw = Math.max(0, Math.abs(d.v)/max*pw), col = d.c ?? o.color ?? S[0];
+    const label = String(d.k).length>28 ? String(d.k).slice(0,27)+'…' : d.k;
+    const share = o.share!==false && tot>0 ? ` · ${pct(d.v/tot)}` : '';
+    h += `<g data-tip="<b>${esc(d.k)}</b><br>${esc(d.tip ?? (f(d.v)+share))}">
+      <rect class="hit" x="0" y="${y-2}" width="${W}" height="${rowH}"/>
+      <rect class="hl" x="0" y="${y-2}" width="${W}" height="${rowH}" fill="var(--wash)"/>
+      <text x="${x0-8}" y="${y+rowH/2-3}" text-anchor="end" dominant-baseline="middle" class="lbl">${esc(label)}</text>
+      <path d="M${x0},${y} h${bw-4} a4,4 0 0 1 4,4 v${rowH-14} a4,4 0 0 1 -4,4 h${-(bw-4)} z" fill="${col}" stroke="var(--surface)" stroke-width="2"/>
+      <text x="${x0+bw+6}" y="${y+rowH/2-3}" dominant-baseline="middle" class="val">${esc(f(d.v))}</text></g>`; });
+  svg.innerHTML = h; el.appendChild(svg); bindTips(svg); return svg;
+}
+
+// ---------------------------------------------------------------- columns (stacked / grouped)
+// cats: labels; series: [{name, values, color}]; opts: {stack, fmt, height, pctMode, rotate, labelEvery, yfmt}
+function columns(el, cats, series, o={}){
+  const W = measure(el), H = o.height ?? 230, mL = 46, mR = 8, mT = 12, mB = o.rotate ? 44 : 26;
+  const pw = W-mL-mR, ph = H-mT-mB, n = cats.length, band = pw/n;
+  const stack = o.stack ?? (series.length>1 && o.group!==true);
+  let max = 0, min = 0;
+  for (let i=0;i<n;i++){ if (stack){ let p=0,q=0; series.forEach(s=>{ const v=s.values[i]||0; if(v>=0)p+=v; else q+=v;}); max=Math.max(max,p); min=Math.min(min,q);} else series.forEach(s=>{max=Math.max(max,s.values[i]||0); min=Math.min(min,s.values[i]||0);}); }
+  if (o.max!=null) max = o.max; if (max===0) max=1;
+  const ticks = niceTicks(max, 4); const tmax = Math.max(ticks[ticks.length-1], max); const negTicks = min<0 ? niceTicks(-min,2).slice(1).map(v=>-v) : [];
+  const nmin = negTicks.length? negTicks[negTicks.length-1] : 0;
+  const y = v => mT + ph*(1 - (v - nmin)/(tmax - nmin)); const y0 = y(0);
+  const yf = o.yfmt ?? compact; const f = o.fmt ?? fmt;
+  const svg = svgEl(W,H); let h = '<g class="grid">';
+  [...ticks, ...negTicks].forEach(t=>{ h += `<line x1="${mL}" x2="${W-mR}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${mL-6}" y="${y(t)}" text-anchor="end" dominant-baseline="middle">${o.pctMode?Math.round(t*100)+'%':yf(t)}</text>`; });
+  h += `</g><line class="axis" x1="${mL}" x2="${W-mR}" y1="${y0}" y2="${y0}"/>`;
+  const gcount = stack ? 1 : series.length; const bw = Math.min(o.barW ?? 24, (band*0.72)/gcount);
+  const every = o.labelEvery ?? Math.ceil(n / Math.floor(pw/ (o.rotate?28:44)));
+  for (let i=0;i<n;i++){ const cx = mL + band*(i+0.5); let pos=0, neg=0;
+    let tipRows = series.map(s=>`${esc(s.name)}: ${esc(f(s.values[i]||0))}`).join('<br>');
+    if (o.tipExtra) tipRows += '<br>' + o.tipExtra(i);
+    h += `<g data-tip="<b>${esc(cats[i])}</b><br>${tipRows}"><rect class="hit" x="${cx-band/2}" y="${mT}" width="${band}" height="${ph}"/><rect class="hl" x="${cx-band/2}" y="${mT}" width="${band}" height="${ph}" fill="var(--wash)"/>`;
+    series.forEach((s,j)=>{ const v = s.values[i]||0; if (!v) return; let yb, yt, x;
+      if (stack){ if (v>=0){ yb=y(pos); yt=y(pos+v); pos+=v; } else { yt=y(neg); yb=y(neg+v); neg+=v; } x = cx-bw/2; }
+      else { yb=y0; yt=y(v); x = cx - (gcount*bw)/2 + j*bw; if (v<0){ const t=yb; yb=yt; yt=t; } }
+      const top = Math.min(yb,yt), hh = Math.max(0, Math.abs(yb-yt));
+      h += `<rect class="bar" x="${x}" y="${top}" width="${bw}" height="${hh}" rx="${stack&&j<series.length-1?0:3}" fill="${s.color}"/>`; });
+    if (i%every===0 || n<=12) h += `<text class="tick" x="${cx}" y="${H-mB+14}" text-anchor="middle" ${o.rotate?`transform="rotate(-40 ${cx} ${H-mB+14})" style="text-anchor:end"`:''}>${esc(o.catFmt?o.catFmt(cats[i]):cats[i])}</text>`;
+    h += '</g>'; }
+  svg.innerHTML = h; el.appendChild(svg); bindTips(svg);
+  if (series.length>1 && o.legend!==false) legend(el, series.map(s=>[s.name, s.color]));
+  return svg;
+}
+
+// ---------------------------------------------------------------- line chart with crosshair
+// xs: labels; series: [{name, values, color, area?}], opts {pctMode, height, fmt}
+function lines(el, xs, series, o={}){
+  const W = measure(el), H = o.height ?? 230, mL = 46, mR = 12, mT = 12, mB = 26, pw = W-mL-mR, ph = H-mT-mB, n = xs.length;
+  let max = 0, min = 0; series.forEach(s=>s.values.forEach(v=>{ if(v!=null){ max=Math.max(max,v); min=Math.min(min,v);} }));
+  if (o.max!=null) max=o.max; if (o.min!=null) min=o.min; if(max===min) max=min+1;
+  const ticks = niceTicks(max-min, 4).map(t=>t+min); const tmax = Math.max(ticks[ticks.length-1], max);
+  const x = i => mL + (n===1?pw/2:pw*i/(n-1)); const y = v => mT + ph*(1-(v-min)/(tmax-min)); const yf = o.yfmt ?? compact; const f = o.fmt ?? fmt;
+  const svg = svgEl(W,H); let h='<g class="grid">';
+  ticks.forEach(t=>{ h+=`<line x1="${mL}" x2="${W-mR}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${mL-6}" y="${y(t)}" text-anchor="end" dominant-baseline="middle">${o.pctMode?Math.round(t*100)+'%':yf(t)}</text>`; });
+  h+='</g>'; if (min<0) h += `<line class="axis" x1="${mL}" x2="${W-mR}" y1="${y(0)}" y2="${y(0)}"/>`;
+  const every = Math.ceil(n/Math.floor(pw/60));
+  xs.forEach((c,i)=>{ if(i%every===0||(i===n-1&&(n-1)%every>=every/2)) h+=`<text class="tick" x="${x(i)}" y="${H-mB+14}" text-anchor="middle">${esc(c)}</text>`; });
+  series.forEach(s=>{ let d='', first=true; s.values.forEach((v,i)=>{ if(v==null){first=true;return;} d+=(first?'M':'L')+x(i).toFixed(1)+','+y(v).toFixed(1); first=false; });
+    if (s.area){ const last = s.values.length-1; h+=`<path class="area" d="${d} L${x(last).toFixed(1)},${y(Math.max(0,min))} L${x(0)},${y(Math.max(0,min))} Z" fill="${s.color}"/>`; }
+    h+=`<path class="line" d="${d}" stroke="${s.color}"/>`; });
+  // crosshair hits
+  for (let i=0;i<n;i++){ const xa = i===0?mL:(x(i-1)+x(i))/2, xb = i===n-1?W-mR:(x(i)+x(i+1))/2;
+    const rows = series.map(s=>`<span style="color:${s.color}">●</span> ${esc(s.name)}: ${esc(f(s.values[i]))}`).join('<br>');
+    h+=`<g data-tip="<b>${esc(xs[i])}</b><br>${rows}"><rect class="hit" x="${xa}" y="${mT}" width="${xb-xa}" height="${ph}"/><g class="hl"><line x1="${x(i)}" x2="${x(i)}" y1="${mT}" y2="${mT+ph}" stroke="var(--ink-3)" stroke-width="1"/>${series.map(s=>s.values[i]==null?'':`<circle class="dot" cx="${x(i)}" cy="${y(s.values[i])}" r="4.5" fill="${s.color}"/>`).join('')}</g></g>`; }
+  svg.innerHTML=h; el.appendChild(svg); bindTips(svg);
+  if (series.length>1) legend(el, series.map(s=>[s.name,s.color]));
+  return svg;
+}
+
+// ---------------------------------------------------------------- lollipop (bar + marker) for pairs
+function table(el, cols, rows){ el.innerHTML = `<table><thead><tr>${cols.map(c=>`<th class="${c.n?'n':''}">${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td class="${c.n?'n':''}">${c.f?c.f(r):esc(r[c.k])}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+
+// ================================================================ HEADER
+const M = D.meta.rows, T = D.transactions, I = D.invoices, B = D.balances, P = D.products, C = D.companies, X = D.cross, DS = D.debt_schedule, Q = D.quality;
+const totalRows = sum(Object.values(M));
+$('hero').innerHTML = `${fmt(totalRows)}<small>filas · 8 ficheros · 24 meses</small>`;
+$('gen').textContent = D.generated_at;
+const lastM = T.monthly[T.monthly.length-2]; // último mes completo (2026-08)
+$('kpis').innerHTML = [
+  ['Empresas', fmt(M.companies), `${fmt(M.groups)} grupos`],
+  ['Movimientos', compact(M.transactions), `${compact(sum(T.monthly.map(m=>m.inflow)))} entradas · ${compact(sum(T.monthly.map(m=>m.outflow)))} salidas`],
+  ['Facturas', compact(M.invoices), `${fmt(C.coverage.find(c=>c.k==='facturas (ERP)').n)} empresas con ERP`],
+  ['Productos', fmt(M.banking_products + M.debt_products), `${fmt(M.banking_products)} bancarios · ${fmt(M.debt_products)} deuda`],
+  ['Empresas activas', fmt(lastM.companies), `en ${lastM.k} (último mes completo)`],
+  ['Contraparte en tx', pct(T.cp_coverage.id), `→ ${pct(T.cp_coverage.either)} extrayendo del texto`],
+  ['Facturas vencidas', pct(I.status.find(s=>s.k==='overdue').n/M.invoices), `${money(I.status.find(s=>s.k==='overdue').pending)} pendientes`],
+  ['Pagan a tiempo', pct(I.on_time_share), 'facturas pagadas, vs. vencimiento'],
+].map(([l,v,d])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+// ================================================================ FINDINGS
+const first = T.monthly[0], mid = T.monthly[12];
+const findings = [
+  ['warn','El panel no es estable: crece con el onboarding', `En ${first.k} solo ${fmt(first.companies)} empresas tenían movimientos; en ${lastM.k} son ${fmt(lastM.companies)}. Cualquier serie temporal agregada mezcla crecimiento de cartera con actividad real: normalizar por empresa activa antes de hablar de tendencia o estacionalidad.`],
+  ['good','La contraparte está escondida en el texto', `Solo el ${pct(T.cp_coverage.id)} de los movimientos lleva <code>counterparty_id</code>, pero otro ${pct(T.cp_coverage.desc_no_id)} la menciona como <code>COUNTERPARTY_xxxxx</code> en la descripción. Un regex triplica la presencia de contraparte (→ ${pct(T.cp_coverage.either)}), pero ojo: es otro espacio de id (token de nombre, global) y solo coincide con la columna el 41 % de las veces; ver sección «Generador».`],
+  ['good','El cruce factura ↔ banco es viable', `De ${fmt(X.match[0])} facturas pagadas con contraparte, ${fmt(X.match[1])} (${pct(X.match[1]/X.match[0])}) tienen un movimiento de la misma empresa, contraparte e importe; ${fmt(X.match[2])} con un único candidato. El signo coincide en el ${pct(X.match_sign)}: positivo = cobro, negativo = pago.`],
+  ['','Los pagos tienen calendario', `La actividad se concentra en los días 1, 5, 10, 20, 27 y 30 (las salidas en importe, del 20 al 30) y en fin de semana hay 10 veces menos movimientos. El plazo pactado más común es 30 días (${fmt(I.terms_top.find(t=>t.k===30)?.n)} facturas) y luego 60; mediana de cobro real ${I.dso_q[0][1]} días en cobros y ${I.dso_q[1][1]} en pagos.`],
+  ['warn','Morosidad alta y concentrada', `El ${pct(I.status.find(s=>s.k==='overdue').n/M.invoices)} de los documentos está vencido (${money(I.status.find(s=>s.k==='overdue').pending)} pendientes) y solo el ${pct(I.on_time_share)} de las pagadas se cobró antes del vencimiento. ${fmt(I.overdue_by_company.find(o=>o.k==='≥50%')?.n)} empresas tienen más de la mitad de sus facturas vencidas.`],
+  ['warn','Un cuarto de los movimientos no tiene categoría', `${fmt(Q.tx_category_dash)} movimientos (${pct(Q.tx_category_dash/M.transactions)}) tienen <code>category = '-'</code>, y la conciliación (<code>accounting_status</code>) solo está activa en ${fmt(T.acc_status_by_company.filter(a=>a.k!=='sin conciliación').reduce((a,b)=>a+b.n,0))} empresas. Hay hueco para clasificación automática.`],
+  ['','La tesorería está muy concentrada', `El 1 % de las cuentas con saldo positivo acumula el ${pct(B.concentration[0])} del saldo total y el 10 % el ${pct(B.concentration[1])}. El ${pct(B.sign.find(s=>s.k==='cero').n/M.balances)} de los productos tiene saldo exactamente 0; la mediana de una cuenta corriente es ${money(B.by_type.find(t=>t.k==='checking').med)} y la de tesorería total por empresa ${money(B.company_total_q[2])}.`],
+  ['','La deuda está en préstamos y líneas', `${fmt(P.debt_type[0].n)} préstamos con ${money(P.debt_type[0].outstanding)} dispuestos y ${fmt(P.debt_type[1].n)} líneas de crédito con uso mediano del ${pct(P.debt_util_q[2])}. Solo 87 productos tienen cuadro de amortización, y ${fmt(DS.next_payment_past)} de ellos tienen el «próximo pago» en el pasado: el fichero está desactualizado.`],
+  ['bad','Hay que limpiar antes de agregar', `${fmt(T.outliers_n)} movimientos y ${fmt(I.outliers_n)} facturas con |importe| ≥ 100 M, ${fmt(B.outliers.length)} saldos ≥ 1.000 M, fechas de vencimiento hasta el año 7025, ${fmt(Q.tx_exact_dups)} movimientos duplicados exactos, ${fmt(Q.tx_desc_tests)} con descripción «Tests» y ${fmt(Q.tx_before_product_created)} movimientos anteriores a la creación de su producto.`],
+];
+$('findings').innerHTML = findings.map(([c,t,b])=>`<div class="finding ${c}"><b>${t}</b>${b}</div>`).join('');
+
+// ================================================================ UNIVERSO
+barH($('c_groupsize'), C.group_size_hist.map(r=>({k:r.n+(r.n===1?' empresa':' empresas'), v:r.groups})), {rowH:18, labelW:90, fmt:fmt});
+barH($('c_currency'), C.currency.slice(0,8).map(r=>({k:r.k, v:r.n})).concat([{k:`otras (${C.currency.length-8})`, v:sum(C.currency.slice(8).map(r=>r.n)), c:'var(--neutral)'}]), {labelW:80});
+barH($('c_country'), C.country_norm.slice(0,9).map(r=>({k:r.k, v:r.n, c:r.k==='(sin país)'?'var(--neutral)':undefined})), {labelW:80});
+barH($('c_erp'), C.erp.slice(0,10).map(r=>({k:r.k, v:r.n, c:r.k==='(sin ERP)'?'var(--neutral)':undefined})), {labelW:120});
+lines($('c_onboard'), C.onboarding_cum.map(r=>r.k), [{name:'empresas acumuladas', values:C.onboarding_cum.map(r=>Number(r.cum)), color:S[0], area:true}]);
+barH($('c_coverage'), C.coverage.map(r=>({k:r.k, v:Number(r.n), tip:`${fmt(r.n)} de ${fmt(M.companies)} (${pct(r.n/M.companies)})`})), {labelW:150, max:M.companies, share:false});
+barH($('c_combo'), C.coverage_combo.map((r,i)=>({k:r.k, v:r.n, c:S[i]})), {labelW:120});
+$('f_combo').innerHTML = `<b>${fmt(C.multicurrency_groups)}</b> grupos operan en más de una moneda · <b>${fmt(C.erp_group_vs_company)}</b> empresas tienen ERP tanto a nivel grupo como empresa (los nombres no coinciden: <code>businessCentral</code> vs <code>Microsoft Business Central</code>).`;
+
+// ================================================================ PRODUCTOS
+barH($('c_bptype'), P.banking_type.map(r=>({k:r.k, v:r.n})), {labelW:100});
+$('s_banks').textContent = `${P.banking_bank_distinct} bancos distintos · ${pct(P.banking_custom_share)} custom`;
+barH($('c_banks'), P.banking_bank_top.map(r=>({k:r.k, v:r.n, c:r.k.startsWith('Other')?'var(--neutral)':undefined})), {labelW:170, rowH:22});
+$('d_ppc').innerHTML = `Mediana <b>${P.per_company_q[0][2]}</b>, p90 <b>${P.per_company_q[0][4]}</b>, máximo <b>${P.per_company_q[1]}</b> productos.`;
+barH($('c_ppc'), P.per_company_hist.map(r=>({k:r.k, v:r.n})), {labelW:60});
+columns($('c_bpactive'), T.bp_type_activity.map(r=>r.k), [{name:'total', values:T.bp_type_activity.map(r=>r.n), color:'var(--neutral)'},{name:'con movimientos', values:T.bp_type_activity.map(r=>r.active), color:S[0]}], {group:true, rotate:true, height:240});
+columns($('c_bpcreated'), P.banking_created_q.map(r=>r.k), [{name:'productos', values:P.banking_created_q.map(r=>r.n), color:S[0]}], {rotate:true, height:240});
+
+// ================================================================ DEUDA
+{ const el = $('c_debttype'); const dt = P.debt_type;
+  const W = measure(el); const svg = svgEl(W, dt.length*30+8); let h=''; const maxN = Math.max(...dt.map(r=>r.n)), maxG = Math.max(...dt.map(r=>r.granted));
+  const c1 = 110, w1 = Math.max(60,(W-c1-40)*0.28), c2 = c1+w1+70, w2 = Math.max(80, W-c2-70);
+  dt.forEach((r,i)=>{ const y=i*30+4; const bn = r.n/maxN*w1, bg = r.granted/maxG*w2, bo = r.outstanding/maxG*w2;
+    h += `<g data-tip="<b>${r.k}</b><br>${fmt(r.n)} productos · ${fmt(r.companies)} empresas<br>concedido ${money(r.granted)} · dispuesto ${money(r.outstanding)} (${pct(r.outstanding/r.granted)})"><rect class="hit" x="0" y="${y-2}" width="${W}" height="30"/><rect class="hl" x="0" y="${y-2}" width="${W}" height="30" fill="var(--wash)"/>
+      <text class="lbl" x="${c1-8}" y="${y+11}" text-anchor="end" dominant-baseline="middle">${r.k}</text>
+      <rect x="${c1}" y="${y}" width="${bn}" height="20" rx="3" fill="var(--seq4)"/><text class="val" x="${c1+bn+5}" y="${y+11}" dominant-baseline="middle">${fmt(r.n)}</text>
+      <rect x="${c2}" y="${y}" width="${bg}" height="20" rx="3" fill="var(--seq1)"/><rect x="${c2}" y="${y}" width="${bo}" height="20" rx="3" fill="var(--seq5)"/><text class="val" x="${c2+bg+5}" y="${y+11}" dominant-baseline="middle">${money(r.outstanding)} / ${money(r.granted)}</text></g>`; });
+  svg.innerHTML = h; el.appendChild(svg); bindTips(svg); legend(el, [['nº productos','var(--seq4)'],['concedido','var(--seq1)'],['dispuesto','var(--seq5)']]); }
+barH($('c_debthist'), P.debt_outstanding_hist.map(r=>({k:r.k, v:r.n})), {labelW:80});
+barH($('c_debtbank'), P.debt_bank_top.map(r=>({k:r.k, v:r.outstanding, tip:`${money(r.outstanding)} dispuesto · ${fmt(r.n)} productos`})), {labelW:150, rowH:22, fmt:money, share:false});
+$('d_util').innerHTML = `Líneas con concedido informado. Mediana de uso <b>${pct(P.debt_util_q[2])}</b>, p25 <b>${pct(P.debt_util_q[1])}</b>, p75 <b>${pct(P.debt_util_q[3])}</b>. Muchas líneas están a 0 o al 100 %.`;
+barH($('c_util'), P.debt_util_hist.map(r=>({k:r.k, v:r.n, c:r.k==='>100%'?'var(--critical)':undefined})), {labelW:70});
+columns($('c_debtcreated'), P.debt_created_q.map(r=>r.k), [{name:'productos', values:P.debt_created_q.map(r=>r.n), color:S[0]}], {rotate:true, height:230});
+barH($('c_debtcomp'), P.debt_company_top.map(r=>({k:r.k, v:r.outstanding, tip:`${money(r.outstanding)} · ${r.n} productos`})), {labelW:90, rowH:22, fmt:money, share:false});
+barH($('c_debtsign'), P.debt_sign.map(r=>({k:r.k, v:r.n, c:r.k==='positivo'?'var(--serious)':r.k==='cero'?'var(--neutral)':S[0]})), {labelW:70});
+{ const ks=[...new Set(DS.rate_hist.map(r=>r.k))].sort((a,b)=>a-b); const g=t=>ks.map(k=>DS.rate_hist.find(r=>r.k===k&&r.interest_type===t)?.n||0);
+  columns($('c_rate'), ks.map(k=>k+' %'), [{name:'fijo', values:g('fixed'), color:S[0]},{name:'variable (spread)', values:g('variable'), color:S[1]}], {height:200});
+  $('f_rate').innerHTML = `Mediana <b>${pct(DS.rate_q[1],1)}</b> (p25 ${pct(DS.rate_q[0],1)} · p75 ${pct(DS.rate_q[2],1)}). ${DS.interest_type.map(r=>`${r.k}: ${r.n}`).join(' · ')}. ${DS.frequency.map(r=>`${r.k}: ${r.n}`).join(' · ')}.`; }
+barH($('c_periods'), DS.periods_hist.map(r=>({k:r.k, v:r.n})), {labelW:60});
+barH($('c_remaining'), DS.remaining.map(r=>({k:r.k, v:r.n, c:r.k==='>100%'?'var(--critical)':undefined})), {labelW:70});
+$('d_next').innerHTML = `<b>${DS.next_payment_past}</b> de 87 tienen <code>next_payment_date</code> anterior a la fecha de corte: el cuadro no está actualizado y no sirve tal cual para prever cuotas.`;
+columns($('c_next'), DS.next_payment.map(r=>r.k), [{name:'préstamos', values:DS.next_payment.map(r=>r.n), color:S[0]}], {rotate:true, height:230});
+barH($('c_dsc_consist'), [
+  {k:'tipo loan', v:DS.type_match.find(r=>r.k==='loan')?.n||0, tip:DS.type_match.map(r=>`${r.k}: ${r.n}`).join(' · ')},
+  {k:'outstanding ≠ debt_products', v:DS.sign_mismatch, c:'var(--serious)', tip:'difieren en más de 1 € (en valor absoluto)'},
+  {k:'cuenta liquidación huérfana', v:DS.settlement_orphan, c:'var(--serious)'},
+  {k:'concedido = 0', v:DS.granted_zero, c:'var(--critical)'},
+  {k:'next_payment en pasado', v:DS.next_payment_past, c:'var(--serious)'}], {labelW:170, max:87, share:false, fmt:v=>`${v} / 87`});
+
+// ================================================================ SALDOS
+columns($('c_balhist'), B.hist.map(r=>r.k), [{name:'productos', values:B.hist.map(r=>r.n), color:S[0]}], {rotate:true, height:260, legend:false});
+{ const qs=[1,5,10,25,50,75,90,95,99]; barH($('c_balq'), B.q.map((v,i)=>({k:'p'+qs[i], v:v, c:v<0?S[1]:S[0], tip:money(v)})), {labelW:40, fmt:money, share:false, rowH:22}); }
+$('d_lorenz').innerHTML = `El 1 % de cuentas con más saldo acumula el <b>${pct(B.concentration[0])}</b>; el 10 %, el <b>${pct(B.concentration[1])}</b>; el 50 %, el <b>${pct(B.concentration[2])}</b>.`;
+{ const el=$('c_lorenz'); const W=measure(el), H=230, m=36; const svg=svgEl(W,H); const x=v=>m+(W-m-10)*v, y=v=>10+(H-m-10)*(1-v);
+  let d=`M${x(0)},${y(0)}`; B.lorenz.forEach(p=>{ d+=` L${x(p.x)},${y(p.y)}`; });
+  svg.innerHTML=`<g class="grid">${[0,.25,.5,.75,1].map(t=>`<line x1="${m}" x2="${W-10}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${m-6}" y="${y(t)}" text-anchor="end" dominant-baseline="middle">${t*100}%</text><text class="tick" x="${x(t)}" y="${H-m+14}" text-anchor="middle">${t*100}%</text>`).join('')}</g>
+  <line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="var(--neutral)" stroke-width="1.5" stroke-dasharray="4 4"/><path class="area" d="${d} L${x(1)},${y(0)} Z" fill="var(--s1)"/><path class="line" d="${d}" stroke="var(--s1)"/>
+  <text class="tick" x="${W/2}" y="${H-2}" text-anchor="middle">% de cuentas (ordenadas por saldo)</text>`;
+  el.appendChild(svg); }
+table($('t_baltype'), [{h:'tipo',k:'k'},{h:'familia',k:'family'},{h:'n',k:'n',n:1,f:r=>fmt(r.n)},{h:'suma',n:1,f:r=>money(r.total)},{h:'mediana',n:1,f:r=>money(r.med)},{h:'% negativo',n:1,f:r=>pct(r.neg_share)}], B.by_type.slice(0,12));
+$('d_ctot').innerHTML = `Mediana <b>${money(B.company_total_q[2])}</b> · p25 <b>${money(B.company_total_q[1])}</b> · p75 <b>${money(B.company_total_q[3])}</b> · p90 <b>${money(B.company_total_q[4])}</b>.`;
+barH($('c_ctot'), B.company_total_hist.map(r=>({k:r.k, v:r.n, c:r.k==='< 0'?S[1]:undefined})), {labelW:80});
+table($('t_balout'), [{h:'producto',k:'product_id',f:r=>`<code>${r.product_id}</code>`},{h:'empresa',k:'company_id'},{h:'tipo',k:'type'},{h:'balance',n:1,f:r=>money(r.balance)}], B.outliers);
+
+// ================================================================ TRANSACCIONES
+$('s_txout').textContent = fmt(T.outliers_n);
+const TM = T.monthly.filter(r=>r.k<'2026-09'); // 2026-09 solo tiene un día
+const mk = TM.map(r=>r.k.slice(2));
+columns($('c_txmonthly'), mk, [{name:'movimientos', values:TM.map(r=>r.n), color:S[0]}], {height:240, barW:30, tipExtra:i=>`${fmt(TM[i].companies)} empresas · ${fmt(TM[i].products)} productos · ${compact(TM[i].n/TM[i].companies)} mov/empresa`});
+lines($('c_txflow'), mk, [{name:'entradas', values:TM.map(r=>r.inflow), color:S[0]},{name:'salidas', values:TM.map(r=>r.outflow), color:S[1]}], {fmt:money});
+lines($('c_txactive'), mk, [{name:'productos activos', values:TM.map(r=>r.products), color:S[2]},{name:'empresas activas', values:TM.map(r=>r.companies), color:S[0]}]);
+columns($('c_weekday'), T.weekday.map(r=>WD[r.k]), [{name:'movimientos', values:T.weekday.map(r=>r.n), color:S[0]}], {height:200});
+columns($('c_dom'), T.dom.map(r=>r.k), [{name:'movimientos', values:T.dom.map(r=>r.n), color:S[0]}], {height:240, barW:14, labelEvery:1, tipExtra:i=>`entradas ${money(T.dom[i].inflow)} · salidas ${money(T.dom[i].outflow)}`});
+$('d_txamt').innerHTML = `Mediana <b>${money(T.amount_q[4])}</b> · p90 <b>${money(T.amount_q[6])}</b> · p99 <b>${money(T.amount_q[8])}</b>. ${pct(T.round_amounts)} de los importes son cifras redondas.`;
+columns($('c_txamt'), T.amount_hist.map(r=>r.k), [{name:'entradas', values:T.amount_hist.map(r=>r.entrada), color:S[0]},{name:'salidas', values:T.amount_hist.map(r=>r.salida), color:S[1]}], {rotate:true, height:250});
+lines($('c_moy'), mk, [{name:'movimientos por empresa activa', values:TM.map(r=>r.n/r.companies), color:S[0], area:true}], {min:0, fmt:v=>fmt1(v)});
+{ const el=$('c_cat'); const cat=T.category.slice(0,14); const W=measure(el); const svg=svgEl(W, cat.length*24+6); let h=''; const maxN=Math.max(...cat.map(r=>r.n)), maxA=Math.max(...cat.map(r=>Math.abs(r.net)));
+  const c1=120, w1=(W-c1)*0.42, c2=c1+w1+70, w2=(W-c2-60)/2, cz=c2+w2;
+  cat.forEach((r,i)=>{ const y=i*24+3, bn=r.n/maxN*w1, ba=Math.abs(r.net)/maxA*w2; const neg=r.net<0;
+    h+=`<g data-tip="<b>${esc(r.k)}</b><br>${fmt(r.n)} mov. (${pct(r.n/M.transactions)}) · neto ${money(r.net)}<br>volumen ${money(r.vol)} · ${pct(r.in_share)} entradas · mediana ${money(r.med)}"><rect class="hit" x="0" y="${y-2}" width="${W}" height="24"/><rect class="hl" x="0" y="${y-2}" width="${W}" height="24" fill="var(--wash)"/>
+    <text class="lbl" x="${c1-8}" y="${y+8}" text-anchor="end" dominant-baseline="middle">${esc(r.k)}</text>
+    <rect x="${c1}" y="${y}" width="${bn}" height="16" rx="3" fill="${r.k==='-'?'var(--neutral)':'var(--seq4)'}"/><text class="val" x="${c1+bn+5}" y="${y+8}" dominant-baseline="middle">${compact(r.n)}</text>
+    <rect x="${neg?cz-ba:cz}" y="${y}" width="${ba}" height="16" rx="3" fill="${neg?S[1]:S[0]}"/><text class="val" x="${neg?cz-ba-4:cz+ba+4}" y="${y+8}" text-anchor="${neg?'end':'start'}" dominant-baseline="middle">${money(r.net)}</text></g>`; });
+  h+=`<line class="axis" x1="${cz}" x2="${cz}" y1="0" y2="${cat.length*24}"/>`; svg.innerHTML=h; el.appendChild(svg); bindTips(svg);
+  legend(el, [['nº movimientos','var(--seq4)'],['neto positivo',S[0]],['neto negativo',S[1]]]); }
+lines($('c_uncat'), mk, [{name:'% sin categoría', values:T.uncategorized_monthly.filter(r=>r.k<'2026-09').map(r=>r.share), color:S[1], area:true}], {pctMode:true, min:0, max:1, fmt:v=>pct(v)});
+{ const cats=['collection','payment','utility','fee','transfer','-']; const months=[...new Set(T.category_monthly.map(r=>r.k))].filter(m=>m<'2026-09');
+  const tot=months.map(m=>sum(T.category_monthly.filter(r=>r.k===m).map(r=>r.n)));
+  const series=cats.map((c,i)=>({name:c==='-'?'sin categoría':c, color:c==='-'?'var(--neutral)':S[i], values:months.map((m,j)=>(T.category_monthly.find(r=>r.k===m&&r.cat===c)?.n||0)/tot[j])}));
+  columns($('c_catmonthly'), months.map(m=>m.slice(2)), series, {stack:true, pctMode:true, height:260, barW:30, fmt:v=>pct(v)}); }
+barH($('c_status'), T.status.map(r=>({k:r.k, v:r.n, c:r.k==='(vacío)'?'var(--neutral)':undefined})), {labelW:70});
+barH($('c_accst'), T.accounting_status.map(r=>({k:r.k.replace('RECONCILIATION','RECONC.').replace('ACCOUNTING','ACC.').replace('RECOMMENDATION','RECOM.'), v:r.n, c:r.k==='(vacío)'?'var(--neutral)':undefined})), {labelW:150, rowH:22});
+barH($('c_accbyc'), T.acc_status_by_company.map(r=>({k:r.k, v:r.n, c:r.k==='sin conciliación'?'var(--neutral)':undefined})), {labelW:130});
+barH($('c_cpcov'), [{k:'con counterparty_id', v:T.cp_coverage.id},{k:'mención en texto sin id', v:T.cp_coverage.desc_no_id, c:S[2]},{k:'id o texto', v:T.cp_coverage.either, c:S[0]},{k:'sin contraparte', v:1-T.cp_coverage.either, c:'var(--neutral)'}], {labelW:160, max:1, fmt:v=>pct(v), share:false});
+{ const el=$('c_cpcat'); const d=T.cp_coverage_by_category; const W=measure(el); const svg=svgEl(W, d.length*22+6); let h=''; const c1=110, pw=W-c1-50;
+  d.forEach((r,i)=>{ const y=i*22+3; h+=`<g data-tip="<b>${esc(r.k)}</b><br>${fmt(r.n)} mov.<br>con id: ${pct(r.id_share)} · id o texto: ${pct(r.any_share)}"><rect class="hit" x="0" y="${y-2}" width="${W}" height="22"/><rect class="hl" x="0" y="${y-2}" width="${W}" height="22" fill="var(--wash)"/>
+    <text class="lbl" x="${c1-8}" y="${y+8}" text-anchor="end" dominant-baseline="middle">${esc(r.k)}</text><line x1="${c1}" x2="${c1+pw}" y1="${y+8}" y2="${y+8}" stroke="var(--grid)"/>
+    <rect x="${c1}" y="${y+2}" width="${r.id_share*pw}" height="12" rx="3" fill="${S[0]}"/><circle class="dot" cx="${c1+r.any_share*pw}" cy="${y+8}" r="5" fill="${S[2]}"/>
+    <text class="val" x="${c1+pw+8}" y="${y+8}" dominant-baseline="middle">${pct(r.any_share,0)}</text></g>`; });
+  svg.innerHTML=h; el.appendChild(svg); bindTips(svg); legend(el, [['con counterparty_id',S[0]],['id o mención en texto',S[2]]]); }
+barH($('c_ph'), T.placeholders.filter(r=>r.n>0).map(r=>({k:r.k, v:r.n/M.transactions, tip:`${fmt(r.n)} movimientos (${pct(r.n/M.transactions)})`})), {labelW:120, fmt:v=>pct(v), share:false, rowH:20});
+$('s_desc').textContent = `${fmt(T.desc_distinct)} descripciones distintas · longitud mediana ${T.desc_len_q[1]} car.`;
+table($('t_desc'), [{h:'descripción',f:r=>`<code>${esc(r.k)}</code>`},{h:'n',n:1,f:r=>fmt(r.n)},{h:'neto',n:1,f:r=>money(r.net)}], T.desc_top);
+$('d_txpc').innerHTML = `Mediana <b>${fmt(T.per_company_q[0][2])}</b>, p90 <b>${fmt(T.per_company_q[0][4])}</b>, máx <b>${fmt(T.per_company_q[1])}</b>. El 10 % de empresas genera el <b>${pct(T.company_concentration[0])}</b> de los movimientos.`;
+barH($('c_txpc'), T.per_company_hist.map(r=>({k:r.k, v:r.n})), {labelW:80});
+barH($('c_span'), T.company_activity_span.map(r=>({k:r.k, v:r.n})), {labelW:150});
+{ const months=TM.map(r=>r.k); const g=(a)=>months.map(m=>a.find(r=>r.k===m)?.n||0);
+  columns($('c_firstlast'), months.map(m=>m.slice(2)), [{name:'primer mes', values:g(T.first_tx_month), color:S[0]},{name:'último mes', values:g(T.last_tx_month), color:S[1]}], {group:true, height:220}); }
+columns($('c_lag'), T.value_lag.map(r=>r.k), [{name:'movimientos', values:T.value_lag.map(r=>r.n), color:S[0]}], {height:200});
+$('f_lag').innerHTML = `<b>${fmt(T.value_date_out_of_range)}</b> movimientos con fecha valor fuera del periodo (±30 días); <b>${fmt(T.value_date_far_future)}</b> en 2027 o después (hasta 2099-12-31).`;
+table($('t_txout'), [{h:'empresa',k:'company_id'},{h:'producto',k:'product_id'},{h:'fecha',k:'date'},{h:'importe',n:1,f:r=>money(r.amount)},{h:'cat.',k:'category'},{h:'descripción',f:r=>`<code>${esc(r.description)}</code>`}], T.outliers_top);
+
+// ================================================================ FACTURAS
+const IM = I.monthly.filter(r=>r.k<'2026-09');
+const ik = IM.map(r=>r.k.slice(2));
+columns($('c_invmonthly'), ik, [{name:'documentos', values:IM.map(r=>r.n), color:S[0]}], {height:240, barW:30, tipExtra:i=>`${fmt(IM[i].companies)} empresas · ${compact(IM[i].n/IM[i].companies)} doc/empresa`});
+lines($('c_invflow'), ik, [{name:'por cobrar (+)', values:IM.map(r=>r.receivable), color:S[0]},{name:'por pagar (−)', values:IM.map(r=>r.payable), color:S[1]}], {fmt:money});
+barH($('c_doctype'), I.document_type.map(r=>({k:r.k, v:r.n, tip:`${fmt(r.n)} (${pct(r.n/M.invoices)}) · volumen ${money(r.vol)}`})), {labelW:120, rowH:22});
+$('d_invst').innerHTML = `Pendiente total en <code>overdue</code>: <b>${money(I.status.find(s=>s.k==='overdue').pending)}</b>; en <code>pending</code>: <b>${money(I.status.find(s=>s.k==='pending').pending)}</b>.`;
+barH($('c_invstatus'), I.status.map(r=>({k:r.k, v:r.n, c:r.k==='overdue'?'var(--serious)':r.k==='paid'?S[0]:r.k==='cancel'?'var(--neutral)':S[2], tip:`${fmt(r.n)} · pendiente ${money(r.pending)}`})), {labelW:130});
+columns($('c_invsign'), I.sign_by_type.map(r=>r.k), [{name:'cobrar (+)', values:I.sign_by_type.map(r=>r.pos), color:S[0]},{name:'pagar (−)', values:I.sign_by_type.map(r=>r.neg), color:S[1]}], {stack:true, rotate:true, height:240});
+columns($('c_invamt'), I.amount_hist.map(r=>r.k), [{name:'cobrar', values:I.amount_hist.map(r=>r.cobrar), color:S[0]},{name:'pagar', values:I.amount_hist.map(r=>r.pagar), color:S[1]}], {rotate:true, height:240});
+$('d_terms').innerHTML = `Mediana <b>${I.terms_q[1]} días</b> (p75 ${I.terms_q[2]}, p90 ${I.terms_q[3]}). Valores más frecuentes: ${I.terms_top.slice(0,5).map(t=>`<b>${t.k}</b> (${compact(t.n)})`).join(', ')}.`;
+barH($('c_terms'), I.terms.map(r=>({k:r.k, v:r.n, c:r.k.startsWith('< 0')?'var(--serious)':undefined})), {labelW:170, rowH:21});
+$('d_dso').innerHTML = `Cobros: mediana <b>${I.dso_q[0][1]} días</b> (p75 ${I.dso_q[0][2]}, p90 ${I.dso_q[0][3]}). Pagos: mediana <b>${I.dso_q[1][1]}</b> (p75 ${I.dso_q[1][2]}, p90 ${I.dso_q[1][3]}).`;
+columns($('c_dso'), I.dso.map(r=>r.k.replace(' (pago antes de emitir)','')), [{name:'cobros', values:I.dso.map(r=>r.cobrar), color:S[0]},{name:'pagos', values:I.dso.map(r=>r.pagar), color:S[1]}], {rotate:true, height:250});
+$('d_late').innerHTML = `El <b>${pct(I.on_time_share)}</b> de las facturas pagadas se pagó en o antes del vencimiento.`;
+barH($('c_late'), I.late_payment.map(r=>({k:r.k, v:r.n, c:r.k.includes('tarde')?(r.k.startsWith('> 90')?'var(--critical)':'var(--serious)'):S[0]})), {labelW:160});
+columns($('c_aging'), I.overdue_aging.map(r=>r.k), [{name:'facturas', values:I.overdue_aging.map(r=>r.n), color:S[1]}], {rotate:true, height:230, tipExtra:i=>`pendiente ${money(I.overdue_aging[i].pending)}`});
+{ const om=I.overdue_monthly.filter(r=>r.k<'2026-09'); lines($('c_ovmonthly'), ik, [{name:'% pagadas', values:om.map(r=>r.paid_share), color:S[0]},{name:'% vencidas', values:om.map(r=>r.overdue_share), color:S[1]}], {pctMode:true, min:0, max:1, fmt:v=>pct(v)}); }
+barH($('c_ovcomp'), I.overdue_by_company.map(r=>({k:r.k, v:r.n, c:r.k==='≥50%'?'var(--critical)':r.k==='25-50%'?'var(--serious)':undefined})), {labelW:70});
+$('d_invpc').innerHTML = `Mediana <b>${fmt(I.per_company_q[0][2])}</b>, p90 <b>${fmt(I.per_company_q[0][4])}</b>, máx <b>${fmt(I.per_company_q[1])}</b>.`;
+barH($('c_invpc'), I.per_company_hist.map(r=>({k:r.k, v:r.n})), {labelW:80});
+$('d_cpinv').innerHTML = `${fmt(I.cp_concentration[2])} contrapartes. El 1 % concentra el <b>${pct(I.cp_concentration[0])}</b> del importe; el 10 %, el <b>${pct(I.cp_concentration[1])}</b>. Mediana de contrapartes por empresa: <b>${fmt(I.cp_per_company_q[1])}</b>.`;
+barH($('c_cpinv'), I.cp_invoices_hist.map(r=>({k:r.k+(r.k==='1'?' factura':' facturas'), v:r.n})), {labelW:100});
+$('d_invcur').innerHTML = `<b>${pct(I.currency_mismatch)}</b> de las facturas tienen moneda distinta de la contable; ${fmt(I.fx_zero)} con <code>exchange_rate = 0</code> y ${fmt(I.fx_one_mismatch)} con moneda distinta pero tipo = 1.`;
+barH($('c_invcur'), I.currency.slice(0,8).map(r=>({k:r.k, v:r.n})), {labelW:60});
+columns($('c_invwd'), I.weekday.map(r=>WD[r.k]), [{name:'documentos', values:I.weekday.map(r=>r.n), color:S[0]}], {height:200});
+columns($('c_invdom'), I.dom.map(r=>r.k), [{name:'documentos', values:I.dom.map(r=>r.n), color:S[0]}], {height:220, barW:12, labelEvery:1});
+barH($('c_invph'), I.concept_placeholders.filter(r=>r.n>0).map(r=>({k:r.k, v:r.n/M.invoices, tip:`${fmt(r.n)} (${pct(r.n/M.invoices)})`})), {labelW:120, fmt:v=>pct(v), share:false, rowH:20});
+table($('t_concept'), [{h:'concepto',f:r=>`<code>${esc(r.k)}</code>`},{h:'n',n:1,f:r=>fmt(r.n)}], I.concept_top);
+table($('t_pend'), [{h:'estado',k:'k'},{h:'n',n:1,f:r=>fmt(r.n)},{h:'pendiente = 0',n:1,f:r=>pct(r.zero_share)},{h:'pendiente > importe',n:1,f:r=>pct(r.gt_amount,2)}], I.pending_consistency);
+
+// ================================================================ CRUCES
+barH($('c_cpoverlap'), [{k:'solo en facturas', v:X.cp_overlap[2], c:S[1]},{k:'en ambas', v:X.cp_overlap[0], c:S[2]},{k:'solo en transacciones', v:X.cp_overlap[1], c:S[0]}], {labelW:150});
+$('f_cpoverlap').innerHTML = `+<b>${fmt(X.cp_overlap_with_desc)}</b> contrapartes de facturas aparecen además en el texto de transacciones sin id.`;
+{ const el=$('c_match'); const tot=X.match[0], m=X.match[1], u=X.match[2]; const W=measure(el); const svg=svgEl(W,70); const pw=W-20;
+  svg.innerHTML=`<rect x="10" y="10" width="${pw}" height="28" rx="4" fill="var(--seq1)"/><rect x="10" y="10" width="${pw*m/tot}" height="28" rx="4" fill="var(--seq3)"/><rect x="10" y="10" width="${pw*u/tot}" height="28" rx="4" fill="var(--seq6)"/>
+  <text class="lbl in" x="18" y="24" dominant-baseline="middle">único: ${pct(u/tot)}</text><text class="lbl" x="${10+pw*m/tot+8}" y="24" dominant-baseline="middle">emparejadas: ${pct(m/tot)}</text><text class="tick" x="${10+pw}" y="58" text-anchor="end">${fmt(tot)} facturas pagadas con contraparte</text>`;
+  el.appendChild(svg); legend(el, [['un único movimiento candidato','var(--seq6)'],['varios candidatos','var(--seq3)'],['sin movimiento igual','var(--seq1)']]); }
+$('f_match').innerHTML = `<b>${fmt(X.match[1])}</b> de ${fmt(X.match[0])} emparejadas (<b>${pct(X.match[1]/X.match[0])}</b>), ${fmt(X.match[2])} con candidato único. El signo del movimiento coincide con el de la factura en el <b>${pct(X.match_sign)}</b>. Es una cota inferior: importes parciales, agrupados o con comisión no se detectan con igualdad exacta.`;
+columns($('c_matchlag'), X.match_lag.map(r=>r.k), [{name:'cobros', values:X.match_lag.map(r=>r.cobrar), color:S[0]},{name:'pagos', values:X.match_lag.map(r=>r.pagar), color:S[1]}], {height:230});
+table($('t_profile'), [{h:'empresa',k:'company_id'},{h:'mon.',k:'currency'},{h:'erp',f:r=>r.erp||'–'},{h:'ctas',n:1,k:'bank_products'},{h:'deuda',n:1,k:'debt_products'},{h:'mov.',n:1,f:r=>fmt(r.tx)},{h:'fact.',n:1,f:r=>fmt(r.inv)},{h:'tesorería',n:1,f:r=>money(r.balance)}], X.company_profile);
+
+
+// ================================================================ GENERADOR
+const PR = JSON.parse(document.getElementById('probe').textContent || 'null');
+if (PR) {
+  const hol = PR.holidays; const xmas = hol.find(h=>h.k==='2024-12-25'), gf = hol.find(h=>h.k==='2025-04-18');
+  const g2 = PR.gmm.find(g=>g.k===2), g4 = PR.gmm.find(g=>g.k===4);
+  const cs = PR.cp_spaces; const mb = PR.match_by_space;
+  $('probe_findings').innerHTML = [
+    ['bad','Veredicto: no hay arquetipos; son datos reales anonimizados', `La pendiente mensual de entradas es unimodal (mediana ${pct(PR.slope_stats.s_in.median)}/mes, curtosis ${fmt1(PR.slope_stats.s_in.kurt)}), el R² de una tendencia lineal es ${pct(PR.r2_median.inflow)} en la mediana y el BIC del GMM no tiene mínimo. Lo que separa los clusters es el ruido y el tamaño, no la trayectoria. Un script de scoring no puede estar midiendo un «parámetro de arquetipo» porque no existe.`],
+    ['good','Las huellas de realidad son abrumadoras', `Benford exacto, Navidad al ${pct(xmas.n/xmas.base,0)} y Viernes Santo al ${pct(gf.n/gf.base,0)} de un día normal, tipo de cambio USD/EUR que sigue el mercado 2024-26, ${fmt(PR.ts_with_time)} movimientos con hora, ids de PayPal/Stripe/sha256 sin normalizar, ${fmt(PR.recurring_pairs[0])} pares empresa-contraparte con el mismo importe exacto ≥ 6 meses (nóminas, alquileres). «Sintético a partir de la distribución» significa aquí anonimizado, no generado.`],
+    ['warn','Consecuencia: la verdad oculta es el futuro real', `Si hay leaderboard, lo que se evalúa es lo que pasó después del corte (saldo, flujo neto, impagos del mes siguiente) o una etiqueta puesta por humanos. La estrategia ganadora es modelado de series con las variables que sí tienen señal (calendario de pagos, estacionalidad por empresa, aging de facturas), no recuperar un generador.`],
+    ['warn','Dos espacios de id de contraparte: no mezclarlos', `<code>counterparty_id</code> es único por empresa (${fmt(cs.column_shared_across_companies[0].n)} ids en 1 empresa, ${fmt(cs.column_shared_across_companies[1]?.n||0)} en 2): no permite enlazar la misma contraparte entre filiales de un grupo. El token del texto es global por nombre y coincide con la columna solo el ${pct(cs.text_eq_column[0])}. Para el matching factura↔banco la columna aporta ${fmt(mb.via_columna)} emparejamientos y el texto añade ${fmt(mb.via_texto_sin_columna)} más (+${pct(mb.via_texto_sin_columna/mb.via_columna,0)}); para agrupar por proveedor entre empresas solo sirve el texto.`],
+    ['','Lo que sí es «estructura» explotable', `Correlación ${PR.slope_corr.in_out.toFixed(2)} entre pendiente de entradas y salidas (las empresas crecen o decrecen en bruto, no en margen); ${fmt(PR.active_months_hist.filter(h=>h.k===24)[0].n)} empresas con 24 meses completos y otras ${fmt(PR.active_months_hist.filter(h=>h.k>=7&&h.k<=8).reduce((a,b)=>a+b.n,0))} con exactamente 7–8 meses (ola de onboarding de enero 2026). Estacionalidad anual débil (amplitud mediana ${fmt1(PR.seas_median*100)} % del residuo) pero presente en una minoría: hay que buscarla por empresa, no en el agregado.`],
+  ].map(([c,t,b])=>`<div class="finding ${c}"><b>${t}</b>${b}</div>`).join('');
+  const sh = PR.slope_hist;
+  columns($('c_slopes'), sh.inflow.map(r=>r.k), [{name:'entradas', values:sh.inflow.map(r=>r.n), color:S[0]},{name:'salidas', values:sh.outflow.map(r=>r.n), color:S[1]},{name:'nº movimientos', values:sh.n_tx.map(r=>r.n), color:S[2]}], {group:true, height:240, rotate:true});
+  $('f_slopes').innerHTML = `Entradas: p10 <b>${pct(PR.slope_stats.s_in.p10)}</b> · mediana <b>${pct(PR.slope_stats.s_in.median)}</b> · p90 <b>${pct(PR.slope_stats.s_in.p90)}</b> por mes. Asimetría ${fmt1(PR.slope_stats.s_in.skew)}, curtosis ${fmt1(PR.slope_stats.s_in.kurt)} (una normal tendría 0): una campana con colas, no una mezcla.`;
+  columns($('c_r2'), PR.r2_hist.inflow.map(r=>r.k), [{name:'entradas', values:PR.r2_hist.inflow.map(r=>r.n), color:S[0]},{name:'nº movimientos', values:PR.r2_hist.n_tx.map(r=>r.n), color:S[2]}], {group:true, height:220});
+  $('f_r2').innerHTML = `Mediana R²: entradas <b>${pct(PR.r2_median.inflow)}</b>, nº movimientos <b>${pct(PR.r2_median.n_tx)}</b>.`;
+  table($('t_gmm'), [{h:'k',k:'k'},{h:'BIC',n:1,f:r=>fmt(r.bic)},{h:'Δ BIC',n:1,f:(r,i)=>r.k===1?'–':fmt(r.bic-PR.gmm[r.k-2].bic)},{h:'silueta (k-means)',n:1,f:r=>r.sil==null?'–':r.sil.toFixed(3)}], PR.gmm);
+  const gl = {s_in:'pendiente entradas',s_out:'pendiente salidas',s_n:'pendiente nº mov.',r2_in:'R² entradas',noise_in:'ruido (sd residuo)',ratio:'log(entradas/salidas)',ac1:'autocorr. lag 1'};
+  table($('t_gmm2'), [{h:'rasgo',f:r=>r.k},{h:`grupo A (n=${PR.gmm2[0].n})`,n:1,f:r=>r.a},{h:`grupo B (n=${PR.gmm2[1].n})`,n:1,f:r=>r.b}],
+    Object.keys(gl).map(c=>({k:gl[c], a:(c.startsWith('s_')?pct(PR.gmm2[0][c]):PR.gmm2[0][c].toFixed(3)), b:(c.startsWith('s_')?pct(PR.gmm2[1][c]):PR.gmm2[1][c].toFixed(3))})));
+  columns($('c_benford'), PR.benford.map(r=>r.d), [{name:'observado', values:PR.benford.map(r=>r.obs), color:S[0]},{name:'Benford', values:PR.benford.map(r=>r.expected), color:'var(--neutral)'}], {group:true, pctMode:true, height:200, fmt:v=>pct(v)});
+  barH($('c_holidays'), hol.map(h=>({k:`${h.k} (${h.dow.slice(0,3)})`, v:h.n/h.base, c:h.n/h.base<0.2?'var(--critical)':h.n/h.base<0.45?'var(--serious)':undefined, tip:`${fmt(h.n)} movimientos vs. ${fmt(h.base)} de media laborable`})), {labelW:120, rowH:20, max:1, fmt:v=>pct(v,0), share:false});
+  lines($('c_fx'), PR.fx_monthly.map(r=>r.k.slice(2)), [{name:'mediana exchange_rate (1,02–1,25)', values:PR.fx_monthly.map(r=>r.fx), color:S[0]}], {min:1.0, max:1.2, yfmt:v=>v.toFixed(2), fmt:v=>v.toFixed(3)});
+  barH($('c_idfmt'), PR.id_formats.map(r=>({k:r.k, v:r.n})), {labelW:170, rowH:22});
+  $('f_idfmt').innerHTML = `Además, <b>${fmt(PR.ts_with_time)}</b> movimientos llevan hora en <code>date</code>; el ${pct(PR.cents_even_share,0)} de los importes tienen céntimos pares (precios reales, sin jitter); los ids de empresa no correlacionan con la fecha de alta (r = ${PR.id_order_corr.company_vs_created.toFixed(2)}): se barajaron.`;
+  barH($('c_created'), PR.created_vs_first_tx.map(r=>({k:r.k, v:r.n, c:r.k.startsWith('−')||r.k.startsWith('<')?S[1]:S[0]})), {labelW:80});
+  barH($('c_cpspace'), [
+    {k:'columna: ids en 1 empresa', v:cs.column_shared_across_companies[0].n, c:S[0]},
+    {k:'columna: ids en 2 empresas', v:cs.column_shared_across_companies[1]?.n||0, c:S[0]},
+    ...cs.text_shared_across_companies.map(r=>({k:`texto: en ${r.k} empresas`, v:r.n, c:S[2]}))], {labelW:180, rowH:20, share:false});
+  $('f_cpspace').innerHTML = `Matching factura↔banco: <b>${fmt(mb.via_columna)}</b> vía columna, <b>${fmt(mb.via_texto)}</b> vía texto, de las cuales <b>${fmt(mb.via_texto_sin_columna)}</b> no tenían columna (sobre ${fmt(mb.total)} facturas pagadas). Los ${fmt(cs.inv_tx_common_same_company[1])} ids comunes entre facturas y transacciones lo son dentro de la misma empresa en ${fmt(cs.inv_tx_common_same_company[0])} casos.`;
+  table($('t_cptop'), [{h:'token',f:r=>`<code>${r.k}</code>`},{h:'empresas',n:1,f:r=>fmt(r.companies)},{h:'movimientos',n:1,f:r=>fmt(r.n)},{h:'ejemplo de descripción',f:r=>`<code>${esc(r.example)}</code>`}], cs.text_top);
+}
+
+// ================================================================ CALIDAD
+const qual = [
+  ['c', `${fmt(T.outliers_n)} movimientos y ${fmt(I.outliers_n)} facturas con |importe| ≥ 100 M`, 'Los mayores llegan a ±3.100 M (tx) y ±62.442 M (facturas). Distorsionan cualquier suma o media.', 'Excluir por umbral o winsorizar por empresa antes de agregar.'],
+  ['c', `${fmt(B.outliers.length)} saldos con |balance| ≥ 1.000 M`, `El mayor es ${money(B.outliers[0].balance)} en una cuenta checking.`, 'Excluir; considerar también p99,9 por tipo de producto.'],
+  ['c', `${fmt(I.dates_out_of_range.due_after_2030 + I.dates_out_of_range.due_before_2020)} vencimientos y ${fmt(I.dates_out_of_range.pay_after_2030 + I.dates_out_of_range.pay_before_2020)} fechas de pago fuera de 2020–2030`, `due_date hasta el año 7025; payment_date hasta 6913. Además ${fmt(I.dates_out_of_range.due_before_issue)} vencen antes de emitirse y ${fmt(I.dates_out_of_range.pay_before_issue)} se pagan antes de emitirse.`, 'Acotar fechas al rango del dataset ±2 años; tratar el resto como nulas.'],
+  ['s', `${fmt(Q.tx_exact_dups)} movimientos duplicados exactos`, 'Misma empresa, producto, fecha, importe y descripción con distinto transaction_id.', 'Deduplicar por esa clave (o marcar) antes de sumar flujos.'],
+  ['s', `${fmt(Q.tx_before_product_created)} movimientos anteriores a la creación de su producto`, 'created_at del producto es la fecha de conexión a la plataforma, no la apertura de la cuenta; el histórico se importa hacia atrás.', 'No usar created_at como inicio de actividad; usar la primera transacción.'],
+  ['s', `${fmt(Q.tx_orphan_product)} movimientos apuntan a productos inexistentes`, `Y ${fmt(B.orphans)} saldos. ${T.products_active[3]} product_id distintos en transacciones no están en ningún fichero de productos.`, 'LEFT JOIN y tipo «desconocido»; no INNER JOIN.'],
+  ['s', `${fmt(Q.tx_desc_tests)} movimientos con descripción «Tests»`, 'Probablemente datos de prueba de la plataforma.', 'Excluir junto con importes 0 (' + fmt(Q.tx_zero_amount) + ').'],
+  ['s', `${fmt(Q.tx_category_dash)} movimientos sin categoría (${pct(Q.tx_category_dash/M.transactions)})`, 'Además 330 con categoría nula y una variante «cash_settlements» (con s) de 90 filas.', 'Unificar «-»/null; oportunidad de clasificador por descripción.'],
+  ['s', `${fmt(Q.tx_status_null)} movimientos sin status`, 'status vacío en el 1,2 %; pending solo 6.579.', 'Tratar vacío como booked.'],
+  ['s', `${DS.next_payment_past} de 87 cuadros de amortización con próximo pago en el pasado`, `Y ${DS.sign_mismatch} con outstanding distinto al de debt_products; ${DS.granted_zero} con concedido = 0.`, 'Usar debt_products como fuente de saldo; el cuadro solo para términos (tipo, frecuencia, periodos).'],
+  ['w', `Signo de la deuda invertido`, `granted/outstanding negativos en debt_products (${P.debt_sign.find(r=>r.k==='positivo')?.n || 0} positivos) pero positivos en debt_schedule_config.`, 'abs() y guardar el signo como convención documentada.'],
+  ['w', `${fmt(Q.bp_currency_vs_company)} productos bancarios en moneda distinta a la de su empresa`, `Y ${fmt(Q.dp_currency_vs_company)} de deuda. Multidivisa real: ${pct(T.fx_share)} de movimientos con exchange_rate ≠ 1 y ${fmt(T.fx_zero)} con tipo 0.`, 'Convertir a moneda de la empresa con exchange_rate solo cuando > 0.'],
+  ['w', `${fmt(I.dates_out_of_range.paid_pending_nonzero)} facturas «paid» con pendiente ≠ 0`, `Y ${fmt(I.dates_out_of_range.pay_after_snapshot)} pagadas con fecha de pago posterior al corte.`, 'Derivar el estado del pendiente y las fechas, no confiar solo en status.'],
+  ['w', `${fmt(I.status.find(s=>s.k==='cancel').n)} facturas canceladas con ${money(I.status.find(s=>s.k==='cancel').pending)} «pendiente»`, 'Las canceladas conservan pending_amount.', 'Poner pendiente = 0 en cancel para el aging.'],
+  ['w', `country vacío en ${pct(C.country_raw.find(r=>r.k==='(vacío)').n/M.companies)} y sin normalizar`, `${C.country_raw.filter(r=>/espa/i.test(r.k)).map(r=>r.k).join(', ')} conviven; ${C.country_raw.length} valores distintos.`, 'Mapa a ISO-2; inferir país por moneda/banco cuando falte.'],
+  ['w', `ERP con dos vocabularios`, 'groups.erp usa nombres comerciales («Microsoft Business Central»); companies.erp usa claves («businessCentral»).', 'Tabla de equivalencias.'],
+  ['i', `${fmt(Q.bp_created_after_snapshot)} productos creados después de la fecha de corte`, 'created_at hasta 2026-09-15 con datos hasta 2026-09-01.', 'Sin impacto; documentar.'],
+  ['i', `${fmt(Q.inv_cp_null)} facturas sin contraparte y ${fmt(Q.inv_concept_null)} sin concepto`, 'Bajo (1,3 % y 0,4 %).', 'Ignorar en el matching.'],
+  ['i', `transactions.csv contiene bytes NUL`, 'El csv de Python falla; DuckDB con ignore_errors=true lee todo (recuento igual al esperado).', 'Filtrar \\0 si se lee con pandas/csv.'],
+  ['i', `Sin duplicados de clave`, `transaction_id y operation_id son únicos; n_companies_in_sample cuadra con companies en los ${fmt(M.groups)} grupos.`, '—'],
+];
+$('qual').innerHTML = qual.map(([s,t,b,f])=>`<div class="q"><span class="sev ${s}"></span><div><b>${t}</b><br>${b}</div><div class="fix">${f}</div></div>`).join('');
+</script>
+</body>
+</html>

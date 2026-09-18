@@ -23,3 +23,10 @@ ssh_key.txt
 
 # datos (646 MB, se descomprimen de output_hackspain_data.zip)
 output/
+
+# salidas del pipeline (regenerables con ./pipeline/run.sh)
+data/
+
+# derivados del EDA (se regeneran con ./eda/run.sh)
+eda/panel.csv
+eda/company_trend_features.csv

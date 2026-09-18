@@ -22,5 +22,7 @@ Documentación del reto y de los datos en [`docs/`](docs/README.md):
 - [Salud](docs/salud.md) — métricas con fórmula y cómo se combinan en el score.
 - [Validación](docs/validacion_salud.md) — evento de impago, Gini, lead time, out-of-sample y criterios de aceptación.
 - [EDA](eda/report.html) — análisis exploratorio completo con ~70 gráficos (`open eda/report.html`; regenerar con `./eda/run.sh`, ver [eda/README.md](eda/README.md)).
+- [Pipeline](pipeline/README.md) — `./pipeline/run.sh`: RAW → preprocesamiento (bronze/silver/gold) → etiquetas → score → validación, con checkpoints en `output/0{1,2,3}_*` (solo re-ejecuta lo que cambió).
+- [Analytics](analytics/README.md) — una función por métrica de `docs/salud.md`, tres generadores de score (v1 scorecard, v2 ∝ Gini, v3 GBM) y el evaluador de `docs/validacion_salud.md`.
 
 Los datos (`output/`, 646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
