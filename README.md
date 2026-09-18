@@ -19,6 +19,8 @@ Documentación del reto y de los datos en [`docs/`](docs/README.md):
 
 - [Reto X Ray](docs/reto-xray.md) — enunciado, requisitos de entrega, evaluación e ideas de producto.
 - [Mapa de datos](docs/data-map.md) — relaciones entre CSV, volúmenes, tipos de columna y avisos de calidad ([versión visual](docs/data-map.html)).
+- [Salud](docs/salud.md) — métricas con fórmula y cómo se combinan en el score.
+- [Validación](docs/validacion_salud.md) — evento de impago, Gini, lead time, out-of-sample y criterios de aceptación.
 - [EDA](eda/report.html) — análisis exploratorio completo con ~70 gráficos (`open eda/report.html`; regenerar con `./eda/run.sh`, ver [eda/README.md](eda/README.md)).
 
 Los datos (`output/`, 646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
