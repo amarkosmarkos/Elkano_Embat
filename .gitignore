@@ -20,3 +20,6 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 ssh_key.txt
+
+# datos (646 MB, se descomprimen de output_hackspain_data.zip)
+output/

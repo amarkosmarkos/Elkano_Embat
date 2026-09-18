@@ -1,0 +1,310 @@
+<title>Elkano Data Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#17221E; --ink-2:#4F5D58; --ink-3:#8A9691;
+  --line:#D6DDDA; --line-2:#E8ECEA;
+  --accent:#0F7A66; --accent-soft:#DDF0EA;
+  --fk:#2E5EA8; --fk-soft:#DFE8F6;
+  --num:#7A4E9E; --num-soft:#EEE4F6;
+  --date:#B0621C; --date-soft:#F8E8D6;
+  --txt:#4F5D58; --txt-soft:#E9EDEB;
+  --warn:#B4361F; --warn-soft:#F9E3DE;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"IBM Plex Serif",Georgia,serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1A2320; --ink:#E6ECE9; --ink-2:#A9B5B0; --ink-3:#71807A;
+  --line:#2C3833; --line-2:#222C28;
+  --accent:#4CBFA6; --accent-soft:#183B34;
+  --fk:#7FA6E6; --fk-soft:#1C2C46;
+  --num:#B992D8; --num-soft:#302242;
+  --date:#E29A5A; --date-soft:#3E2A16;
+  --txt:#A9B5B0; --txt-soft:#26302C;
+  --warn:#EF8A73; --warn-soft:#432119;
+}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1A2320; --ink:#E6ECE9; --ink-2:#A9B5B0; --ink-3:#71807A;
+  --line:#2C3833; --line-2:#222C28;
+  --accent:#4CBFA6; --accent-soft:#183B34;
+  --fk:#7FA6E6; --fk-soft:#1C2C46;
+  --num:#B992D8; --num-soft:#302242;
+  --date:#E29A5A; --date-soft:#3E2A16;
+  --txt:#A9B5B0; --txt-soft:#26302C;
+  --warn:#EF8A73; --warn-soft:#432119;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 72px;padding-inline:24px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
+h2{font-family:var(--serif);font-weight:500;font-size:22px;margin-top:56px;margin-bottom:6px}
+h3{font-size:15px;font-weight:600}
+p{margin:0}
+.lede{color:var(--ink-2);max-width:68ch;margin-top:10px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.sub{color:var(--ink-2);font-size:14px;max-width:70ch;margin-bottom:18px}
+.mono{font-family:var(--mono)}
+.tab{font-variant-numeric:tabular-nums}
+
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin-top:28px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.fact{padding:14px 16px 14px 0;border-right:1px solid var(--line-2)}
+.fact:last-child{border-right:0}
+.fact .v{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.fact .l{font-size:12px;color:var(--ink-3);margin-top:2px}
+
+/* diagram */
+figure{margin:0}
+.diagram{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px}
+.diagram svg{display:block;max-width:100%;height:auto;min-width:760px;color:var(--ink);font-family:var(--sans)}
+figcaption{font-size:13px;color:var(--ink-2);margin-top:10px;max-width:80ch}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--ink-2);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:22px;height:0;border-top:2px solid var(--fk)}
+.legend i.dash{border-top-style:dashed;border-color:var(--accent)}
+.legend i.thin{border-top-width:1px;border-color:var(--ink-3)}
+
+/* volume */
+.vol{display:grid;grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;font-size:13px}
+.vol .name{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+.vol .bar{height:14px;background:var(--line-2);border-radius:2px;position:relative;overflow:hidden}
+.vol .bar b{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:2px}
+.vol .n{font-family:var(--mono);color:var(--ink-2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.vol .sz{color:var(--ink-3);font-size:12px;margin-left:6px}
+.axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-3);grid-column:2;margin-top:2px}
+
+/* tables */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.card header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line-2);padding-bottom:8px}
+.card header .rows{font-family:var(--mono);font-size:13px;color:var(--ink-2);white-space:nowrap}
+.card header h3{font-family:var(--mono);font-weight:500;font-size:15px}
+.card .role{font-size:12.5px;color:var(--ink-2)}
+.cols{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13px;align-items:start}
+.cname{font-family:var(--mono);font-size:12.5px;white-space:nowrap;padding-top:2px}
+.cmeta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;min-width:0}
+.chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap}
+.chip.key{background:var(--fk-soft);color:var(--fk)}
+.chip.text{background:var(--txt-soft);color:var(--txt)}
+.chip.number{background:var(--num-soft);color:var(--num)}
+.chip.date{background:var(--date-soft);color:var(--date)}
+.nul{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--ink-3);white-space:nowrap}
+.nul i{display:inline-block;width:36px;height:6px;background:var(--line-2);border-radius:2px;position:relative;overflow:hidden}
+.nul i b{position:absolute;inset:0 auto 0 0;background:var(--warn)}
+.nul.hi{color:var(--warn)}
+.det{flex-basis:100%;font-size:12px;color:var(--ink-3);font-family:var(--mono);line-height:1.45;overflow-wrap:anywhere}
+.det .v{color:var(--ink-2)}
+
+/* notes */
+.notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.note{border-left:3px solid var(--warn);padding:6px 0 6px 12px;font-size:13.5px;color:var(--ink-2)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+@media (max-width:520px){ .grid{grid-template-columns:1fr} .wrap{padding-inline:16px} .cols{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:no-preference){ .vol .bar b{transition:width .4s ease} }
+</style>
+<div class="wrap">
+<p class="eyebrow">HackSpain 2026 · Track Embat · output_hackspain_data.zip</p>
+<h1>Elkano Data Map</h1>
+<p class="lede">Ocho CSV sintéticos con la tesorería de 1.286 empresas durante 24 meses (2024-09-01 → 2026-09-01). Este mapa muestra cómo se enlazan los ficheros, cuánto pesa cada uno y de qué tipo es cada columna, medido directamente sobre los datos descomprimidos.</p>
+<div class="facts">
+  <div class="fact"><div class="v">8</div><div class="l">ficheros CSV · 646 MB</div></div>
+  <div class="fact"><div class="v">3.472.176</div><div class="l">filas en total</div></div>
+  <div class="fact"><div class="v">250 → 1.286</div><div class="l">grupos → empresas</div></div>
+  <div class="fact"><div class="v">8.226</div><div class="l">productos (5.987 bancarios + 2.239 deuda)</div></div>
+  <div class="fact"><div class="v">129.701</div><div class="l">contrapartes distintas</div></div>
+  <div class="fact"><div class="v">24 meses</div><div class="l">2024-09 → 2026-09</div></div>
+</div>
+
+<h2>Relaciones entre ficheros</h2>
+<p class="sub">Cada caja es un CSV; la barra inferior es su volumen en escala logarítmica. Las flechas van de la clave foránea a la tabla que referencia, con el porcentaje de ids que resuelven. <code class="mono">company_id</code> aparece en las 7 tablas hijas y resuelve al 100 % en todas.</p>
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 1120 620" role="img" aria-label="Diagrama entidad-relación: groups a companies; companies a banking_products, debt_products e invoices; productos a balances y transactions; debt_schedule_config a debt_products y banking_products; transactions e invoices comparten counterparty_id.">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--fk)"/></marker>
+  <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+</defs>
+<g style="fill:none;stroke:var(--fk);stroke-width:1.6">
+  <!-- companies -> groups -->
+  <line x1="300" y1="283" x2="222" y2="283" marker-end="url(#ar)"/>
+  <!-- banking/debt -> companies -->
+  <path d="M570,110 C530,110 530,283 492,283" marker-end="url(#ar)"/>
+  <path d="M570,272 C530,272 530,283 492,283" marker-end="url(#ar)"/>
+  <!-- invoices -> companies (bottom route) -->
+  <polyline points="870,503 800,503 800,592 395,592 395,318" marker-end="url(#ar)"/>
+  <!-- product_id bus -->
+  <line x1="812" y1="53" x2="812" y2="283"/>
+  <line x1="812" y1="93" x2="762" y2="93" marker-end="url(#ar)"/>
+  <line x1="812" y1="283" x2="762" y2="283" marker-end="url(#ar)"/>
+  <line x1="870" y1="53" x2="812" y2="53"/>
+  <line x1="870" y1="193" x2="812" y2="193"/>
+  <!-- dsc -> debt_products -->
+  <line x1="665" y1="400" x2="665" y2="318" marker-end="url(#ar)"/>
+  <!-- dsc.settlement -> banking -->
+  <polyline points="570,433 545,433 545,76 568,76" marker-end="url(#ar)"/>
+</g>
+<g style="fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 4">
+  <line x1="965" y1="226" x2="965" y2="308" marker-end="url(#ar2)"/>
+  <line x1="965" y1="470" x2="965" y2="378" marker-end="url(#ar2)"/>
+</g>
+<!-- edge labels -->
+<g style="font-size:11px;fill:var(--fk);font-family:var(--mono)">
+  <text x="261" y="274" text-anchor="middle">group_id</text><text x="261" y="298" text-anchor="middle">100%</text>
+  <text x="511" y="185" text-anchor="middle" transform="rotate(-90 511 185)">company_id · 100%</text>
+  <text x="600" y="606" text-anchor="middle">company_id · 100% · 785 de 1.286 empresas</text>
+  <text x="836" y="150" text-anchor="middle" transform="rotate(-90 836 150)">product_id · 99,6% / 99,5%</text>
+  <text x="675" y="365" text-anchor="start">product_id · 100%</text>
+  <text x="545" y="486" text-anchor="start">settlement_product_id → banking_products · 91%</text>
+</g>
+<g style="font-size:11px;fill:var(--accent);font-family:var(--mono)">
+  <text x="972" y="272" text-anchor="start">counterparty_id · 9,8% informado</text>
+  <text x="972" y="428" text-anchor="start">counterparty_id · 98,7% informado</text>
+</g>
+<!-- nodes -->
+<g style="font-family:var(--mono)">
+  <g transform="translate(30,250)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">groups</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">250</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">grupo empresarial · ERP</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="62" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(300,250)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--accent);stroke-width:1.6"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">companies</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">1.286</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">clave central · país · moneda</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="81" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(570,60)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">banking_products</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">5.987</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">cuentas · tarjetas · 1.283 empresas</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="98" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(570,250)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">debt_products</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">2.239</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">préstamos · líneas · 378 empresas</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="87" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(570,400)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">debt_schedule_config</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">87 filas · amortización · 40 empresas</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="50" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(870,20)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">balances</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">7.996</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">foto a 2026-09-01 · 1 por producto</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="101" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(870,160)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">transactions</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">2.556.437</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">movimientos bancarios · 472 MB</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+  <g transform="translate(870,310)">
+    <rect width="190" height="66" rx="4" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2;stroke-dasharray:5 4"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">counterparties</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">129.701</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">implícita, sin CSV · 42.125 en ambas</text>
+    <text x="12" y="56" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">47.796 en tx · 124.030 en invoices</text>
+  </g>
+  <g transform="translate(870,470)">
+    <rect width="190" height="66" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.2"/>
+    <text x="12" y="22" style="font-size:13px;font-weight:500;fill:var(--ink)">invoices</text>
+    <text x="178" y="22" text-anchor="end" style="font-size:11px;fill:var(--ink-2)">897.894</text>
+    <text x="12" y="40" style="font-size:10.5px;fill:var(--ink-3);font-family:var(--sans)">facturas ERP · 173 MB</text>
+    <rect x="12" y="50" width="166" height="4" rx="2" style="fill:var(--line-2)"/><rect x="12" y="50" width="155" height="4" rx="2" style="fill:var(--accent)"/>
+  </g>
+</g>
+</svg>
+</div>
+<div class="legend">
+  <span><i></i>clave foránea (id resuelto %)</span>
+  <span><i class="dash"></i>id compartido sin tabla maestra</span>
+  <span>caja punteada = entidad implícita</span>
+</div>
+<figcaption>El espacio de <code class="mono">product_id</code> es único para productos bancarios y de deuda: balances y transactions apuntan a cualquiera de los dos. Solo el 9,8 % de las transacciones tiene contraparte resuelta, frente al 98,7 % de las facturas; 42.125 contrapartes aparecen en ambas y permiten cruzar factura ↔ movimiento.</figcaption>
+</figure>
+
+<h2>Volumen por fichero</h2>
+<p class="sub">Filas en escala logarítmica. Dos tablas de hechos concentran el 99,5 % de las filas y el 99,8 % de los bytes.</p>
+<div class="vol" id="vol"></div>
+
+<h2>Columnas y tipos</h2>
+<p class="sub">Tipo inferido leyendo cada valor. La barra roja es el porcentaje de valores vacíos; bajo cada columna categórica, sus valores más frecuentes. Las cifras de distintos son exactas.</p>
+<div class="grid" id="tables"></div>
+
+<h2>Avisos de calidad</h2>
+<p class="sub">Cosas que conviene saber antes de cargar los datos en Convex o hacer joins.</p>
+<div class="notes">
+  <div class="note"><b>transactions.csv contiene bytes NUL.</b> El lector <code>csv</code> de Python lanza <code>line contains NUL</code>; hay que filtrar <code>\0</code> al leer.</div>
+  <div class="note"><b>companies.country</b> está vacío en el 82 % y mezcla <code>ES</code>, <code>ESPAÑA</code>, <code>España</code>, <code>Portugal</code>… Normalizar a ISO-2.</div>
+  <div class="note"><b>transactions.counterparty_id</b> vacío en el 90 %; <code>category</code> vale <code>-</code> en 635.530 filas (25 %); <code>accounting_status</code> vacío en el 62 %.</div>
+  <div class="note"><b>balances.available</b> está vacío al 100 %; <code>countable</code> al 92 % y <code>liquidity</code> al 76 %. Solo <code>balance</code> es fiable.</div>
+  <div class="note"><b>Fechas fuera de rango.</b> <code>transactions.value_date</code> llega a 2099-12-31; <code>invoices.due_date</code> hasta el año 7025 y <code>payment_date</code> hasta 6913 (y desde 2000).</div>
+  <div class="note"><b>Importes extremos.</b> <code>invoices.amount</code> ±62.442 M; <code>balances.balance</code> de −1e9 a 9,99e10; <code>transactions.amount</code> ±3.100 M. Filtrar outliers antes de agregar.</div>
+  <div class="note"><b>Signo de la deuda.</b> En <code>debt_products</code>, <code>granted</code> y <code>outstanding</code> son negativos (hasta −300 M); en <code>debt_schedule_config</code> los mismos importes son positivos.</div>
+  <div class="note"><b>Referencias huérfanas.</b> 9 % de <code>settlement_product_id</code> no está en banking_products; ~0,5 % de <code>product_id</code> en balances y transactions no existe en ningún fichero de productos.</div>
+  <div class="note"><b>Cobertura desigual.</b> Todas las empresas tienen transacciones, pero solo 785 tienen facturas y 378 tienen deuda; debt_schedule_config cubre 87 de 2.239 productos de deuda.</div>
+  <div class="note"><b>exchange_rate = 0</b> aparece en transactions e invoices; en invoices llega a 20.303. Evitar dividir por él sin comprobar.</div>
+</div>
+</div>
+
+<script id="data" type="application/json">{"groups":{"rows":250,"cols":[{"n":"group_id","k":"key","null":0.0,"d":250},{"n":"erp","k":"text","null":64.4,"d":21,"top":[["Microsoft Business Central",28],["Netsuite",19],["SAP Business One",6],["Microsoft Navision",6],["Sage 200",5],["Sage X3",4]]},{"n":"n_companies_in_sample","k":"number","null":0.0,"d":21,"r":[1.0,22.0]}]},"companies":{"rows":1286,"cols":[{"n":"company_id","k":"key","null":0.0,"d":1286},{"n":"group_id","k":"key","null":0.0,"d":250},{"n":"country","k":"text","null":82.1,"d":22,"top":[["ES",142],["ESPAÑA",14],["NL",14],["DE",11],["España",9],["FR",6]]},{"n":"currency","k":"text","null":0.0,"d":28,"top":[["EUR",1149],["GBP",42],["USD",36],["MXN",7],["DKK",6],["AUD",5]]},{"n":"erp","k":"text","null":42.1,"d":20,"top":[["businessCentral",322],["netsuite",143],["businessOne",47],["sage200",47],["dynamicsAx",42],["sageX3",30]]},{"n":"created_at","k":"date","null":0.0,"r":["2021-11-17","2026-07-16"]}]},"banking_products":{"rows":5987,"cols":[{"n":"product_id","k":"key","null":0.0,"d":5987},{"n":"company_id","k":"key","null":0.0,"d":1283},{"n":"label","k":"text","null":0.0,"d":143},{"n":"type","k":"text","null":0.0,"d":9,"top":[["checking",4854],["card",796],["investment",201],["wallet",34],["tpv",25],["risk",25]]},{"n":"bank_name","k":"text","null":0.0},{"n":"service","k":"text","null":0.0,"d":198},{"n":"currency","k":"text","null":0.0,"d":39,"top":[["EUR",4919],["USD",582],["GBP",197],["MXN",25],["CAD",21],["NOK",21]]},{"n":"created_at","k":"date","null":0.0,"r":["2021-11-18","2026-09-15"]}]},"debt_products":{"rows":2239,"cols":[{"n":"product_id","k":"key","null":0.0,"d":2239},{"n":"company_id","k":"key","null":0.0,"d":378},{"n":"label","k":"text","null":0.0},{"n":"type","k":"text","null":0.0,"d":8,"top":[["loan",1022],["lineofcredit",536],["confirming",229],["leasing",179],["guarantee",155],["mortgage",60]]},{"n":"bank_name","k":"text","null":0.0,"d":64},{"n":"service","k":"text","null":0.0,"d":60},{"n":"currency","k":"text","null":0.0,"d":4,"top":[["EUR",2221],["USD",15],["GBP",2],["MXN",1]]},{"n":"created_at","k":"date","null":0.0,"r":["2022-04-06","2026-09-15"]},{"n":"granted","k":"number","null":7.5,"r":[-300000000.0,2000000.0]},{"n":"outstanding","k":"number","null":0.0,"r":[-300000000.0,21350000.0]},{"n":"liquidity","k":"number","null":64.1,"r":[0.0,42700000.0]}]},"debt_schedule_config":{"rows":87,"cols":[{"n":"product_id","k":"key","null":0.0,"d":87},{"n":"company_id","k":"key","null":0.0,"d":40},{"n":"settlement_product_id","k":"key","null":0.0,"d":68},{"n":"currency","k":"text","null":0.0,"d":1,"top":[["EUR",87]]},{"n":"amortization_type","k":"text","null":0.0,"d":1,"top":[["constant quote",87]]},{"n":"interest_calc_method","k":"text","null":0.0,"d":2,"top":[["30/360",81],["Actual/Actual ISDA",6]]},{"n":"amortising_frequency","k":"text","null":0.0,"d":3,"top":[["monthly",79],["quarterly",5],["semiannually",3]]},{"n":"granted_balance","k":"number","null":0.0,"d":61,"r":[0.0,300000000.0]},{"n":"outstanding_balance","k":"number","null":0.0,"d":85,"r":[2.43,300000000.0]},{"n":"total_periods","k":"number","null":0.0,"d":57,"r":[1.0,180.0]},{"n":"next_payment_date","k":"date","null":0.0,"d":63,"r":["2024-03-19","2027-01-22"]},{"n":"last_payment_date","k":"date","null":0.0,"d":87,"r":["2024-02-27","2026-09-15"]},{"n":"annual_interest_rate_or_spread","k":"number","null":0.0,"d":9,"r":[0.0,0.11]},{"n":"interest_type","k":"text","null":0.0,"d":2,"top":[["fixed",58],["variable",29]]}]},"balances":{"rows":7996,"cols":[{"n":"product_id","k":"key","null":0.0,"d":7996},{"n":"company_id","k":"key","null":0.0,"d":1273},{"n":"date","k":"date","null":0.0,"d":5,"r":["2026-08-25","2026-09-01"]},{"n":"balance","k":"number","null":0.0,"r":[-999999999.0,99999990850.0]},{"n":"available","k":"text","null":100.0},{"n":"granted","k":"number","null":66.9,"r":[-300000000.0,2000000.0]},{"n":"liquidity","k":"number","null":76.3,"r":[-23638.71,1000207616.82]},{"n":"countable","k":"number","null":91.7,"r":[-23439448.15,1001000207615.82]}]},"transactions":{"rows":2556437,"cols":[{"n":"transaction_id","k":"key","null":0.0},{"n":"company_id","k":"key","null":0.0,"d":1286},{"n":"product_id","k":"key","null":0.0,"d":5311},{"n":"date","k":"date","null":0.0,"r":["2024-09-01","2026-09-01"]},{"n":"value_date","k":"date","null":0.0,"r":["2022-07-01","2099-12-31"]},{"n":"amount","k":"number","null":0.0,"r":[-3069784469.83,3100000000.0]},{"n":"exchange_rate","k":"number","null":0.0,"r":[0.0,6500.0]},{"n":"status","k":"text","null":1.2,"d":2,"top":[["booked",2520019],["pending",6579]]},{"n":"accounting_status","k":"text","null":61.6,"d":6,"top":[["RECONCILIATION_COMPLETED",528034],["DISCARDED",308568],["PENDING",95281],["ACCOUNTING_COMPLETED",30995],["ACCOUNTING_RECOMMENDATION",18064],["RECONCILIATION_RECOMMENDATION",1626]]},{"n":"category","k":"text","null":0.0,"d":23,"top":[["-",635530],["collection",567417],["payment",362276],["utility",259430],["fee",179500],["transfer",152102]]},{"n":"description","k":"text","null":0.0},{"n":"counterparty_id","k":"key","null":90.2,"d":47796}]},"invoices":{"rows":897894,"cols":[{"n":"operation_id","k":"key","null":0.0},{"n":"company_id","k":"key","null":0.0,"d":785},{"n":"document_type","k":"text","null":0.0,"d":10,"top":[["invoice",760406],["paymentDocument",53761],["note",38154],["deposit",21390],["invoiceGroup",13775],["deliveryNote",6380]]},{"n":"issuance_date","k":"date","null":0.0,"r":["2024-09-01","2026-09-01"]},{"n":"due_date","k":"date","null":0.0,"r":["2000-03-01","7025-07-31"]},{"n":"payment_date","k":"date","null":0.0,"r":["2000-10-31","6913-11-20"]},{"n":"amount","k":"number","null":0.0,"r":[-62442200699.61,62442200699.61]},{"n":"pending_amount","k":"number","null":0.0,"r":[-1613461892.11,1272103835.8]},{"n":"currency","k":"text","null":0.0,"d":39,"top":[["EUR",767795],["USD",55608],["GBP",21048],["CLP",8247],["CAD",6593],["MXN",6527]]},{"n":"accounting_currency","k":"text","null":0.0,"d":23,"top":[["EUR",779839],["USD",35020],["GBP",24770],["CLP",8368],["MXN",6912],["COP",6266]]},{"n":"exchange_rate","k":"number","null":0.0,"r":[0.0,20303.01]},{"n":"status","k":"text","null":0.0,"d":7,"top":[["paid",660299],["overdue",192556],["pending",29717],["cancel",13699],["payment_in_progress",1216],["paymentOrder",406]]},{"n":"concept","k":"text","null":0.4},{"n":"counterparty_id","k":"key","null":1.3,"d":124030}]}}</script>
+<script>
+const T = JSON.parse(document.getElementById('data').textContent);
+const ORDER = ['groups','companies','banking_products','debt_products','debt_schedule_config','balances','transactions','invoices'];
+const ROLE = {
+  groups:'Un grupo empresarial (holding) por fila; 1–22 empresas en muestra.',
+  companies:'Clave central: toda tabla hija lleva company_id.',
+  banking_products:'Cuentas corrientes, tarjetas, inversión, TPV… 1 fila por producto.',
+  debt_products:'Préstamos, líneas, confirming, leasing… con importe concedido y pendiente.',
+  debt_schedule_config:'Términos del préstamo (amortización, tipo, periodos) para 87 productos de deuda.',
+  balances:'Saldo por producto a 2026-09-01 (o el snapshot anterior más cercano).',
+  transactions:'Movimientos bancarios 2024-09 → 2026-09. Texto anonimizado con placeholders.',
+  invoices:'Facturas sincronizadas del ERP con ciclo emisión → vencimiento → pago.'
+};
+const SIZE = {groups:'5 KB',companies:'71 KB',banking_products:'596 KB',debt_products:'268 KB',debt_schedule_config:'13 KB',balances:'481 KB',transactions:'472 MB',invoices:'173 MB'};
+const fmt = n => n.toLocaleString('es-ES');
+const fnum = n => Math.abs(n) >= 1e6 ? (n/1e6).toLocaleString('es-ES',{maximumFractionDigits:1})+' M' : n.toLocaleString('es-ES',{maximumFractionDigits:2});
+
+// volume
+const maxLog = Math.log10(T.transactions.rows);
+const vol = document.getElementById('vol');
+[...ORDER].sort((a,b)=>T[b].rows-T[a].rows).forEach(f=>{
+  const w = Math.max(1.5, 100*Math.log10(T[f].rows)/maxLog);
+  vol.insertAdjacentHTML('beforeend', `<div class="name">${f}</div><div class="bar"><b style="width:${w}%"></b></div><div class="n">${fmt(T[f].rows)}<span class="sz">${SIZE[f]}</span></div>`);
+});
+vol.insertAdjacentHTML('beforeend', `<div></div><div class="axis"><span>1</span><span>10²</span><span>10⁴</span><span>10⁶</span></div><div></div>`);
+
+// tables
+const KIND = {key:'clave',text:'texto',number:'número',date:'fecha'};
+const grid = document.getElementById('tables');
+ORDER.forEach(f=>{
+  const t = T[f];
+  const cols = t.cols.map(c=>{
+    const hi = c.null >= 50 ? ' hi' : '';
+    const nul = c.null > 0 ? `<span class="nul${hi}"><i><b style="width:${c.null}%"></b></i>${c.null}% vacío</span>` : '';
+    let det = '';
+    if (c.top) det = c.top.map(([v,n])=>`<span class="v">${v}</span> ${fmt(n)}`).join(' · ') + (c.d>c.top.length?` · +${c.d-c.top.length} más`:'');
+    else if (c.k==='date' && c.r) det = `${c.r[0]} → ${c.r[1]}`;
+    else if (c.k==='number' && c.r) det = `${fnum(c.r[0])} → ${fnum(c.r[1])}`;
+    else if (c.k==='key' && c.d) det = `${fmt(c.d)} distintos`;
+    else if (c.d && c.d>40) det = `${fmt(c.d)} distintos`;
+    return `<div class="cname">${c.n}</div><div class="cmeta"><span class="chip ${c.k}">${KIND[c.k]}</span>${nul}${det?`<span class="det">${det}</span>`:''}</div>`;
+  }).join('');
+  grid.insertAdjacentHTML('beforeend', `<article class="card"><header><h3>${f}.csv</h3><span class="rows tab">${fmt(t.rows)} filas · ${t.cols.length} col</span></header><p class="role">${ROLE[f]}</p><div class="cols">${cols}</div></article>`);
+});
+</script>
