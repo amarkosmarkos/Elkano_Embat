@@ -12,7 +12,6 @@ export function RecommendationCard({ r }: { r: Recommendation }) {
         <span className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${FIT_COLOR(r.fit)}`}>encaje {r.fit}</span>
       </div>
       <p className="text-sm text-ink-dim">{r.reason}</p>
-      {r.detail && <p className="font-mono text-xs text-accent">{r.detail}</p>}
     </div>
   );
 }

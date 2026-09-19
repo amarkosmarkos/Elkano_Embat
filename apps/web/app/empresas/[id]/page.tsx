@@ -22,17 +22,16 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     regime: last?.regime ?? null,
     cashPosition: last?.cashPosition ?? null,
     cDeuda: last?.cDeuda ?? null,
-    hasDebt: co.hasDebt,
     recentAlerts: alerts.map((a) => ({ severity: a.severity, title: a.title })),
-    groupSiblings: siblings.map((s) => ({ companyId: s.companyId, displayName: s.displayName, score: s.score, cashPosition: s.cashPosition })),
+    groupSiblings: siblings.map((s) => ({ companyId: s.companyId, score: s.score, cashPosition: s.cashPosition })),
   });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <div className="font-mono text-[12px] tracking-wide text-ink-mute">{co.companyId}{co.groupId ? ` · ${co.groupId}` : ""}</div>
-          <h1 className="mt-1 text-4xl font-bold tracking-tight text-ink">{co.displayName}</h1>
+          <div className="font-mono text-[12px] tracking-wide text-ink-mute">{co.groupId ?? ""}</div>
+          <h1 className="mt-1 font-mono text-4xl font-bold tracking-tight text-ink">{co.companyId}</h1>
           {explanation && <p className="mt-3 max-w-xl text-ink-dim">{explanation.text}</p>}
         </div>
         <div className={`rounded-2xl border px-5 py-3 text-right shadow-sm ${last ? BORDER[band(last.score)] : "border-line"}`}>
@@ -63,15 +62,17 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      <section className="mt-14">
-        <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Producto</div>
-        <h2 className="text-2xl font-bold tracking-tight text-ink">Qué le recomendaría el sistema</h2>
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {recos.map((r) => (
-            <RecommendationCard key={r.product} r={r} />
-          ))}
-        </div>
-      </section>
+      {recos.length > 0 && (
+        <section className="mt-14">
+          <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Producto</div>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">Qué le recomendaría el sistema</h2>
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {recos.map((r) => (
+              <RecommendationCard key={r.product} r={r} />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

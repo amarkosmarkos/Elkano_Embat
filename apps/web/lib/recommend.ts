@@ -1,10 +1,13 @@
 // Motor de recomendación: reglas explícitas, no una caja negra — cada producto dice con qué dato
-// concreto se ha activado. "empresa → 2-3 productos recomendados" sale de aquí, no a mano.
+// concreto se ha activado. "empresa → 2-3 productos recomendados" sale de aquí, no a mano. Todo lo
+// que entra aquí es real: score/regime/c_deuda de scores_v3.csv, cash_position reconstruido desde
+// balances.csv+transactions.csv (tools/export_cash_position.py) — nada de nombres inventados, las
+// "hermanas" de grupo se identifican por company_id.
 import { eur, sane } from "./format";
 
 export type ProductId = "excedentes" | "cash-pooling" | "monitor";
 
-export type GroupSibling = { companyId: string; displayName: string; score: number; cashPosition: number | null };
+export type GroupSibling = { companyId: string; score: number; cashPosition: number | null };
 
 export type RecoInput = {
   score: number | null;
@@ -12,7 +15,6 @@ export type RecoInput = {
   cashPosition: number | null;
   /** contribución de la dimensión deuda al score este mes (scores.c_deuda) — negativa = pesa en contra. */
   cDeuda: number | null;
-  hasDebt: boolean | null;
   recentAlerts: { severity: string; title: string }[];
   groupSiblings: GroupSibling[]; // ya excluye a la propia empresa
 };
@@ -70,7 +72,7 @@ export function recommend(input: RecoInput): Recommendation[] {
           product: "cash-pooling",
           title: PRODUCT_TITLE["cash-pooling"],
           fit: Math.min(98, fit),
-          reason: `${richest.s.displayName}, del mismo grupo, tiene ${eur(richest.cash)} en caja — ${(cashGap / 1000).toFixed(0)}k€ más que esta empresa. El grupo ya tiene el colchón; solo falta moverlo.`,
+          reason: `${richest.s.companyId}, del mismo grupo, tiene ${eur(richest.cash)} en caja — ${(cashGap / 1000).toFixed(0)}k€ más que esta empresa. El grupo ya tiene el colchón; solo falta moverlo.`,
           detail: "Rol: recibe. El tipo interno lo fija su score frente al del grupo.",
         });
       } else if (myCash > 150_000 && sorted.length > 1) {
@@ -82,7 +84,7 @@ export function recommend(input: RecoInput): Recommendation[] {
             product: "cash-pooling",
             title: PRODUCT_TITLE["cash-pooling"],
             fit: Math.min(95, fit),
-            reason: `${poorest.s.displayName}, del mismo grupo, va ${poorest.s.score < (score ?? 100) ? "peor" : "más justa de caja"} — esta empresa tiene margen para prestarle a tipo interno en vez de que pida a un banco.`,
+            reason: `${poorest.s.companyId}, del mismo grupo, va ${poorest.s.score < (score ?? 100) ? "peor" : "más justa de caja"} — esta empresa tiene margen para prestarle a tipo interno en vez de que pida a un banco.`,
             detail: "Rol: aporta. El límite que puede prestar lo fija su propio score.",
           });
         }

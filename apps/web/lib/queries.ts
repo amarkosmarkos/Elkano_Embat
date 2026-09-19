@@ -35,11 +35,7 @@ const REGIMED_CTE = `
 const regimedCte = sql.raw(REGIMED_CTE);
 
 export async function listCompanies(limit = 60) {
-  return db
-    .select({ companyId: companies.companyId, displayName: companies.displayName, groupId: companies.groupId, hasDebt: companies.hasDebt })
-    .from(companies)
-    .orderBy(asc(companies.companyId))
-    .limit(limit);
+  return db.select().from(companies).orderBy(asc(companies.companyId)).limit(limit);
 }
 
 export async function getCompany(companyId: string) {
@@ -53,13 +49,13 @@ export async function getScoreSeries(companyId: string) {
 
 export async function getLastScore(companyId: string) {
   const rows = await db.execute<{
-    month: string; score: number; regime: string; c_deuda: number | null; cash_position: number | null; alert: boolean;
-  }>(sql`${regimedCte} select r.month, r.score, r.regime, s.c_deuda, s.cash_position, s.alert
+    month: string; score: number; regime: string; c_deuda: number | null; cash_position: number | null;
+  }>(sql`${regimedCte} select r.month, r.score, r.regime, s.c_deuda, s.cash_position
          from regimed r join scores s on s.company_id = r.company_id and s.month = r.month
          where r.company_id = ${companyId} order by r.month desc limit 1`);
   const row = rows[0];
   if (!row) return null;
-  return { month: row.month, score: row.score, regime: row.regime, cDeuda: row.c_deuda, cashPosition: row.cash_position, alert: row.alert };
+  return { month: row.month, score: row.score, regime: row.regime, cDeuda: row.c_deuda, cashPosition: row.cash_position };
 }
 
 /** Texto real de `scores.explanation` ("bajó 31,1 pts: liquidez"), o null si ese mes no tiene
@@ -109,7 +105,7 @@ export async function getGroupLatestScores(groupId: string, excludeCompanyId?: s
     seen.add(row.companyId);
     out.push(row);
   }
-  return out.map((row) => ({ ...row, displayName: siblings.find((s) => s.companyId === row.companyId)?.displayName ?? row.companyId }));
+  return out;
 }
 
 /**
@@ -152,7 +148,7 @@ export async function listPoolingGroups(limit = 40) {
 /** Todo lo que necesita la pantalla de cash-pooling de un grupo: filiales + su serie mensual completa. */
 export async function getGroupSeries(groupId: string) {
   const base = await db
-    .select({ companyId: companies.companyId, displayName: companies.displayName, currency: companies.currency, country: companies.country })
+    .select({ companyId: companies.companyId, currency: companies.currency, country: companies.country })
     .from(companies)
     .where(eq(companies.groupId, groupId))
     .orderBy(asc(companies.companyId));
@@ -171,7 +167,7 @@ export async function getGroupSeries(groupId: string) {
 }
 
 export async function scoreStats() {
-  const rows = await db.execute<{ month: string; avg: number; p20: number; p80: number; n: number }>(sql`
+  return db.execute<{ month: string; avg: number; p20: number; p80: number; n: number }>(sql`
     select month,
            avg(score)::float as avg,
            percentile_cont(0.2) within group (order by score)::float as p20,
@@ -181,7 +177,6 @@ export async function scoreStats() {
     group by month
     order by month
   `);
-  return rows;
 }
 
 export async function regimeBreakdown(month: string) {
@@ -204,8 +199,7 @@ export type MonthPortfolioKpis = {
  * KPIs de cartera por mes, para el widget "Embat · Salud financiera de la cartera" de /datos.
  * `regime` se calcula al vuelo (ver REGIMED_CTE) sobre el score real; "deteriorando" cuenta solo
  * `deteriorating`, no `dip` (bache puntual). "Alertas nuevas" = meses con `alert = true` (el 20%
- * peor del mes), ya no hay tipos "improvement" que excluir porque esa taxonomía no existía en el
- * score real.
+ * peor del mes).
  */
 export async function portfolioKpisByMonth(): Promise<{ months: MonthPortfolioKpis[]; defaultMonth: string | null }> {
   const scoreRows = await db.execute<{
@@ -249,7 +243,7 @@ export type RegimeCode = "i" | "s" | "d" | "p";
 const REGIME_CODE: Record<string, RegimeCode> = { improving: "i", stable: "s", deteriorating: "d", dip: "p" };
 
 export type CompanyScorePoint = { score: number; regime: RegimeCode | null };
-export type CompanyScoreSeries = { companyId: string; displayName: string; points: (CompanyScorePoint | null)[] };
+export type CompanyScoreSeries = { companyId: string; points: (CompanyScorePoint | null)[] };
 
 /**
  * Serie mes a mes de TODAS las empresas (score + régimen), para el gráfico animado de distribución
@@ -258,38 +252,34 @@ export type CompanyScoreSeries = { companyId: string; displayName: string; point
  * que el índice del slider apunte a la misma posición en ambos sitios.
  */
 export async function companyScoreSeries(months: string[]): Promise<CompanyScoreSeries[]> {
-  const rows = await db.execute<{ company_id: string; display_name: string; month: string; score: number; regime: string | null }>(sql`
-    ${regimedCte} select r.company_id, c.display_name, r.month, r.score, r.regime
-    from regimed r
-    join companies c on c.company_id = r.company_id
-    order by r.company_id, r.month
+  const rows = await db.execute<{ company_id: string; month: string; score: number; regime: string | null }>(sql`
+    ${regimedCte} select company_id, month, score, regime from regimed order by company_id, month
   `);
 
-  const byCompany = new Map<string, { displayName: string; byMonth: Map<string, CompanyScorePoint> }>();
+  const byCompany = new Map<string, Map<string, CompanyScorePoint>>();
   for (const r of rows) {
-    let entry = byCompany.get(r.company_id);
-    if (!entry) {
-      entry = { displayName: r.display_name, byMonth: new Map() };
-      byCompany.set(r.company_id, entry);
+    let byMonth = byCompany.get(r.company_id);
+    if (!byMonth) {
+      byMonth = new Map();
+      byCompany.set(r.company_id, byMonth);
     }
-    entry.byMonth.set(r.month, { score: r.score, regime: r.regime ? (REGIME_CODE[r.regime] ?? null) : null });
+    byMonth.set(r.month, { score: r.score, regime: r.regime ? (REGIME_CODE[r.regime] ?? null) : null });
   }
 
-  return Array.from(byCompany.entries()).map(([companyId, { displayName, byMonth }]) => ({
+  return Array.from(byCompany.entries()).map(([companyId, byMonth]) => ({
     companyId,
-    displayName,
     points: months.map((m) => byMonth.get(m) ?? null),
   }));
 }
 
 /** Empresas rankeadas por score del último mes, con régimen — para /empresas. */
 export async function listCompaniesRanked(limit = 60) {
-  const rows = await db.execute<{ company_id: string; display_name: string; group_id: string | null; score: number | null; regime: string | null }>(sql`
-    ${regimedCte} select c.company_id, c.display_name, c.group_id, r.score, r.regime
+  const rows = await db.execute<{ company_id: string; group_id: string | null; score: number; regime: string | null }>(sql`
+    ${regimedCte} select c.company_id, c.group_id, r.score, r.regime
     from companies c
-    left join regimed r on r.company_id = c.company_id and r.month = (select max(month) from scores s2 where s2.company_id = c.company_id)
-    order by r.score desc nulls last
+    join regimed r on r.company_id = c.company_id and r.month = (select max(month) from scores s2 where s2.company_id = c.company_id)
+    order by r.score desc
     limit ${limit}
   `);
-  return rows.map((r) => ({ companyId: r.company_id, displayName: r.display_name, groupId: r.group_id, score: r.score, regime: r.regime }));
+  return rows.map((r) => ({ companyId: r.company_id, groupId: r.group_id, score: r.score, regime: r.regime }));
 }

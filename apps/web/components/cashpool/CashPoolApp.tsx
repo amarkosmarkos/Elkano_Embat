@@ -397,7 +397,7 @@ function WorldMap({ entities, proposals, decisions, mode, hover, setHover }: {
 
       {hovered && tip && (
         <div className="pointer-events-none absolute z-10 w-64 rounded-sm border border-line bg-ground/95 p-3 text-xs shadow-lg" style={{ left: Math.min(tip.x + 14, (boxRef.current?.clientWidth ?? 600) - 270), top: tip.y + 14 }}>
-          <div className="font-semibold">{hovered.displayName}</div>
+          <div className="font-semibold">{hovered.companyId}</div>
           <div className="font-mono text-[10.5px] text-ink-mute">{hovered.companyId} · {hovered.countryName}{hovered.countryInferred ? " (por divisa)" : ""}</div>
           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
             <span className="text-ink-mute">caja</span><span className="font-mono text-right">{hovered.cashLocal !== null ? local(hovered.cashLocal, hovered.currency) : "—"}</span>
@@ -468,16 +468,16 @@ function ProposalRow({ p, from, to, decision, onDecide, onHover }: { p: Proposal
     <div className={`flex flex-wrap items-center justify-between gap-4 p-5 ${decision ? "opacity-55" : ""}`} onMouseEnter={() => onHover(to.companyId)} onMouseLeave={() => onHover(null)}>
       <div className="min-w-[280px] flex-1">
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-semibold">{from.displayName}</span>
+          <span className="font-semibold">{from.companyId}</span>
           <span className="font-mono text-[10px] text-ink-mute">{from.currency}</span>
           <span className="text-ink-mute">→</span>
-          <span className="font-semibold">{to.displayName}</span>
+          <span className="font-semibold">{to.companyId}</span>
           <span className="font-mono text-[10px] text-ink-mute">{to.currency}</span>
           <span className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${urg}`}>{p.urgency}</span>
           {!p.sameCurrency && <span className="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-ink-mute">cruce de divisa · {eur(p.fxCostEur)} FX</span>}
         </div>
         <div className="mt-1 font-mono text-[11px] text-ink-mute">
-          {to.displayName} tiene {to.cashEur !== null ? eur(to.cashEur) : "—"} y score {to.score} · en banco pagaría {p.bankRate}% · en el pool {p.internalRate}%
+          {to.companyId} tiene {to.cashEur !== null ? eur(to.cashEur) : "—"} y score {to.score} · en banco pagaría {p.bankRate}% · en el pool {p.internalRate}%
         </div>
       </div>
       <div className="flex items-center gap-5">

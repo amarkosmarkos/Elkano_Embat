@@ -133,20 +133,20 @@ function CompanyScatter({
   const fallbackLanes = useMemo(() => new Map(series.map((s) => [s.companyId, hashToUnit(s.companyId)])), [series]);
 
   const dots = useMemo(() => {
-    const live: { companyId: string; displayName: string; score: number; regime: RegimeCode }[] = [];
-    const faded: { companyId: string; displayName: string; score: number; regime: RegimeCode }[] = [];
+    const live: { companyId: string; score: number; regime: RegimeCode }[] = [];
+    const faded: { companyId: string; score: number; regime: RegimeCode }[] = [];
 
     for (const s of series) {
       const current = s.points[monthIndex];
       if (current) {
-        live.push({ companyId: s.companyId, displayName: s.displayName, score: current.score, regime: current.regime ?? "s" });
+        live.push({ companyId: s.companyId, score: current.score, regime: current.regime ?? "s" });
         continue;
       }
       // sin dato este mes (entra/sale del dataset): se queda en su última posición conocida y se desvanece
       let point = undefined as (typeof s.points)[number] | undefined;
       for (let i = monthIndex - 1; i >= 0 && !point; i--) point = s.points[i];
       for (let i = monthIndex + 1; i < s.points.length && !point; i++) point = s.points[i];
-      if (point) faded.push({ companyId: s.companyId, displayName: s.displayName, score: point.score, regime: point.regime ?? "s" });
+      if (point) faded.push({ companyId: s.companyId, score: point.score, regime: point.regime ?? "s" });
     }
 
     // ordenar por score para que el apilado por bin salga limpio (izquierda→derecha, abanico simétrico)
@@ -198,7 +198,7 @@ function CompanyScatter({
           >
             <circle r={6} fill="transparent" />
             <circle r={dotR} fill={REGIME_COLOR[d.regime]} />
-            <title>{`${d.displayName} · ${d.score} / 100 · ${REGIME_LABEL[d.regime]}`}</title>
+            <title>{`${d.companyId} · ${d.score} / 100 · ${REGIME_LABEL[d.regime]}`}</title>
           </g>
         ))}
       </svg>
@@ -214,7 +214,7 @@ function CompanyScatter({
   );
 }
 
-type Mover = { companyId: string; displayName: string; score: number; delta: number };
+type Mover = { companyId: string; score: number; delta: number };
 
 /** Top N que más suben / más caen entre `monthIndex - 1` y `monthIndex`, a partir de la misma
  * `series` que ya trae el gráfico — nada de ir a Postgres otra vez por cada mes del scrubber. */
@@ -225,7 +225,7 @@ function computeMovers(series: CompanyScoreSeries[], monthIndex: number, n = 6):
     const cur = s.points[monthIndex];
     const prev = s.points[monthIndex - 1];
     if (!cur || !prev) continue;
-    deltas.push({ companyId: s.companyId, displayName: s.displayName, score: cur.score, delta: cur.score - prev.score });
+    deltas.push({ companyId: s.companyId, score: cur.score, delta: cur.score - prev.score });
   }
   const risers = [...deltas].sort((a, b) => b.delta - a.delta).slice(0, n);
   const fallers = [...deltas].sort((a, b) => a.delta - b.delta).slice(0, n);
@@ -246,7 +246,7 @@ function MoverList({ title, tone, items }: { title: string; tone: "good" | "bad"
               href={`/empresas/${it.companyId}`}
               className="-mx-1 flex items-center justify-between gap-3 rounded-md px-1 py-2 text-sm transition-colors hover:bg-panel-2"
             >
-              <span className="truncate text-ink">{it.displayName}</span>
+              <span className="truncate text-ink">{it.companyId}</span>
               <span className="flex shrink-0 items-center gap-2 font-mono text-xs">
                 <span className="text-ink-mute">{it.score}</span>
                 <span className={tone === "good" ? "text-good" : "text-bad"}>

@@ -22,8 +22,8 @@ export default async function EmpresasPage() {
           {rows.map((r) => (
             <Link key={r.companyId} href={`/empresas/${r.companyId}`} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-5 py-3 transition-colors hover:bg-panel-2">
               <div>
-                <div className="text-sm font-medium text-ink">{r.displayName}</div>
-                <div className="font-mono text-[10.5px] text-ink-mute">{r.companyId}{r.groupId ? ` · ${r.groupId}` : ""}</div>
+                <div className="font-mono text-sm font-medium text-ink">{r.companyId}</div>
+                {r.groupId && <div className="font-mono text-[10.5px] text-ink-mute">{r.groupId}</div>}
               </div>
               <span className="text-xs text-ink-mute">{r.regime ?? "—"}</span>
               <ScoreChip score={r.score} />

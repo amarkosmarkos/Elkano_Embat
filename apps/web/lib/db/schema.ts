@@ -1,22 +1,16 @@
 // Esquema Drizzle — refleja tal cual el Postgres ya levantado (docker-compose.yml, puerto 5433).
-// `scores` es 1:1 con output/02_score/scores_v3.csv (el score real de analytics/, Gini 0.54/0.44/0.38):
-// nada de signals/subscores/regime/confidence inventados — eso era del contrato viejo
-// (docs/CONTRATO_DATOS.md), de antes de que existiera el pipeline de análisis. Si hace falta alguno
-// de esos campos, se recalcula desde metrics_v1.parquet o gold/, no se resucita el esquema viejo.
+// Todo lo que hay aquí es trazable a un CSV real del reto (output_hackspain_data/) o al score
+// real de analytics/ (output/02_score/scores_v3.csv) — nada inventado (ver auditoría de
+// data/*.json, borrado). No hay display_name, sector_hint, has_erp, has_debt ni fechas de alta:
+// esos campos no tienen fuente real que se use en la app hoy.
 import { pgTable, text, integer, real, boolean, primaryKey, index } from "drizzle-orm/pg-core";
 
+// companies.csv (crudo): company_id, group_id, country, currency — literal, sin cálculo.
 export const companies = pgTable("companies", {
   companyId: text("company_id").primaryKey(),
   groupId: text("group_id"),
-  displayName: text("display_name").notNull(),
-  sectorHint: text("sector_hint"),
   currency: text("currency").default("EUR"),
-  country: text("country"), // ISO-2 real del CSV crudo (solo 230/1286 lo traen); null = desconocido, NO se inventa
-  hasErp: boolean("has_erp").default(false),
-  hasDebt: boolean("has_debt").default(false),
-  firstMonth: text("first_month"),
-  lastMonth: text("last_month"),
-  nMonths: integer("n_months"),
+  country: text("country"), // ISO-2 real (solo ~230/1286 lo traen); null = desconocido, NO se inventa
 });
 
 // columnas tal cual output/02_score/scores_v3.csv (ver output/README.md). `score_oot` y
@@ -38,10 +32,10 @@ export const scores = pgTable(
     scoreOot: real("score_oot"),
     alert: boolean("alert").notNull().default(false),
     explanation: text("explanation"),
-    // único campo que no sale de scores_v3.csv: saldo bancario real a fin de mes (EUR), de
-    // gold/company_month.parquet (tools/export_cash_position.py) — cash-pooling y "excedentes"
-    // necesitan un importe real y el score no lo lleva. Es un hecho anterior al modelo, no cambia
-    // aunque se reentrene v3. Puede ser null si la empresa no tiene cuenta corriente ese mes.
+    // único campo que no sale de scores_v3.csv: saldo real de caja a fin de mes (EUR), reconstruido
+    // desde balances.csv + transactions.csv (tools/export_cash_position.py, mismo método que
+    // documenta analytics/README.md). Cash-pooling y "excedentes" necesitan un importe real y el
+    // score no lo lleva. Puede ser null si la empresa no tiene cuenta corriente con historia ese mes.
     cashPosition: real("cash_position"),
   },
   (t) => [

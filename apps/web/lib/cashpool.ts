@@ -8,7 +8,6 @@ import { sane } from "./format";
 
 export type EntityBase = {
   companyId: string;
-  displayName: string;
   currency: string;
   country: string | null;
 };
