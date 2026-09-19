@@ -6,6 +6,7 @@ import type { CompanyIndex } from "@/lib/score/types";
 import { applyRisk, DEFAULT_CONFIG, type Network, type PortfolioConfig, type PortfolioResult, type RiskTolerance } from "./portfolio";
 import { applyActions, type ExecutedAction } from "./actions";
 import { assessAll, type Assessed } from "./assess";
+import { marketPotential, type Potential } from "./potential";
 import { deployableCapital as deployableAt } from "@/lib/score/derived";
 
 const KEY = "xray_marketplace_v3";
@@ -27,6 +28,7 @@ interface Ctx extends Persisted {
   network: Network | null;
   error: string | null;
   assessed: Assessed[];
+  potential: Potential | null;
   byId: Map<string, CompanyIndex>;
   openCompany: string | null;
   setOpenCompany: (id: string | null) => void;
@@ -89,6 +91,7 @@ export function MarketplaceProvider({ children, initialLender }: { children: Rea
   useEffect(() => { if (hydrated) try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }, [state, hydrated]);
 
   const assessed = useMemo(() => (network ? assessAll(network) : []), [network]);
+  const potential = useMemo(() => (network ? marketPotential(network, assessed) : null), [network, assessed]);
   const byId = useMemo(() => new Map(network?.companies.map((c) => [c.id, c]) ?? []), [network]);
   const cal = network?.calibration ?? [];
 
@@ -119,7 +122,7 @@ export function MarketplaceProvider({ children, initialLender }: { children: Rea
   const removeDeal = useCallback((id: string) => setState((s) => ({ ...s, deals: s.deals.filter((d) => d.id !== id), activeDealId: s.activeDealId === id ? null : s.activeDealId })), []);
   const effectiveOf = useCallback((deal: Deal) => applyActions(deal.result, deal.executed, cal), [cal]);
 
-  const value: Ctx = { ...state, network, error, assessed, byId, openCompany, setOpenCompany, setLender, setConfig, setRisk, setResult, closeDeal, setActiveDeal, setDealMonth, executeOnDeal, undoDeal, removeDeal, effectiveOf };
+  const value: Ctx = { ...state, network, error, assessed, potential, byId, openCompany, setOpenCompany, setLender, setConfig, setRisk, setResult, closeDeal, setActiveDeal, setDealMonth, executeOnDeal, undoDeal, removeDeal, effectiveOf };
   return <MarketplaceCtx.Provider value={value}>{children}</MarketplaceCtx.Provider>;
 }
 

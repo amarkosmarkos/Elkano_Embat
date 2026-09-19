@@ -14,8 +14,8 @@ import { fmtMoney, monthLabelLong } from "@/lib/format";
 const pct = (v: number, d = 2) => `${(v * 100).toFixed(d).replace(".", ",")} %`;
 
 /**
- * Paso 3 · cierre. Con la cartera decidida, tres cifras y nada más: cuánto se financia a las empresas,
- * cuánto se queda Embat y qué interés se lleva el prestamista. Debajo, las condiciones por receptora y el botón de cierre.
+ * Paso 3 · cierre. Quién pone el dinero (el prestamista y lo que recibe), quién intermedia (Embat y su comisión)
+ * y quién lo recibe (las receptoras y lo que pagan), cada cifra con cómo se calcula. Debajo, condiciones por receptora y cierre.
  */
 export default function DealClose() {
   const { network, result, lenderId, byId, config, closeDeal, openCompany, setOpenCompany } = useMarketplace();
@@ -32,10 +32,12 @@ export default function DealClose() {
   return (
     <div className={`grid grid-cols-1 gap-5 ${openCompany ? "xl:grid-cols-[minmax(0,1fr)_380px]" : ""}`}>
       <div className="flex flex-col gap-4">
-        <div className="card grid grid-cols-1 gap-px overflow-hidden bg-line-soft p-0 md:grid-cols-3">
-          <Big label="Se financia a las empresas" value={fmtMoney(e.amount)} tone="pos" sub={`${n} receptoras · ${config.term} meses · pagan ${pct(e.avgRate, 1)} anual`} how={`Suma de los ${n} importes de la cartera del paso 2 (${fmtMoney(config.ticket)} de ticket, ${Math.round(config.maxExposure * 100)} % máx. por empresa) sobre ${fmtMoney(config.capital)} de tesorería desplegable. Interés total que pagan: ${fmtMoney(e.grossInterest)}.`} />
-          <Big label="Se queda Embat" value={fmtMoney(e.embatFee)} tone="ink" sub={`${fee} % del interés que pagan las empresas`} how={`${fee} % × ${fmtMoney(e.grossInterest)} de interés bruto en ${config.term} meses. Es la única retribución del intermediario: no toma riesgo de crédito.`} />
-          <Big label="Interés del prestamista" value={pct(e.netYield)} tone="good" sub={`${fmtMoney(e.lenderNet)} netos para ${lender.name}`} how={`Interés bruto ${fmtMoney(e.grossInterest)} − comisión ${fmtMoney(e.embatFee)} − pérdida esperada ${fmtMoney(e.expectedLoss)} (PD media ${pct(e.avgPd, 1)} × LGD ${Math.round(PRICING.lgd * 100)} %) = ${fmtMoney(e.lenderNet)}, anualizado sobre ${fmtMoney(e.amount)}.`} />
+        <div className="card grid grid-cols-1 gap-px overflow-hidden bg-line-soft p-0 md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          <Party role="Pone el dinero" name={lender.name} amount={fmtMoney(e.amount)} tone="ink" line={`de su tesorería desplegable (${fmtMoney(config.capital)}) · a ${config.term} meses`} gets={`Recibe ${pct(e.netYield)} anual · ${fmtMoney(e.lenderNet)} netos`} getsTone="good" how={`Interés bruto ${fmtMoney(e.grossInterest)} − comisión ${fmtMoney(e.embatFee)} − pérdida esperada ${fmtMoney(e.expectedLoss)} (PD media ${pct(e.avgPd, 1)} × LGD ${Math.round(PRICING.lgd * 100)} %) = ${fmtMoney(e.lenderNet)}, anualizado sobre ${fmtMoney(e.amount)}.`} />
+          <Arrow />
+          <Party role="Intermedia" name="Embat" amount={fmtMoney(e.embatFee)} tone="good" line={`${fee} % del interés que pagan las empresas`} gets="Puntúa, casa, estructura y vigila" getsTone="mute" how={`${fee} % × ${fmtMoney(e.grossInterest)} de interés bruto en ${config.term} meses. No pone capital ni toma riesgo de crédito.`} center />
+          <Arrow />
+          <Party role="Reciben el dinero" name={`${n} empresas receptoras`} amount={fmtMoney(e.amount)} tone="pos" line={`${fmtMoney(config.ticket)} a ${fmtMoney(Math.max(...result.positions.map((x) => x.amount)))} cada una · ${config.term} meses`} gets={`Pagan ${pct(e.avgRate, 1)} anual · ${fmtMoney(e.grossInterest)} de interés`} getsTone="ink" how={`Suma de los ${n} importes de la cartera del paso 2 (${Math.round(config.maxExposure * 100)} % máx. por empresa). Cada una paga el tipo que marca su score.`} />
         </div>
 
         <Card title="Condiciones por receptora" sub={`Tipo = ${pct(PRICING.baseRate, 1)} base + PD anual × ${Math.round(PRICING.lgd * 100)} % LGD + margen por banda (prime ${pct(PRICING.margin.prime, 1)} · sana ${pct(PRICING.margin.healthy, 1)} · vigilar ${pct(PRICING.margin.watch, 1)}). Pincha una fila para verla en el visor.`}>
@@ -57,7 +59,7 @@ export default function DealClose() {
         </Card>
 
         <div className="card flex flex-wrap items-center justify-between gap-4 p-5">
-          <div><div className="text-[15px] font-semibold text-ink">Cerrar la operación</div><p className="mt-1 text-[13px] text-ink-mute">{lender.name} → {n} receptoras · {fmtMoney(e.amount)} · {config.term} meses · asignación en {monthLabelLong(config.asOf).toLowerCase()}. Pasa al monitor, donde riesgo e interés se recalculan mes a mes con los scores reales.</p></div>
+          <div><div className="text-[15px] font-semibold text-ink">Cerrar la operación</div><p className="mt-1 text-[13px] text-ink-mute"><span className="text-ink">{lender.name}</span> presta {fmtMoney(e.amount)} a <span className="text-ink">{n} receptoras</span> · {config.term} meses · asignación en {monthLabelLong(config.asOf).toLowerCase()}. Pasa al monitor, donde riesgo e interés se recalculan mes a mes con los scores reales.</p></div>
           {!confirm ? <div className="flex gap-2"><Link href="/productos/marketplace/receptores" className="rounded-lg border border-line px-4 py-2 text-[14px] text-ink hover:bg-panel-2">← Ajustar cartera</Link><Btn size="lg" onClick={() => setConfirm(true)}>Cerrar la operación</Btn></div>
             : <div className="rounded-lg border border-line bg-panel-2 p-3"><div className="text-[13px] text-ink">¿Confirmas el cierre? Las condiciones quedan fijadas.</div><div className="mt-3 flex gap-2"><Btn onClick={onClose}>Sí, cerrar y monitorizar</Btn><Btn variant="outline" onClick={() => setConfirm(false)}>Cancelar</Btn></div></div>}
         </div>
@@ -67,14 +69,21 @@ export default function DealClose() {
   );
 }
 
-function Big({ label, value, sub, how, tone }: { label: string; value: string; sub: string; how: string; tone: "pos" | "ink" | "good" }) {
+function Party({ role, name, amount, tone, line, gets, getsTone, how, center }: { role: string; name: string; amount: string; tone: "pos" | "ink" | "good"; line: string; gets: string; getsTone: "good" | "ink" | "mute"; how: string; center?: boolean }) {
   const c = tone === "good" ? "text-good" : tone === "pos" ? "text-pos" : "text-ink";
+  const g = getsTone === "good" ? "text-good" : getsTone === "ink" ? "text-ink" : "text-ink-mute";
   return (
-    <div className="bg-panel p-5">
-      <div className="text-[13px] text-ink-mute">{label}</div>
-      <div className={`num mt-1 text-[36px] font-semibold leading-none tracking-tight ${c}`}>{value}</div>
-      <div className="mt-1.5 text-[13px] text-ink">{sub}</div>
-      <div className="mt-2 border-t border-line-soft pt-2 text-[11.5px] leading-snug text-ink-mute"><span className="font-medium text-ink-dim">Cómo se calcula · </span>{how}</div>
+    <div className={`flex flex-col bg-panel p-5 ${center ? "md:justify-center" : ""}`}>
+      <div className="text-[12px] font-medium uppercase tracking-wide text-ink-mute">{role}</div>
+      <div className="mt-0.5 truncate text-[17px] font-semibold text-ink">{name}</div>
+      <div className={`num mt-2 text-[36px] font-semibold leading-none tracking-tight ${c}`}>{amount}</div>
+      <div className="mt-1.5 text-[12.5px] text-ink-mute">{line}</div>
+      <div className={`mt-2 text-[13.5px] font-medium ${g}`}>→ {gets}</div>
+      <div className="mt-3 border-t border-line-soft pt-2 text-[11.5px] leading-snug text-ink-mute"><span className="font-medium text-ink-dim">Cómo se calcula · </span>{how}</div>
     </div>
   );
+}
+
+function Arrow() {
+  return <div className="hidden items-center justify-center bg-panel px-2 text-ink-mute md:flex"><svg viewBox="0 0 24 24" width={20} height={20} fill="none"><path d="M4 12h16 M13 5l7 7-7 7" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></svg></div>;
 }
