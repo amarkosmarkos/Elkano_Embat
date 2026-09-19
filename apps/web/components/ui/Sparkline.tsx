@@ -1,7 +1,7 @@
-/** Mini-serie SVG. Acepta nulls (huecos). */
-export function Sparkline({ values, width = 120, height = 32, color = "var(--color-accent-2)", fill = true, min, max, marker }: { values: (number | null)[]; width?: number; height?: number; color?: string; fill?: boolean; min?: number; max?: number; marker?: number }) {
+/** Mini-serie SVG. Acepta nulls (huecos). `responsive` estira el ancho al contenedor manteniendo `width`/`height` como sistema de coordenadas. */
+export function Sparkline({ values, width = 120, height = 32, color = "var(--color-accent-2)", fill = true, min, max, marker, responsive = false }: { values: (number | null)[]; width?: number; height?: number; color?: string; fill?: boolean; min?: number; max?: number; marker?: number; responsive?: boolean }) {
   const vals = values.filter((v): v is number => v != null && Number.isFinite(v));
-  if (vals.length < 2) return <svg width={width} height={height} />;
+  if (vals.length < 2) return <svg width={responsive ? "100%" : width} height={height} viewBox={responsive ? `0 0 ${width} ${height}` : undefined} />;
   const lo = min ?? Math.min(...vals);
   const hi = max ?? Math.max(...vals);
   const span = hi - lo || 1;
@@ -19,7 +19,7 @@ export function Sparkline({ values, width = 120, height = 32, color = "var(--col
   const lastV = values[lastIdx] as number;
   const area = fill ? `${d.replace(/M/g, "L").replace(/^L/, "M")} L${x(lastIdx).toFixed(1)},${height} L${x(values.findIndex((v) => v != null)).toFixed(1)},${height} Z` : "";
   return (
-    <svg width={width} height={height} className="overflow-visible">
+    <svg width={responsive ? "100%" : width} height={height} viewBox={responsive ? `0 0 ${width} ${height}` : undefined} preserveAspectRatio="none" className="overflow-visible">
       {fill && <path d={area} fill={color} opacity={0.12} />}
       <path d={d} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
       {marker != null && values[marker] != null && <circle cx={x(marker)} cy={y(values[marker] as number)} r={2.6} fill={color} />}

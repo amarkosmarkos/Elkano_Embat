@@ -6,7 +6,7 @@ import type { MapPoint } from "@/lib/data/mapa";
 import { scoreScale } from "@/lib/score/colors";
 import { TXT } from "./axes";
 
-export type Axis = "momentum" | "lane" | "stress";
+export type Axis = "momentum" | "stress";
 
 function hashToUnit(id: string): number {
   let h = 0x811c9dc5;
@@ -15,18 +15,17 @@ function hashToUnit(id: string): number {
 }
 
 /**
- * Mapa de la red: X = score, Y = momentum a 3 meses (o carril fijo por empresa, o nº de alarmas).
+ * Mapa de la red: X = score, Y = momentum a 3 meses (o nº de alarmas).
  * Transiciones CSS al cambiar de mes (migrado del CompanyScatter de /datos). Hover con ficha rápida.
  */
-export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; idx: number; axis: Axis; layer: "none" | "alert" | "stress" }) {
+export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; idx: number; axis: Axis; layer: "none" | "alert" }) {
   const W = 1100, H = 420, padL = 44, padR = 20, padT = 22, padB = 34;
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
-  const lanes = useMemo(() => new Map(points.map((p) => [p.id, hashToUnit(p.id)])), [points]);
+  const jitter = useMemo(() => new Map(points.map((p) => [p.id, hashToUnit(p.id)])), [points]);
   const x = (s: number) => padL + (s / 100) * (W - padL - padR);
   const yMom = (m: number) => padT + (1 - (Math.max(-30, Math.min(30, m)) + 30) / 60) * (H - padT - padB);
   const yStress = (n: number, j: number) => padT + (1 - (Math.min(8, n) + 0.15 + j * 0.7) / 9) * (H - padT - padB);
-  const yLane = (u: number) => padT + u * (H - padT - padB);
 
   const pos = points.map((p) => {
     let s = p.s[idx], faded = false;
@@ -35,8 +34,8 @@ export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; i
     const prev = idx - 3 >= 0 ? p.s[idx - 3] : null;
     const mom = prev == null || p.s[idx] == null ? null : (p.s[idx] as number) - prev;
     const n = p.n[idx] ?? 0;
-    const u = lanes.get(p.id)!;
-    const cy = axis === "momentum" ? yMom(mom ?? 0) : axis === "stress" ? yStress(n, u) : yLane(u);
+    const u = jitter.get(p.id)!;
+    const cy = axis === "momentum" ? yMom(mom ?? 0) : yStress(n, u);
     return { p, s, mom, n, faded: faded || (axis === "momentum" && mom == null), cx: x(s), cy, alert: p.a[idx] === 1 };
   }).filter((v): v is NonNullable<typeof v> => v != null);
 
@@ -65,7 +64,7 @@ export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; i
           <text key={v} x={padL - 8} y={yStress(v, 0.5) + 3.5} textAnchor="end" {...TXT}>{v}</text>
         ))}
         <text x={W - padR} y={padT - 8} textAnchor="end" {...TXT}>score →</text>
-        <text x={padL} y={padT - 8} {...TXT}>{axis === "momentum" ? "↑ momentum 3 meses (pts)" : axis === "stress" ? "↑ alarmas de estrés activas" : "carril fijo por empresa"}</text>
+        <text x={padL} y={padT - 8} {...TXT}>{axis === "momentum" ? "↑ momentum 3 meses (pts)" : "↑ alarmas de estrés activas"}</text>
         {pos.map((v) => {
           const dim = sameGroup ? !sameGroup.has(v.p.id) : false;
           const r = hover === v.p.id ? 6 : 3.1;
@@ -79,7 +78,6 @@ export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; i
             >
               <circle r={9} fill="transparent" />
               {layer === "alert" && v.alert && <circle r={r + 3} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.7} />}
-              {layer === "stress" && v.n > 0 && <circle r={r + 2 + Math.min(4, v.n)} fill="#f59e0b" opacity={0.18} />}
               <circle r={r} fill={scoreScale(v.s)} stroke={hover === v.p.id ? "#fafafa" : "none"} strokeWidth={1.5} />
             </g>
           );
