@@ -1,0 +1,23 @@
+{
+  "version": "events_v1",
+  "rows": 22230,
+  "event_rate": 0.19050832208726945,
+  "rate_by_rule": {
+    "D1": 0.07467386414754835,
+    "D2": 0.01839856050382366,
+    "D3": 0.09262258209626631,
+    "D4": 0.01691408007197481
+  },
+  "companies_ever_in_event": 799,
+  "cure_rows": 310,
+  "in_expected_range": true,
+  "thresholds": {
+    "D1_DAYS": 90,
+    "D1_MAX_AGE_DAYS": 180,
+    "D1_MIN_SHARE_OUTFLOW": 0.25,
+    "D3_MIN_DAYS": 5,
+    "D4_MULT": 3.0,
+    "D4_MIN_SHARE": 0.02,
+    "BALANCE_MODE": "reconstructed"
+  }
+}

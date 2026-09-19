@@ -34,6 +34,15 @@ cambian, `pnpm --filter web db:push && pnpm --filter web db:seed` los recarga y
 `docker exec xray-db pg_dump -U xray -d xray --no-owner --no-privileges | gzip -9 > db/init/01_seed.sql.gz`
 regenera el dump.
 
+## Marketplace demo (frontend)
+
+```bash
+docker compose --profile marketplace up --build   # → http://localhost:8080
+```
+
+Credit marketplace built on the v3 score: network of qualified companies → lender / receiver profiles → portfolio
+builder → monitoring over real score history → action center. Ver [`apps/marketplace/README.md`](apps/marketplace/README.md).
+
 ## Knowledge base
 
 Documentación del reto y de los datos en [`docs/`](docs/README.md):
@@ -46,4 +55,6 @@ Documentación del reto y de los datos en [`docs/`](docs/README.md):
 - [Pipeline](pipeline/README.md) — `./pipeline/run.sh`: RAW → preprocesamiento (bronze/silver/gold) → etiquetas → score → validación, con checkpoints en `output/0{1,2,3}_*` (solo re-ejecuta lo que cambió).
 - [Analytics](analytics/README.md) — una función por métrica de `docs/salud.md`, tres generadores de score (v1 scorecard, v2 ∝ Gini, v3 GBM) y el evaluador de `docs/validacion_salud.md`.
 
-Los datos (`output/`, 646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
+Los datos crudos (`output/*.csv`, 646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
+**Los resultados del score sí van**: `output/02_score/scores_v3.csv` (+ v1, v2, las 105 métricas) y la validación en
+`output/03_validation/`. Qué contiene cada fichero y cómo usarlo: [`output/README.md`](output/README.md).

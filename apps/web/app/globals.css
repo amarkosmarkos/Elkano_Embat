@@ -1,45 +1,46 @@
 @import "tailwindcss";
 
-/* Mismos tokens que el artifact de pitch (Elkano X-Ray) — continuidad visual entre el pitch y la app real.
-   Paleta validada contra daltonismo (dataviz skill, scripts/validate_palette.js): status y diverging
-   pasan las seis comprobaciones sobre fondo #0a0e13. */
 @theme {
-  --color-ground: #0a0e13;
-  --color-panel: #121820;
-  --color-panel-2: #0d131a;
-  --color-panel-hi: #182029;
-  --color-line: #22303f;
-  --color-line-soft: #1a2430;
+  --color-ground: #fbfbfd;
+  --color-panel: #ffffff;
+  --color-panel-2: #f5f5f7;
+  --color-panel-hi: #ffffff;
+  --color-line: #d2d2d7;
+  --color-line-soft: #e8e8ed;
 
-  --color-ink: #eef3f6;
-  --color-ink-dim: #93a4b3;
-  --color-ink-mute: #5c7082;
+  --color-ink: #1d1d1f;
+  --color-ink-dim: #6e6e73;
+  --color-ink-mute: #86868b;
 
-  --color-accent: #6fe3ff;
-  --color-good: #2f9e6e;
-  --color-good-dim: #12291f;
-  --color-warn: #b8890f;
-  --color-warn-dim: #2c2210;
-  --color-bad: #d6455a;
-  --color-bad-dim: #301419;
-  --color-pos: #3a9dc4;
-  --color-neg: #c46a30;
+  --color-accent: #8041d1;
+  --color-accent-2: #415de6;
+  --color-good: #1d8a44;
+  --color-good-dim: #e7f6ec;
+  --color-warn: #b56a00;
+  --color-warn-dim: #fdf1e0;
+  --color-bad: #d3273e;
+  --color-bad-dim: #fcecee;
+  --color-pos: #0071e3;
+  --color-neg: #c2410c;
 
-  /* cargadas por <link> en app/layout.tsx (Big Shoulders Display / IBM Plex no están en el next/font
-     de esta versión de Next) */
-  --font-display: "Big Shoulders Display", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  /* -apple-system resuelve a San Francisco de verdad en Mac/iOS; Inter (cargada en app/layout.tsx)
+     es el equivalente web más cercano para el resto. Un único stack para todo salvo el mono. */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "IBM Plex Mono", "Cascadia Code", Menlo, monospace;
+
+  --brand-gradient: linear-gradient(275deg, #c357ec 4%, #9d4bdd 50%, #415de6 96%);
 }
 
 body {
   background: var(--color-ground);
   color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
   background: var(--color-accent);
-  color: #03181f;
+  color: #ffffff;
 }
 
 /* arcos de flujo del mapa de cash-pooling: guiones que "circulan" en el sentido del dinero */

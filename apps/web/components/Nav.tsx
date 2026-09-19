@@ -14,16 +14,16 @@ const LINKS: { href: string; label: string }[] = [
 export default function Nav() {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-40 border-b border-line-soft bg-ground/85 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="flex items-baseline gap-2 font-display text-lg font-extrabold tracking-wide">
-          ELKANO <span className="text-accent">X-RAY</span>
+    <header className="sticky top-0 z-40 border-b border-line-soft bg-white/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5">
+        <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-ink">
+          Elkano <span className="bg-[image:var(--brand-gradient)] bg-clip-text text-transparent">X-Ray</span>
         </Link>
-        <nav className="flex gap-5 font-mono text-xs text-ink-dim">
+        <nav className="flex gap-6 text-[13px] font-medium text-ink-dim">
           {LINKS.map((l) => {
             const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
             return (
-              <Link key={l.href} href={l.href} className={active ? "text-accent" : "hover:text-ink"}>
+              <Link key={l.href} href={l.href} className={active ? "text-ink" : "transition-colors hover:text-ink"}>
                 {l.label}
               </Link>
             );

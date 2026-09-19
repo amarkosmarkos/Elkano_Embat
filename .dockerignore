@@ -1,0 +1,21 @@
+# keep the build context small: only the score outputs are needed (see apps/marketplace/Dockerfile)
+**/node_modules
+**/.next
+**/dist
+**/.git
+output/transactions.csv
+output/invoices.csv
+output/balances.csv
+output/banking_products.csv
+output/debt_products.csv
+output/debt_schedule_config.csv
+output/01_preprocessed
+output/03_validation
+output/02_score/*.parquet
+!output/02_score/metrics_v1.parquet
+output/02_score/scores_v1.csv
+eda
+apps/marketplace/public/data
+apps/web
+docs
+*.zip

@@ -3,8 +3,8 @@ import { ProductSummaryCard } from "@/components/ProductCard";
 export default function ProductosPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
-      <div className="mb-3 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Producto</div>
-      <h1 className="max-w-2xl font-display text-4xl font-extrabold">El score es el motor. Esto es lo que se vende.</h1>
+      <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Producto</div>
+      <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-ink">El score es el motor. Esto es lo que se vende.</h1>
       <p className="mt-4 max-w-2xl text-ink-dim">
         Tres decisiones que hoy se toman a ciegas y que con un score vivo se toman con criterio — sobre el propio
         dataset del reto. El comprador de las tres es el mismo: la empresa que ya le da los datos a Embat.

@@ -1,0 +1,488 @@
+{
+  "score_version": "v1-scorecard",
+  "events_version": "events_v1",
+  "ran_at": "2026-09-18T22:40:13",
+  "n_rows": 15803,
+  "n_companies": 1282,
+  "coverage": {
+    "missing_score": 0,
+    "rows_with_event_label": 15803
+  },
+  "n_pairs": 9020,
+  "event_rate": 0.2041,
+  "event_rate_h": {
+    "h1": 0.2068,
+    "h3": 0.3311,
+    "h6": 0.4626
+  },
+  "gini": {
+    "h1": 0.3392,
+    "h3": 0.2617,
+    "h6": 0.2481
+  },
+  "ks": {
+    "h1": 0.2531,
+    "h3": 0.1966,
+    "h6": 0.1762
+  },
+  "gini_new_events": {
+    "h1": 0.111,
+    "h3": 0.1017,
+    "h6": 0.1277
+  },
+  "event_rate_new_h6": 0.3642,
+  "gini_no_twin": {
+    "h1": 0.2605,
+    "h3": 0.1936,
+    "h6": 0.1974
+  },
+  "gini_cure_h6": 0.0064,
+  "n_cure_rows": 1367,
+  "lead_time_months": {
+    "median": 1.0,
+    "p25": 0.0,
+    "p75": 4.0,
+    "n_companies_with_event": 497,
+    "share_warned_before_or_at_event": 0.5292,
+    "share_warned_2m_before": 0.4134
+  },
+  "oos": {
+    "gini_h6_by_fold": [
+      0.4412,
+      0.1838,
+      0.1479,
+      0.2184,
+      0.2059
+    ],
+    "mean": 0.2394,
+    "drop_vs_in_sample": 0.0087
+  },
+  "oot": {
+    "train_months": "…2026-02",
+    "test_months": "2026-03…",
+    "gini_h6": null,
+    "gini_h6_train": 0.2481,
+    "drop": null,
+    "uses_score_oot": false,
+    "note": "y_6 necesita 6 meses de futuro: en el periodo de test solo hay h1/h3; la caída OOT se mide con h3"
+  },
+  "oot_h3": {
+    "gini_h3_test": 0.2264,
+    "gini_h3_train": 0.2736,
+    "drop": 0.0472
+  },
+  "psi": {
+    "2025-06_vs_2026-06": 0.0205,
+    "2025-07_vs_2026-07": 0.04,
+    "2025-08_vs_2026-08": 0.0183
+  },
+  "autocorr_lag1": 0.7366,
+  "autocorr_lag1_company_mean": 0.492,
+  "univariate": {
+    "c_pago": 0.1443,
+    "c_liquidez": 0.2811,
+    "c_caja": -0.0066,
+    "c_deuda": 0.0988,
+    "c_concentracion": -0.0265,
+    "dim_pago": 0.1121,
+    "dim_liquidez": 0.2478,
+    "dim_caja": -0.0321,
+    "dim_deuda": 0.0746,
+    "dim_concentracion": -0.0197
+  },
+  "score_beats_best_dimension": false,
+  "univariate_metrics": {
+    "gini": {
+      "retraso_pago": {
+        "gini": -0.1304,
+        "coverage": 0.476
+      },
+      "pct_pago_tarde": {
+        "gini": -0.1489,
+        "coverage": 0.476
+      },
+      "falta_regular": {
+        "gini": 0.0022,
+        "coverage": 0.919
+      },
+      "dso": {
+        "gini": -0.0854,
+        "coverage": 0.361
+      },
+      "pct_cobro_vencido": {
+        "gini": -0.1291,
+        "coverage": 0.474
+      },
+      "devoluciones": {
+        "gini": -0.0041,
+        "coverage": 1.0
+      },
+      "colchon": {
+        "gini": 0.2498,
+        "coverage": 0.933
+      },
+      "runway": {
+        "gini": 0.2053,
+        "coverage": 0.988
+      },
+      "dias_negativo": {
+        "gini": -0.21,
+        "coverage": 0.988
+      },
+      "credito_disponible": {
+        "gini": -0.0654,
+        "coverage": 0.137
+      },
+      "neto_operativo": {
+        "gini": -0.0086,
+        "coverage": 0.972
+      },
+      "tendencia_3m": {
+        "gini": -0.0014,
+        "coverage": 0.972
+      },
+      "tendencia_6m": {
+        "gini": 0.0237,
+        "coverage": 0.987
+      },
+      "volatilidad": {
+        "gini": 0.0572,
+        "coverage": 0.998
+      },
+      "ratio_cobros_pagos": {
+        "gini": -0.0196,
+        "coverage": 0.822
+      },
+      "crecimiento_cobros": {
+        "gini": -0.0551,
+        "coverage": 0.405
+      },
+      "pct_dispuesto": {
+        "gini": 0.0281,
+        "coverage": 0.134
+      },
+      "servicio_deuda": {
+        "gini": -0.076,
+        "coverage": 0.027
+      },
+      "coste_financiero": {
+        "gini": -0.0883,
+        "coverage": 0.942
+      },
+      "deuda_cobros": {
+        "gini": -0.0754,
+        "coverage": 0.26
+      },
+      "top5_clientes": {
+        "gini": 0.0314,
+        "coverage": 0.535
+      },
+      "hhi": {
+        "gini": 0.0484,
+        "coverage": 0.535
+      },
+      "rating_cartera": {
+        "gini": -0.1023,
+        "coverage": 0.469
+      },
+      "clientes_activos": {
+        "gini": -0.0466,
+        "coverage": 0.552
+      }
+    },
+    "weak (|gini| < 0.05)": [
+      "falta_regular",
+      "devoluciones",
+      "neto_operativo",
+      "tendencia_3m",
+      "tendencia_6m",
+      "ratio_cobros_pagos",
+      "pct_dispuesto",
+      "top5_clientes",
+      "hhi",
+      "clientes_activos"
+    ],
+    "correlated_pairs (|rho| > 0.8)": [
+      [
+        "retraso_pago",
+        "pct_pago_tarde",
+        0.81
+      ],
+      [
+        "top5_clientes",
+        "hhi",
+        0.89
+      ]
+    ]
+  },
+  "calibration_h6": [
+    {
+      "decile": 1,
+      "n": 1581,
+      "score_min": 2.21,
+      "score_max": 31.41,
+      "event_h1": 0.4924,
+      "event_h3": 0.5937,
+      "event_h6": 0.6978
+    },
+    {
+      "decile": 2,
+      "n": 1580,
+      "score_min": 31.41,
+      "score_max": 36.93,
+      "event_h1": 0.3033,
+      "event_h3": 0.4475,
+      "event_h6": 0.5762
+    },
+    {
+      "decile": 3,
+      "n": 1580,
+      "score_min": 36.95,
+      "score_max": 40.55,
+      "event_h1": 0.2325,
+      "event_h3": 0.3604,
+      "event_h6": 0.5309
+    },
+    {
+      "decile": 4,
+      "n": 1580,
+      "score_min": 40.55,
+      "score_max": 43.67,
+      "event_h1": 0.2134,
+      "event_h3": 0.3494,
+      "event_h6": 0.4805
+    },
+    {
+      "decile": 5,
+      "n": 1581,
+      "score_min": 43.67,
+      "score_max": 46.72,
+      "event_h1": 0.1722,
+      "event_h3": 0.2983,
+      "event_h6": 0.4611
+    },
+    {
+      "decile": 6,
+      "n": 1580,
+      "score_min": 46.73,
+      "score_max": 49.92,
+      "event_h1": 0.1582,
+      "event_h3": 0.2916,
+      "event_h6": 0.4154
+    },
+    {
+      "decile": 7,
+      "n": 1580,
+      "score_min": 49.92,
+      "score_max": 53.29,
+      "event_h1": 0.1478,
+      "event_h3": 0.2736,
+      "event_h6": 0.4262
+    },
+    {
+      "decile": 8,
+      "n": 1580,
+      "score_min": 53.29,
+      "score_max": 56.89,
+      "event_h1": 0.1144,
+      "event_h3": 0.242,
+      "event_h6": 0.3815
+    },
+    {
+      "decile": 9,
+      "n": 1580,
+      "score_min": 56.89,
+      "score_max": 61.77,
+      "event_h1": 0.125,
+      "event_h3": 0.2364,
+      "event_h6": 0.3589
+    },
+    {
+      "decile": 10,
+      "n": 1581,
+      "score_min": 61.78,
+      "score_max": 79.16,
+      "event_h1": 0.1112,
+      "event_h3": 0.2174,
+      "event_h6": 0.3018
+    }
+  ],
+  "worst_false_negatives": [
+    {
+      "company_id": "COMP_0732",
+      "month": "2025-03",
+      "score": 75.89
+    },
+    {
+      "company_id": "COMP_0176",
+      "month": "2026-03",
+      "score": 75.39
+    },
+    {
+      "company_id": "COMP_0614",
+      "month": "2026-05",
+      "score": 74.51
+    },
+    {
+      "company_id": "COMP_0781",
+      "month": "2026-01",
+      "score": 73.84
+    },
+    {
+      "company_id": "COMP_1065",
+      "month": "2026-03",
+      "score": 73.8
+    },
+    {
+      "company_id": "COMP_0826",
+      "month": "2026-04",
+      "score": 73.72
+    },
+    {
+      "company_id": "COMP_0077",
+      "month": "2025-12",
+      "score": 73.68
+    },
+    {
+      "company_id": "COMP_1239",
+      "month": "2026-04",
+      "score": 73.67
+    },
+    {
+      "company_id": "COMP_0815",
+      "month": "2026-04",
+      "score": 73.48
+    },
+    {
+      "company_id": "COMP_1042",
+      "month": "2025-04",
+      "score": 73.22
+    }
+  ],
+  "worst_false_positives": [
+    {
+      "company_id": "COMP_1091",
+      "month": "2025-06",
+      "score": 12.8
+    },
+    {
+      "company_id": "COMP_1174",
+      "month": "2025-08",
+      "score": 17.66
+    },
+    {
+      "company_id": "COMP_0293",
+      "month": "2025-09",
+      "score": 18.48
+    },
+    {
+      "company_id": "COMP_0593",
+      "month": "2025-12",
+      "score": 18.95
+    },
+    {
+      "company_id": "COMP_0803",
+      "month": "2025-05",
+      "score": 18.95
+    },
+    {
+      "company_id": "COMP_0282",
+      "month": "2025-02",
+      "score": 18.99
+    },
+    {
+      "company_id": "COMP_0304",
+      "month": "2025-12",
+      "score": 19.23
+    },
+    {
+      "company_id": "COMP_1160",
+      "month": "2025-06",
+      "score": 19.43
+    },
+    {
+      "company_id": "COMP_0960",
+      "month": "2025-07",
+      "score": 19.95
+    },
+    {
+      "company_id": "COMP_0549",
+      "month": "2026-02",
+      "score": 20.03
+    }
+  ],
+  "group_corr": {
+    "pairs": 5846,
+    "corr": 0.1976
+  },
+  "alerts": {
+    "rate": 0.2363,
+    "precision_h3": 0.505,
+    "recall_h3": 0.3571
+  },
+  "acceptance": [
+    {
+      "metric": "Gini h6",
+      "value": 0.2481,
+      "min": 0.4,
+      "good": 0.55,
+      "status": "FALLA"
+    },
+    {
+      "metric": "Gini h6 > mejor dimensión",
+      "value": false,
+      "min": true,
+      "good": true,
+      "status": "FALLA"
+    },
+    {
+      "metric": "KS h6",
+      "value": 0.1762,
+      "min": 0.3,
+      "good": 0.45,
+      "status": "FALLA"
+    },
+    {
+      "metric": "Lead time mediano (meses)",
+      "value": 1.0,
+      "min": 1.0,
+      "good": 2.0,
+      "status": "mínimo"
+    },
+    {
+      "metric": "Gini de mejora",
+      "value": 0.0064,
+      "min": 0.2,
+      "good": 0.35,
+      "status": "FALLA"
+    },
+    {
+      "metric": "Caída in-sample → OOS",
+      "value": 0.0087,
+      "min": 0.08,
+      "good": 0.05,
+      "status": "bueno"
+    },
+    {
+      "metric": "Caída → OOT (h6, o h3 si no hay h6)",
+      "value": 0.0472,
+      "min": 0.08,
+      "good": 0.05,
+      "status": "bueno"
+    },
+    {
+      "metric": "PSI 12 meses (máx.)",
+      "value": 0.04,
+      "min": 0.25,
+      "good": 0.1,
+      "status": "bueno"
+    },
+    {
+      "metric": "Autocorrelación lag 1",
+      "value": 0.7366,
+      "min": "0.75–0.97",
+      "good": "0.8–0.95",
+      "status": "FALLA"
+    }
+  ]
+}
