@@ -35,7 +35,7 @@ export function Histogram({ data, width = 360, height = 170 }: { data: { bucket:
           </g>
         );
       })}
-      <text x={width - padR} y={height - padB + 24} fontSize={10} fill="#94a3b8" textAnchor="end">score (0–100)</text>
+      <text x={width - padR} y={height - padB + 24} fontSize={10} fill="#94a3b8" textAnchor="end">score (0-100)</text>
       <line x1={padL} x2={width - padR} y1={padT + h} y2={padT + h} stroke="#cbd5e1" strokeWidth={1} />
     </svg>
   );

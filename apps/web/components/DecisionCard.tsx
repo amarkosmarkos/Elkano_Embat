@@ -41,7 +41,7 @@ export function DecisionCard({
         )}
       </header>
       {disabled ? (
-        <p className="text-[13px] text-ink-2">{emptyText ?? "No aplica para esta empresa."}</p>
+        <p className="text-[13px] text-ink-2">{emptyText ?? "No se aplica a esta empresa."}</p>
       ) : (
         <>
           {headline && <div className="text-2xl font-bold text-navy num leading-tight">{headline}</div>}

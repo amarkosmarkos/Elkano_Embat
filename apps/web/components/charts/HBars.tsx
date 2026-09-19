@@ -21,7 +21,7 @@ export function HBars({ rows, width = 520, rowH = 30, max }: { rows: HBarRow[]; 
         const color = pos ? "#15803d" : "#b91c1c";
         return (
           <g key={r.label}>
-            <title>{`${r.label}: ${fmtSigned(r.value)} pts${r.hint ? ` · ${r.hint}` : ""}`}</title>
+            <title>{`${r.label}: ${fmtSigned(r.value)} pts${r.hint ? `, ${r.hint}` : ""}`}</title>
             <text x={labelW - 10} y={y + rowH / 2 + 4} fontSize={12} fill="#0f172a" textAnchor="end" fontWeight={500}>{r.label}</text>
             <rect x={pos ? cx : cx - bw} y={y + 6} width={Math.max(bw, 1)} height={rowH - 12} fill={color} rx={3} opacity={0.9} />
             <text x={pos ? cx + bw + 6 : cx - bw - 6} y={y + rowH / 2 + 4} fontSize={12} fill={color} textAnchor={pos ? "start" : "end"} fontWeight={600}>{fmtSigned(r.value)}</text>

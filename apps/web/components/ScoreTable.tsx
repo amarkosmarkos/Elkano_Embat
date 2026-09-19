@@ -111,7 +111,7 @@ export function ScoreTable({ companies }: { companies: CompanySummary[] }) {
         )}
       </div>
       <div className="px-3 py-1.5 text-[11px] text-ink-2 border-b border-line bg-surface">
-        {fmtInt(rows.length)} empresas · ordenado por {sortKey} · clic en una fila para abrir la ficha
+        {fmtInt(rows.length)} empresas, ordenado por {sortKey}, clic en una fila para abrir la ficha
       </div>
       <table className="tbl w-full">
         <thead>
@@ -130,7 +130,7 @@ export function ScoreTable({ companies }: { companies: CompanySummary[] }) {
           {rows.slice(0, limit).map((c) => (
             <tr key={c.id} className="cursor-pointer" onClick={() => router.push(`/empresa/${c.id}/`)}>
               <td className="font-mono text-[12px] text-navy font-semibold">{c.id}</td>
-              <td className="font-mono text-[11px] text-ink-2">{c.group_id ?? "—"}{c.group_size > 1 ? <span className="text-ink-3">·{c.group_size}</span> : null}</td>
+              <td className="font-mono text-[11px] text-ink-2">{c.group_id ?? "-"}{c.group_size > 1 ? <span className="text-ink-3">, {c.group_size}</span> : null}</td>
               <td className="text-right"><ScorePill score={c.score} tier={c.tier} /></td>
               <td className="text-right"><Delta value={c.delta6} suffix="" /></td>
               <td><TrendTag trend={c.trend} /></td>

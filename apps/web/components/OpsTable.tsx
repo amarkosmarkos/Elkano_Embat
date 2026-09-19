@@ -16,7 +16,7 @@ function Detail({ op }: { op: Op }) {
   if (op.kind === "placement")
     return (
       <>
-        Depósito a {op.horizon_months} meses en <b>{op.bank}</b> al {fmtPct(op.rate)} · {fmtMonthLong(op.start_month)} → {fmtMonthLong(op.maturity_month)} · rendimiento{" "}
+        Depósito a {op.horizon_months} meses en <b>{op.bank}</b> al {fmtPct(op.rate)}, {fmtMonthLong(op.start_month)} → {fmtMonthLong(op.maturity_month)}, rendimiento{" "}
         <b className="num text-ok">+{fmtEur(op.yield_yearly)}/año</b>
       </>
     );
@@ -108,7 +108,7 @@ export function OpsTable() {
                       <CompanyLink id={op.company_id} className="font-semibold" />
                     )}
                   </td>
-                  <td className="text-right num font-semibold">{op.kind === "alert_resolved" ? <span className="text-ink-3">—</span> : fmtEur(op.amount)}</td>
+                  <td className="text-right num font-semibold">{op.kind === "alert_resolved" ? <span className="text-ink-3">-</span> : fmtEur(op.amount)}</td>
                   <td className="wrap text-ink-2 max-w-[520px]"><Detail op={op} /></td>
                   <td className="num text-ink-2">{fmtDate(op.created_at)}</td>
                   <td className="text-right">

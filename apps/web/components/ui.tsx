@@ -89,7 +89,7 @@ export function Bell({ on }: { on: boolean }) {
       </svg>
     </span>
   ) : (
-    <span className="inline-block w-5 h-5 text-ink-3 text-center text-[11px]">·</span>
+    <span className="inline-block w-5 h-5 text-ink-3 text-center text-[11px]" aria-label="Sin alerta"></span>
   );
 }
 

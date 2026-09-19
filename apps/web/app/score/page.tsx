@@ -11,7 +11,7 @@ export default function ScorePage() {
   const total = Math.max(1, k.verde + k.ambar + k.rojo);
   const rows: { label: string; n: number; cls: string; dot: string }[] = [
     { label: "Verde (≥ 70)", n: k.verde, cls: "text-ok", dot: "bg-ok" },
-    { label: "Ámbar (40–70)", n: k.ambar, cls: "text-warn", dot: "bg-warn" },
+    { label: "Ámbar (40-70)", n: k.ambar, cls: "text-warn", dot: "bg-warn" },
     { label: "Rojo (< 40)", n: k.rojo, cls: "text-bad", dot: "bg-bad" },
   ];
   return (

@@ -95,7 +95,7 @@ export function LineChart({
           if (v == null) return null;
           return (
             <circle key={`h${i}`} cx={x(i)} cy={y(v)} r={7} fill="transparent">
-              <title>{`${fmtMonth(m)} · ${series.map((s) => `${s.label}: ${s.values[i] == null ? "—" : format(s.values[i] as number)}`).join(" · ")}`}</title>
+              <title>{`${fmtMonth(m)}, ${series.map((s) => `${s.label}: ${s.values[i] == null ? "-" : format(s.values[i] as number)}`).join(", ")}`}</title>
             </circle>
           );
         })}

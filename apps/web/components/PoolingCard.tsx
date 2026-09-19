@@ -59,13 +59,13 @@ function Totals({ moved, saving, total }: { moved: number; saving: number; total
       </div>
       <div className="rounded bg-ok-bg/60 px-2 py-1.5">
         <div className="kicker">Ahorro anual estimado</div>
-        <div className="num font-semibold text-ok text-[14px]">{fmtEur(Math.round(saving))}<span className="text-ink-3 font-normal text-[11px]"> · {fmtPct(POOLING_SAVING_RATE)}</span></div>
+        <div className="num font-semibold text-ok text-[14px]">{fmtEur(Math.round(saving))}<span className="text-ink-3 font-normal text-[11px]">, {fmtPct(POOLING_SAVING_RATE)}</span></div>
       </div>
     </div>
   );
 }
 
-/** Producto 2 · Cash pooling (ficha de empresa): propuestas con «Aprobar» por fila, totales vivos y enlace al grupo. */
+/** Producto 2, Cash pooling (ficha de empresa): propuestas con «Aprobar» por fila, totales vivos y enlace al grupo. */
 export function PoolingCard({
   groupId,
   members,
@@ -90,7 +90,7 @@ export function PoolingCard({
     <section className={`card p-4 flex flex-col gap-3 ${allDone ? "border-ok bg-ok-bg/30" : ""}`}>
       <header className="flex items-start justify-between gap-3">
         <div>
-          <div className="kicker">Producto 2 · Cash pooling</div>
+          <div className="kicker">Producto 2, Cash pooling</div>
           <h3 className="text-[15px] font-semibold text-ink leading-tight">{groupId ? `Netear dentro de ${groupId}` : "Cash pooling"}</h3>
         </div>
         {groupId && pending.length > 0 && (
@@ -115,7 +115,7 @@ export function PoolingCard({
               <span>Caja de {me.id}</span>
               <span className="num font-semibold text-ink">
                 {fmtEur(me.cash)}
-                {me.drawn0 > 0 && <span className="text-ink-3 font-normal"> · dispuesto {fmtEurShort(me.drawn)}</span>}
+                {me.drawn0 > 0 && <span className="text-ink-3 font-normal">, dispuesto {fmtEurShort(me.drawn)}</span>}
               </span>
             </div>
           )}
@@ -132,7 +132,7 @@ export function PoolingCard({
                       <ApproveButton small done={!!o} onApprove={() => approve(p)} onUndo={() => undo(p)} />
                     </span>
                   </div>
-                  <div className="text-ink-2 mt-0.5">{p.reason} · límite {fmtEurShort(p.limit)} · {fmtPct(p.rate_internal)}</div>
+                  <div className="text-ink-2 mt-0.5">{p.reason}, límite {fmtEurShort(p.limit)}, {fmtPct(p.rate_internal)}</div>
                 </li>
               );
             })}
@@ -194,7 +194,7 @@ export function GroupPoolingPanel({
           hint={
             moved > 0
               ? `ejecutado ${fmtEurShort(moved)} de ${fmtEurShort(totalProposed)} al ${fmtPct(POOLING_SAVING_RATE)}`
-              : `propuesto ${fmtEurShort(totalProposed)} al ${proposals[0] ? fmtPct(proposals[0].rate_internal) : "—"} interno`
+              : `propuesto ${fmtEurShort(totalProposed)} al ${proposals[0] ? fmtPct(proposals[0].rate_internal) : "-"} interno`
           }
           accent="text-ok"
         />
@@ -205,7 +205,7 @@ export function GroupPoolingPanel({
           <header className="flex items-start justify-between gap-3 mb-3">
             <div>
               <div className="kicker">Miembros</div>
-              <h2 className="text-[15px] font-semibold text-ink leading-tight">{fmtInt(members.length)} empresas · score medio {Math.round(avg)}</h2>
+              <h2 className="text-[15px] font-semibold text-ink leading-tight">{fmtInt(members.length)} empresas, score medio {Math.round(avg)}</h2>
             </div>
             {moved > 0 && <span className="text-[11px] text-ok font-medium">cifras tras {fmtEurShort(moved)} neteados</span>}
           </header>
@@ -234,10 +234,10 @@ export function GroupPoolingPanel({
                     {m.received > 0 && <div className="text-[10px] text-ink-3">+{fmtEurShort(m.received)} recibidos</div>}
                   </td>
                   <td className="text-right num">
-                    {m.drawn ? fmtEur(m.drawn) : <span className="text-ink-3">—</span>}
+                    {m.drawn ? fmtEur(m.drawn) : <span className="text-ink-3">-</span>}
                     {m.received > 0 && m.drawn0 > 0 && <div className="text-[10px] text-ok">antes {fmtEurShort(m.drawn0)}</div>}
                   </td>
-                  <td className="text-right num text-bad">{m.cash < 0 ? fmtEur(-m.cash) : <span className="text-ink-3">—</span>}</td>
+                  <td className="text-right num text-bad">{m.cash < 0 ? fmtEur(-m.cash) : <span className="text-ink-3">-</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -279,7 +279,7 @@ export function GroupPoolingPanel({
                     </div>
                     <div className="text-right shrink-0">
                       <div className="num font-semibold">{fmtEur(p.amount)}</div>
-                      <div className="text-ink-3">límite {fmtEurShort(p.limit)} · {fmtPct(p.rate_internal)}</div>
+                      <div className="text-ink-3">límite {fmtEurShort(p.limit)}, {fmtPct(p.rate_internal)}</div>
                     </div>
                   </li>
                 );

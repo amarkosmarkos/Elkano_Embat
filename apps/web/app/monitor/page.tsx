@@ -34,7 +34,7 @@ export default function MonitorPage() {
       <PageHeader
         step={5}
         title="Monitor"
-        subtitle={`Todo lo que el sistema levantaría en ${fmtMonthLong(o.month_last)}, ordenado por urgencia. Cada fila enlaza a la ficha de la empresa.`}
+        subtitle={`Avisos del sistema en ${fmtMonthLong(o.month_last)}, ordenado por urgencia. Cada fila enlaza a la ficha de la empresa.`}
       />
       <MonitorList rows={rows} />
 

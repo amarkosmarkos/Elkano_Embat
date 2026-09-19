@@ -7,7 +7,7 @@ export default function OperacionesPage() {
       <PageHeader
         step={6}
         title="Operaciones ejecutadas"
-        subtitle="Todo lo que el tesorero ha aprobado en esta sesión: colocaciones, movimientos de pooling y avisos resueltos. Se guarda en el navegador; no hay backend."
+        subtitle="Colocaciones, movimientos de pooling y avisos resueltos que el tesorero ha aprobado en esta sesión. El registro se guarda en este navegador, no en un servidor."
       />
       <OpsTable />
     </>

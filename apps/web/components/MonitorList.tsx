@@ -55,7 +55,7 @@ export function MonitorList({ rows }: { rows: MonitorRow[] }) {
           const rs = rows.filter((r) => r.severity === g.sev && (showResolved || !isResolved(r.c.id)));
           const nOpen = open.filter((r) => r.severity === g.sev).length;
           return (
-            <Card key={g.sev} kicker={g.hint} title={`${g.title} · ${fmtInt(nOpen)}`} right={<SeverityBadge severity={g.sev} />}>
+            <Card key={g.sev} kicker={g.hint} title={`${g.title}, ${fmtInt(nOpen)}`} right={<SeverityBadge severity={g.sev} />}>
               {rs.length === 0 ? (
                 <p className="text-[13px] text-ink-2">{nOpen === 0 && rows.some((r) => r.severity === g.sev) ? "Todo resuelto en este nivel." : "Ninguna empresa en este nivel."}</p>
               ) : (
@@ -85,7 +85,7 @@ export function MonitorList({ rows }: { rows: MonitorRow[] }) {
                           <td className="wrap text-ink-2 max-w-[220px]">{why}<div className="text-[11px] text-ink-3 truncate" title={c.explanation}>{c.explanation}</div></td>
                           <td className="wrap">
                             {cards.length === 0 ? (
-                              <span className="text-ink-3">—</span>
+                              <span className="text-ink-3">-</span>
                             ) : (
                               <ul className="space-y-0.5">
                                 {cards.map((a, i) => (

@@ -49,7 +49,7 @@ export function FlowChart({ nodes, proposals, width = 640 }: { nodes: Node[]; pr
         return (
           <g key={i}>
             <path d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`} fill="none" stroke="#0b1f3a" strokeWidth={sw} opacity={0.25} strokeLinecap="round">
-              <title>{`${p.from} → ${p.to}: ${fmtEurShort(p.amount)} (límite ${fmtEurShort(p.limit)}) · ${p.reason}`}</title>
+              <title>{`${p.from} → ${p.to}: ${fmtEurShort(p.amount)} (límite ${fmtEurShort(p.limit)}), ${p.reason}`}</title>
             </path>
             <rect x={mx - 34} y={(y1 + y2) / 2 - 9} width={68} height={18} rx={9} fill="#0b1f3a" />
             <text x={mx} y={(y1 + y2) / 2 + 4} fontSize={11} fill="#fff" textAnchor="middle" fontWeight={600}>{fmtEurShort(p.amount)}</text>

@@ -19,7 +19,7 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const path = usePathname() ?? "/";
-  if (/^\/(intro|escena|cierre)(\/|$)/.test(path)) return <>{children}<PresentationNav /></>;
+  if (/^\/(intro|escena|cierre|calculo-score|producto)(\/|$)/.test(path)) return <>{children}<PresentationNav /></>;
   return (
     <>
       <Nav companyId={companyId} groupId={groupId} monthLast={monthLast} />

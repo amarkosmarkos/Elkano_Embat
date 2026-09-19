@@ -53,12 +53,12 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
       {/* Cabecera */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <div className="kicker">Paso 3 de 6 · Ficha de empresa</div>
+          <div className="kicker">Paso 3 de 6, Ficha de empresa</div>
           <h1 className="text-2xl font-bold text-navy font-mono leading-tight">{s.id}</h1>
           <div className="text-[12px] text-ink-2 mt-1 flex items-center gap-3">
-            <span>{s.country} · {s.currency}</span>
+            <span>{s.country}, {s.currency}</span>
             <span>
-              Grupo {s.group_id ? <Link href={`/grupo/${s.group_id}/`} className="font-mono text-navy hover:underline">{s.group_id}</Link> : "—"} ({s.group_size} {s.group_size === 1 ? "empresa" : "empresas"})
+              Grupo {s.group_id ? <Link href={`/grupo/${s.group_id}/`} className="font-mono text-navy hover:underline">{s.group_id}</Link> : "-"} ({s.group_size} {s.group_size === 1 ? "empresa" : "empresas"})
             </span>
             <span>Observada desde {fmtMonthLong(s.first_month)}</span>
             <span>{d.products.n_bank} {d.products.n_bank === 1 ? "banco" : "bancos"}: {d.products.banks.join(", ")}</span>
@@ -70,7 +70,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-[300px_1fr] gap-4 items-stretch">
         <div className="card p-4 flex flex-col justify-between" style={{ background: TIER_BG[s.tier] }}>
           <div>
-            <div className="kicker" style={{ color: TIER_COLOR[s.tier] }}>Score · {fmtMonthLong(last.m)}</div>
+            <div className="kicker" style={{ color: TIER_COLOR[s.tier] }}>Score, {fmtMonthLong(last.m)}</div>
             <div className="text-[72px] font-bold num leading-none mt-1" style={{ color: TIER_COLOR[s.tier] }}>{fmt1(s.score)}</div>
             <div className="mt-2 flex items-center gap-2">
               <TierBadge tier={s.tier} />
@@ -93,7 +93,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           <p className="mt-3 text-[14px] font-medium text-ink leading-snug">«{s.explanation}»</p>
         </div>
 
-        <Card kicker="Trayectoria" title="Score mes a mes" right={<span className="text-[11px] text-ink-2">Bandas: {TIER_LABEL.verde} ≥ 70 · {TIER_LABEL.ambar} 40–70 · {TIER_LABEL.rojo} &lt; 40</span>}>
+        <Card kicker="Trayectoria" title="Score mes a mes" right={<span className="text-[11px] text-ink-2">Bandas: {TIER_LABEL.verde} ≥ 70, {TIER_LABEL.ambar} 40-70, {TIER_LABEL.rojo} &lt; 40</span>}>
           <LineChart
             months={months}
             series={[{ key: "score", label: "Score", values: d.months.map((m) => m.score), color: "#0b1f3a" }]}
@@ -111,10 +111,10 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
 
       {/* Por qué / qué se movió / cuándo se vio venir */}
       <div className={`mt-4 grid gap-4 ${d.anticipation ? "grid-cols-[1fr_1fr_320px]" : "grid-cols-2"}`}>
-        <Card kicker="Desglose" title="Por qué saca este número" right={<span className="text-[11px] text-ink-2">puntos sobre 50 · {fmtMonth(last.m)}</span>}>
+        <Card kicker="Desglose" title="Por qué saca este número" right={<span className="text-[11px] text-ink-2">puntos sobre 50, {fmtMonth(last.m)}</span>}>
           <HBars rows={contribRows} width={440} max={maxAbs} />
           <p className="text-[12px] text-ink-2 mt-2">
-            Las cinco dimensiones suman {fmtSigned(DIMS.reduce((a, k) => a + last.c[k], 0))} pts sobre una base de 50. Positivo empuja el score hacia arriba; negativo lo tira hacia abajo.
+            Las cinco dimensiones suman {fmtSigned(DIMS.reduce((a, k) => a + last.c[k], 0))} pts sobre una base de 50. Los valores positivos suben el score y los negativos lo bajan.
           </p>
         </Card>
 
@@ -168,7 +168,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
               { key: "min", label: "Saldo mínimo", values: d.months.map((m) => m.balance_min), color: "#b45309", dashed: true },
             ]}
           />
-          <div className="text-[12px] text-ink-2 mt-1">Runway: <b className="text-ink">{fmt1(last.runway)} meses</b> · Servicio de deuda: <b className="text-ink">{fmtPct(last.servicio_deuda)}</b> de los pagos</div>
+          <div className="text-[12px] text-ink-2 mt-1">Runway: <b className="text-ink">{fmt1(last.runway)} meses</b>, Servicio de deuda: <b className="text-ink">{fmtPct(last.servicio_deuda)}</b> de los pagos</div>
         </Card>
         <Card kicker="Caja" title="Cobros y pagos">
           <LineChart
@@ -182,7 +182,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
               { key: "out", label: "Pagos", values: d.months.map((m) => m.outflow), color: "#b91c1c" },
             ]}
           />
-          <div className="text-[12px] text-ink-2 mt-1">Neto {fmtMonth(last.m)}: <b className={last.net < 0 ? "text-bad" : "text-ink"}>{fmtEur(last.net)}</b> · Devoluciones: <b className="text-ink">{fmtInt(last.devoluciones)}</b></div>
+          <div className="text-[12px] text-ink-2 mt-1">Neto {fmtMonth(last.m)}: <b className={last.net < 0 ? "text-bad" : "text-ink"}>{fmtEur(last.net)}</b>, Devoluciones: <b className="text-ink">{fmtInt(last.devoluciones)}</b></div>
         </Card>
         <Card kicker="Plazos" title="Días de pago (DPO) y de cobro (DSO)">
           <LineChart
@@ -195,14 +195,14 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
               { key: "dso", label: "DSO (cobra a)", values: d.months.map((m) => m.dso), color: "#7c3aed" },
             ]}
           />
-          <div className="text-[12px] text-ink-2 mt-1">Retraso a proveedores: <b className="text-ink">{fmt1(last.retraso_pago)} d</b> · Cobros vencidos: <b className={last.overdue_share > 0.3 ? "text-bad" : "text-ink"}>{fmtPct(last.overdue_share)}</b></div>
+          <div className="text-[12px] text-ink-2 mt-1">Retraso a proveedores: <b className="text-ink">{fmt1(last.retraso_pago)} d</b>, Cobros vencidos: <b className={last.overdue_share > 0.3 ? "text-bad" : "text-ink"}>{fmtPct(last.overdue_share)}</b></div>
         </Card>
       </div>
 
       {/* Productos */}
       <div className="mt-8 mb-3 flex items-baseline justify-between">
         <h2 className="text-lg font-bold text-navy">Qué haría el sistema</h2>
-        <span className="text-[12px] text-ink-2">Tres productos que salen del mismo score: colocar excedentes, netear dentro del grupo y avisar antes de que duela</span>
+        <span className="text-[12px] text-ink-2">El score permite proponer colocaciones, mover caja dentro del grupo y avisar con antelación</span>
       </div>
       <div className="grid grid-cols-3 gap-4 items-start">
         <ExcedentesCard
@@ -220,11 +220,11 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           proposals={po?.proposals ?? []}
           savingYearly={po?.saving_yearly ?? 0}
           highlightId={s.id}
-          emptyText={s.group_size > 1 ? "El grupo no tiene saldo neteable suficiente." : "Empresa sin grupo: no hay con quién netear."}
+          emptyText={s.group_size > 1 ? "El grupo no tiene saldo suficiente para compensar sus necesidades de caja." : "Esta empresa no pertenece a un grupo con el que pueda compensar saldos."}
         />
 
         <section className="card p-4">
-          <div className="kicker">Producto 3 · Monitor</div>
+          <div className="kicker">Producto 3, Monitor</div>
           <h3 className="text-[15px] font-semibold text-ink leading-tight">
             {alertas.length ? `${alertas.length} ${alertas.length === 1 ? "aviso" : "avisos"} este mes` : "Sin avisos este mes"}
           </h3>
@@ -236,10 +236,10 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
                   <SeverityBadge severity={a.severity} />
                 </div>
                 <p className="text-[12px] text-ink-2 mt-1 leading-snug">{a.text}</p>
-                <div className="text-[11px] text-ink-3 mt-1">{a.type} · {fmtMonth(a.month)}{a.months_ahead > 0 ? ` · avisa con ${a.months_ahead} ${a.months_ahead === 1 ? "mes" : "meses"}` : " · ahora"}</div>
+                <div className="text-[11px] text-ink-3 mt-1">{a.type}, {fmtMonth(a.month)}{a.months_ahead > 0 ? `, avisa con ${a.months_ahead} ${a.months_ahead === 1 ? "mes" : "meses"}` : ", ahora"}</div>
               </li>
             ))}
-            {alertas.length === 0 && <li className="text-[13px] text-ink-2">Nada que levante a un tesorero de la silla.</li>}
+            {alertas.length === 0 && <li className="text-[13px] text-ink-2">Sin avisos este mes.</li>}
           </ul>
         </section>
       </div>
@@ -250,11 +250,11 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-4 gap-4 text-[13px]">
             <div>
               <div className="kicker">Bancos</div>
-              <div className="mt-1">{d.products.banks.join(" · ")}</div>
+              <div className="mt-1">{d.products.banks.join(", ")}</div>
             </div>
             <div>
               <div className="kicker">Productos de deuda</div>
-              <div className="mt-1">{d.products.n_debt} {d.products.has_investment ? "· con producto de inversión" : "· sin inversión"}</div>
+              <div className="mt-1">{d.products.n_debt} {d.products.has_investment ? ",  con producto de inversión" : ",  sin inversión"}</div>
             </div>
             <div className="col-span-2">
               <div className="kicker">Líneas de crédito</div>
@@ -279,7 +279,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         </Card>
       </div>
       <div className="mt-4 text-[12px] text-ink-2">
-        Estado actual: <ScorePill score={s.score} tier={s.tier} /> · {TREND_LABEL[s.trend]} · caja {fmtEur(s.cash)} · {s.has_debt ? "con deuda" : "sin deuda"}
+        Estado actual: <ScorePill score={s.score} tier={s.tier} />, {TREND_LABEL[s.trend]}, caja {fmtEur(s.cash)}, {s.has_debt ? "con deuda" : "sin deuda"}
       </div>
     </>
   );

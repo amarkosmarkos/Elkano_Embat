@@ -9,7 +9,7 @@ const HORIZONS = [3, 6, 12] as const;
 const STEP = 1000;
 const roundStep = (x: number) => Math.round(x / STEP) * STEP;
 
-/** Producto 1 · Colocación de excedentes. Importe y plazo editables; «Aprobar» registra un depósito en el almacén local. */
+/** Producto 1, Colocación de excedentes. Importe y plazo editables; «Aprobar» registra un depósito en el almacén local. */
 export function ExcedentesCard({
   companyId,
   currency,
@@ -59,7 +59,7 @@ export function ExcedentesCard({
     <section className={`card p-4 flex flex-col gap-3 ${done ? "border-ok bg-ok-bg/30" : ""}`}>
       <header className="flex items-start justify-between gap-3">
         <div>
-          <div className="kicker">Producto 1 · Colocación de excedentes</div>
+          <div className="kicker">Producto 1, Colocación de excedentes</div>
           <h3 className="text-[15px] font-semibold text-ink leading-tight">
             {!data ? "Colocación de excedentes" : done ? "Colocación ejecutada" : `Colocar ${fmtEurShort(amount)} a ${horizon} meses`}
           </h3>
@@ -81,7 +81,7 @@ export function ExcedentesCard({
         <span>Caja disponible</span>
         <span className="num font-semibold text-ink">
           {fmtEur(available)}
-          {placedTotal > 0 && <span className="text-ink-3 font-normal"> · {fmtEurShort(placedTotal)} colocados</span>}
+          {placedTotal > 0 && <span className="text-ink-3 font-normal">, {fmtEurShort(placedTotal)} colocados</span>}
         </span>
       </div>
 
@@ -161,7 +161,7 @@ export function ExcedentesCard({
           <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[12px]">
             <dt className="text-ink-2">Suelo 6 meses</dt><dd className="num text-right">{fmtEur(data.floor6)}</dd>
             <dt className="text-ink-2">Suelo 12 meses</dt><dd className="num text-right">{fmtEur(data.floor12)}</dd>
-            <dt className="text-ink-2">Propuesta del sistema</dt><dd className="num text-right">{fmtEur(data.proposal)} · {data.horizon_months} m</dd>
+            <dt className="text-ink-2">Propuesta del sistema</dt><dd className="num text-right">{fmtEur(data.proposal)}, {data.horizon_months} m</dd>
             <dt className="text-ink-2">Tipo</dt><dd className="num text-right">{fmtPct(rate)}</dd>
             <dt className="text-ink-2">Rendimiento en el plazo</dt><dd className="num text-right font-semibold">{fmtEur(yieldPeriod)}</dd>
             <dt className="text-ink-2">Banco</dt><dd className="text-right truncate" title={bank}>{bank}</dd>

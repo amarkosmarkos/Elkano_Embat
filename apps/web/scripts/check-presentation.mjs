@@ -1,6 +1,7 @@
 // Read-only smoke test against a running development server or static export.
 const base = process.argv[2] || 'http://localhost:4321';
 const routes = ['/intro/', '/escena/1/', '/escena/2/', '/escena/3/', '/score/',
+  '/calculo-score/', '/producto/1/', '/producto/2/', '/producto/3/', '/escena/8/',
   '/empresa/COMP_0945/', '/empresa/COMP_0640/', '/escena/4/', '/empresa/COMP_0054/',
   '/grupo/GROUP_0067/', '/empresa/COMP_0636/', '/monitor/', '/escena/5/', '/operaciones/', '/escena/6/', '/cierre/'];
 for (const route of routes) {

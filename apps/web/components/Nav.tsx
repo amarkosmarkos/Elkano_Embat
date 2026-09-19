@@ -45,7 +45,7 @@ export function Nav({ companyId, groupId, monthLast }: { companyId: string; grou
           ))}
         </nav>
         <div className="text-[11px] text-white/60 shrink-0">
-          Datos a <span className="text-white/90 font-medium">{monthLast}</span> · HackSpain 2026 · Embat X Ray
+          Datos a <span className="text-white/90 font-medium">{monthLast}</span>, HackSpain 2026, Embat X Ray
         </div>
       </div>
     </header>

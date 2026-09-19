@@ -1,12 +1,12 @@
 /** Edit route order and media here without changing playback or navigation. */
 export const presentation = [
-  ["/escena/1", "Zarpar"], ["/escena/2", "La isla"], ["/escena/3", "Las estrellas"],
-  ["/score", "El score"], ["/empresa/COMP_0945", "Una empresa se tuerce"],
-  ["/empresa/COMP_0640", "Otra recupera el rumbo"], ["/escena/4", "El cofre"],
-  ["/empresa/COMP_0054", "Colocación de excedentes"], ["/grupo/GROUP_0067", "Cash pooling"],
-  ["/empresa/COMP_0636", "La señal de aviso"], ["/monitor", "El monitor"],
-  ["/escena/5", "El puerto"], ["/operaciones", "Las decisiones ejecutadas"], ["/escena/6", "Cierre"],
+  ["/escena/1", "1. Intro"], ["/escena/2", "Transición, La isla"],
+  ["/escena/3", "2. El problema"], ["/calculo-score", "3. Cálculo del score"],
+  ["/escena/4", "4. El cofre"], ["/producto/1", "5. Colocación de excedentes"],
+  ["/producto/2", "6. Cash pooling"], ["/producto/3", "7. Monitor"],
+  ["/escena/8", "8. Dos empresas"], ["/escena/6", "9. Gracias"],
 ] as const;
+export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"09 / FIN",8:"08 / DOS EMPRESAS"};
 export const presentationHref = (path: string) => `${path}/?present=1`;
 export const sceneMedia: Record<number, { title: string; video: string; poster: string; height: number }> = {
   1: { title: "Zarpar", video: "/video/zarpar-seedance.mp4", poster: "/video/zarpar-seedance.jpg", height: 650 },

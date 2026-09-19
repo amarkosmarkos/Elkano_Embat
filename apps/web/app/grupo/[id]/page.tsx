@@ -53,7 +53,7 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
       />
 
       <div className="mt-4 text-[12px] text-ink-2">
-        La regla es simple: una empresa recibe como máximo un porcentaje de lo que tiene dispuesto (80 % si está verde, 50 % en ámbar, 30 % en rojo) y el interés interno sustituye al de la póliza.
+        Cada empresa recibe como máximo un porcentaje de lo que tiene dispuesto (80 % si está verde, 50 % en ámbar, 30 % en rojo) y el interés interno sustituye al de la póliza.
         {" "}<Link href="/monitor/" className="text-navy hover:underline">Siguiente: el monitor →</Link>
       </div>
     </>

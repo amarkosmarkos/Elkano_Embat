@@ -8,7 +8,7 @@ export function PresentationNav() {
   const pathname=usePathname(); const router=useRouter();
   const [enabled,setEnabled]=useState(false); const [open,setOpen]=useState(false);
   const path=(pathname??"").replace(/\/$/,"");
-  const scene=path.startsWith("/escena")||path==="/intro"||path==="/cierre";
+  const scene=path.startsWith("/escena")||path.startsWith("/producto")||path==="/calculo-score"||path==="/intro"||path==="/cierre";
   const canonical=path==="/intro"?"/escena/1":path==="/cierre"?"/escena/6":path;
   const index=presentation.findIndex(([route])=>route===canonical);
   useEffect(()=>{setEnabled(scene||new URLSearchParams(location.search).get("present")==="1");setOpen(false);},[pathname,scene]);
@@ -29,7 +29,7 @@ export function PresentationNav() {
   return <nav className={`presentation-nav ${scene?"on-scene":"on-product"}`} aria-label="Recorrido de la presentación">
     <div className="presentation-controls">
       {prev?<Link href={presentationHref(prev[0])} aria-label={`Anterior: ${prev[1]}`} className="presentation-arrow">‹</Link>:<span className="presentation-arrow disabled">‹</span>}
-      <button onClick={()=>setOpen(!open)} aria-expanded={open} aria-controls="presentation-index" className="presentation-current"><span>{String(index+1).padStart(2,"0")} / 14</span> {presentation[index][1]} <span>☰</span></button>
+      <button onClick={()=>setOpen(!open)} aria-expanded={open} aria-controls="presentation-index" className="presentation-current"><span>{String(index+1).padStart(2,"0")} / {presentation.length}</span> {presentation[index][1]} <span>☰</span></button>
       {next?<Link href={presentationHref(next[0])} aria-label={`Siguiente: ${next[1]}`} className="presentation-arrow">›</Link>:<Link href={presentationHref(presentation[0][0])} className="presentation-arrow" aria-label="Volver al principio">↺</Link>}
     </div>
     {open&&<div id="presentation-index" className="presentation-index">{presentation.map(([route,label],i)=><Link key={route} href={presentationHref(route)} aria-current={i===index?"step":undefined}><span>{String(i+1).padStart(2,"0")}</span>{label}</Link>)}</div>}
