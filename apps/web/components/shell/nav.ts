@@ -8,7 +8,6 @@ export const NAV: NavItem[] = [
     children: [
       { href: "/cartera/mapa", label: "Mapa" },
       { href: "/cartera/movimientos", label: "Movimientos" },
-      { href: "/cartera/calor", label: "Calor" },
       { href: "/cartera/bandeja", label: "Bandeja" },
     ],
   },

@@ -57,12 +57,12 @@ export default async function MovimientosPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="Suben" value={formatCount(withPrev.filter((r) => (r.d1 as number) > 0.5).length)} tone="good" sub={`vs ${monthLabel(store.months[idx - 1])}`} />
-        <Kpi label="Bajan" value={formatCount(withPrev.filter((r) => (r.d1 as number) < -0.5).length)} tone="bad" sub={`vs ${monthLabel(store.months[idx - 1])}`} />
-        <Kpi label="Pasan a deterioro" value={formatCount(toWorse.length)} tone="bad" sub="cambio de régimen" />
-        <Kpi label="Pasan a mejora" value={formatCount(toBetter.length)} tone="good" sub="cambio de régimen" />
-        <Kpi label="Entran en el 20 % peor" value={formatCount(enter.length)} tone="warn" />
-        <Kpi label="Salen del 20 % peor" value={formatCount(exit.length)} tone="good" />
+        <Kpi icon="trend-up" label="Suben" value={formatCount(withPrev.filter((r) => (r.d1 as number) > 0.5).length)} tone="good" sub={`vs ${monthLabel(store.months[idx - 1])}`} />
+        <Kpi icon="trend-down" label="Bajan" value={formatCount(withPrev.filter((r) => (r.d1 as number) < -0.5).length)} tone="bad" sub={`vs ${monthLabel(store.months[idx - 1])}`} />
+        <Kpi icon="trend-down" label="Pasan a deterioro" value={formatCount(toWorse.length)} tone="bad" sub="cambio de régimen" />
+        <Kpi icon="trend-up" label="Pasan a mejora" value={formatCount(toBetter.length)} tone="good" sub="cambio de régimen" />
+        <Kpi icon="enter" label="Entran en el 20 % peor" value={formatCount(enter.length)} tone="warn" />
+        <Kpi icon="exit" label="Salen del 20 % peor" value={formatCount(exit.length)} tone="good" />
       </div>
       <Card title={`Distribución del cambio mensual · ${monthLabel(month)}`} sub="Δ score de cada empresa respecto al mes anterior. Lo normal es ±3; las colas son lo que importa.">
         <ValueHistogram values={deltas} bins={40} height={130} color="#e5e5e5" fmt={(v) => `${v >= 0 ? "+" : ""}${v.toFixed(0)}`} lo={-25} hi={25} />

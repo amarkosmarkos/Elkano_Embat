@@ -31,10 +31,10 @@ export default function Bandeja({ alerts, month }: { alerts: Alert[]; month: str
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Kpi label="Avisos" value={formatCount(alerts.length - resolved.size)} sub={monthLabelLong(month)} />
-        <Kpi label="Severidad alta" value={formatCount(n("high"))} tone="bad" sub="entra en el 20 % peor · alarma S1/S3/S8 · cae ≥ 15" />
-        <Kpi label="Severidad media" value={formatCount(n("medium"))} tone="warn" sub="cambio de régimen · cae ≥ 8 · otras alarmas" />
-        <Kpi label="Mejoras" value={formatCount(n("info"))} tone="good" sub="sale del 20 % peor · sube ≥ 8" />
+        <Kpi icon="gauge" label="Avisos" value={formatCount(alerts.length - resolved.size)} sub={monthLabelLong(month)} />
+        <Kpi icon="alert" label="Severidad alta" value={formatCount(n("high"))} tone="bad" sub="entra en el 20 % peor · alarma S1/S3/S8 · cae ≥ 15" />
+        <Kpi icon="alert" label="Severidad media" value={formatCount(n("medium"))} tone="warn" sub="cambio de régimen · cae ≥ 8 · otras alarmas" />
+        <Kpi icon="trend-up" label="Mejoras" value={formatCount(n("info"))} tone="good" sub="sale del 20 % peor · sube ≥ 8" />
       </div>
       <Card
         title="Avisos del mes"
