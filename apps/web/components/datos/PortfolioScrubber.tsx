@@ -140,9 +140,7 @@ function CompanyScatter({ series, monthIndex }: { series: CompanyScoreSeries[]; 
             >
               <circle r={7} fill="transparent" />
               <circle r={2.6} fill={color} />
-              <title>
-                {s.displayName} · {point.score} / 100 · {REGIME_LABEL[point.regime ?? "s"]}
-              </title>
+              <title>{`${s.displayName} · ${point.score} / 100 · ${REGIME_LABEL[point.regime ?? "s"]}`}</title>
             </g>
           );
         })}
