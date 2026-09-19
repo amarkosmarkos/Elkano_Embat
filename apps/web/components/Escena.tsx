@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { presentation, presentationHref, sceneMedia, sectionLabel } from "@/lib/presentation";
@@ -11,6 +11,16 @@ function Layer({p,from=0,to=1,position="center",children}:{p:number;from?:number
   const alpha=clamp((p-from)/.045)*(to===1?1:clamp((to-p)/.045));
   return <div className={`scene-layer scene-${position}`} aria-hidden={alpha===0} style={{opacity:alpha,transform:`translateY(${(1-alpha)*14}px)`,pointerEvents:alpha>.5?"auto":"none"}}>{children}</div>;
 }
+// Static closing copy: visible in the initial HTML, independent of video state.
+const ClosingCopy=memo(function ClosingCopy(){
+  return <div className="scene-layer scene-center closing-copy">
+    <h1 className="story-thanks">Gracias por escuchar.</h1>
+    <p className="scene-credits">Luken, Nagore, Markos, David y Xuban</p>
+    <p className="scene-eyebrow">HackSpain 2026 · Embat</p>
+    <div className="closing-platform"><Link href="/plataforma/" className="closing-platform-button">Entrar en la plataforma <span aria-hidden="true">→</span></Link></div>
+  </div>;
+});
+
 export function Escena({number}:{number:number;windows?:WindowData[]}) {
   const router=useRouter();
   const index=presentation.findIndex(([route])=>route===`/escena/${number}`);const next=index>=0?presentation[index+1]:undefined;
@@ -89,7 +99,7 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
       {number===3&&<SkyStory p={p} reduced={reduced}/>}
       {number===8&&<Layer p={p} from={.38} position="right"><div className="story-overlay-placeholder"><p className="scene-eyebrow">DOS EMPRESAS</p><h2>Cada barco es una empresa.</h2><div className="company-case-placeholder"><h3>Empresa A</h3><p>Diagnóstico y producto recomendado pendientes.</p></div><div className="company-case-placeholder"><h3>Empresa B</h3><p>Diagnóstico y producto recomendado pendientes.</p></div></div></Layer>}
       {number===5&&<><Layer p={Math.max(.05,p)} to={.54} position="right"><p className="scene-eyebrow">QUIÉN GANA CON ESTO</p><div className="scene-product"><h2>La empresa</h2><p>Gana interés que hoy no gana, deja de pagar intereses por dinero que ya tiene y evita el descubierto de julio.</p></div><div className="scene-product"><h2>Embat</h2><p>Dos módulos nuevos sobre 400 clientes, comisión por cada colocación, y una razón para que el financiero entre cada día.</p></div></Layer><Layer p={p} from={.52}><p className="scene-eyebrow">SOLO EN ESTE DATASET</p><div className="scene-metrics"><div><strong>535 M€</strong><p>parados en 312 empresas</p></div><div><strong>85 M€</strong><p>neteables hoy</p></div><div><strong>182</strong><p>empresas avisadas antes del impago con cuatro meses de antelación</p></div></div></Layer></>}
-      {number===6&&<Layer p={1}><h1 className="story-thanks">Gracias por escuchar.</h1><p className="scene-credits">Luken, Nagore, Markos, David y Xuban</p><p className="scene-eyebrow">HackSpain 2026, Reto X Ray de Embat</p><div className="closing-platform"><Link href="/plataforma/" className="closing-platform-button">Ir a la plataforma <span aria-hidden="true">→</span></Link><p>Explora los datos. Descubre las oportunidades.</p></div></Layer>}
+      {number===6&&<ClosingCopy/>}
       {error&&<p className="scene-media-error">No se ha podido cargar el vídeo. Puedes continuar con la presentación.</p>}
       <div className="scene-progress" role="progressbar" aria-label="Recorrido de la escena" aria-valuenow={Math.round(p*100)} aria-valuemin={0} aria-valuemax={100}><div style={{transform:`scaleX(${p})`}}/></div>
     </section>

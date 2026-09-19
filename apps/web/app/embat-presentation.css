@@ -126,11 +126,10 @@ body{overscroll-behavior:none}
 
 /* Closing-slide CTA: the entry point to the standalone platform. */
 .closing-platform{margin-top:32px}
-.closing-platform-button{display:inline-flex;align-items:center;justify-content:center;gap:28px;min-height:56px;padding:16px 28px;border:1px solid #ffffff26;border-radius:6px;background:var(--embat-blue);color:white;font-family:var(--font-sans);font-size:17px;font-weight:700;box-shadow:0 8px 28px #050b2c66;transition:background-color .18s ease,box-shadow .18s ease}
-.closing-platform-button:hover{background:var(--embat-blue-hover);box-shadow:0 10px 32px #050b2c99}
-.closing-platform-button span{font-size:24px;line-height:1;transition:transform .18s ease}
-.closing-platform-button:hover span{transform:translateX(4px)}
-.closing-platform>p{margin:12px 0 0;color:var(--embat-inverse);font-size:13px}
+.closing-platform-button{display:inline-flex;align-items:center;justify-content:center;gap:24px;min-height:68px;padding:12px 14px 12px 28px;border:1px solid #ffffff;border-radius:8px;background:#ffffff;color:var(--embat-navy);font-family:var(--font-sans);font-size:19px;font-weight:600;box-shadow:0 6px 24px #050b2c40;text-decoration:none}
+.closing-platform-button:hover{background:var(--embat-blue-light);border-color:var(--embat-blue-inverse)}
+.closing-platform-button span{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;border-radius:5px;background:var(--embat-blue);color:#fff;font-size:27px;line-height:1}
+.closing-platform-button:focus-visible{outline:3px solid var(--embat-blue-inverse);outline-offset:5px}
 @media(max-width:600px){.scene-number-6 .scene-center{top:16%}.closing-platform{margin-top:24px}.closing-platform-button{max-width:100%;font-size:16px}}
 @media(max-height:600px){.scene-number-6 .scene-center{top:6%;max-height:calc(100svh - 120px);overflow:auto}.scene-number-6 h1.story-thanks{font-size:36px;margin:12px 0}.scene-number-6 .scene-credits{margin:12px 0}.closing-platform{margin-top:16px}}
 @media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-button span{transition:none}.closing-platform-button:hover span{transform:none}}
@@ -145,7 +144,10 @@ body{overscroll-behavior:none}
 .presentation-play-placeholder{visibility:hidden}
 @media(max-width:640px){.presentation-nav{width:90vw}.presentation-controls{grid-template-columns:28px 28px 30px minmax(0,1fr) 28px 28px}.presentation-current{gap:6px}}
 
-/* Closing copy appears independently of video loading and timeupdate events. */
-@keyframes closing-copy-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.scene-number-6 .scene-layer{animation:closing-copy-in .22s ease-out both}
-@media(prefers-reduced-motion:reduce){.scene-number-6 .scene-layer{animation:none}}
+/* Closing copy is immediately visible, including before hydration or video load. */
+.scene-number-6 .closing-copy{opacity:1;transform:none;animation:none;transition:none;will-change:auto}
+
+/* Gentle title-only reveal, driven by CSS rather than the video's frame updates. */
+@keyframes closing-title-reveal{from{opacity:.15}to{opacity:1}}
+.closing-copy .story-thanks{animation:closing-title-reveal .9s cubic-bezier(.22,1,.36,1) both;will-change:opacity}
+@media(prefers-reduced-motion:reduce){.closing-copy .story-thanks{animation:none;will-change:auto}}
