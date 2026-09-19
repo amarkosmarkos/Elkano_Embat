@@ -78,7 +78,7 @@ export default async function MovimientosPage() {
               const p = prev.get(r.id)!;
               return (
                 <div key={r.id} className="flex items-center justify-between gap-3 border-b border-line-soft py-2 text-[12.5px]">
-                  <CompanyLink id={r.id} name={r.name} />
+                  <CompanyLink id={r.id} name={r.name} showId={false} />
                   <span className="flex shrink-0 items-center gap-1.5">
                     <Pill tone={TREND_TONE[p.trend]}>{TREND_LABEL[p.trend]}</Pill><span className="text-ink-mute">→</span><Pill tone={TREND_TONE[r.trend]}>{TREND_LABEL[r.trend]}</Pill>
                     <span className="num ml-1 w-8 text-right text-ink">{r.score.toFixed(0)}</span>
