@@ -44,7 +44,7 @@ export default function Bandeja({ alerts, month }: { alerts: Alert[]; month: str
             <div className="flex rounded-lg border border-line bg-panel p-0.5">
               {(["all", "high", "medium", "info"] as const).map((v) => <button key={v} type="button" onClick={() => setSev(v)} className={`rounded-lg px-2.5 py-1 ${sev === v ? "bg-panel-hi text-ink" : "text-ink-mute hover:text-ink-dim"}`}>{v === "all" ? "Todos" : SEV[v].label}</button>)}
             </div>
-            <label className="flex items-center gap-1.5 text-ink-mute"><input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} className="accent-accent" />resueltos</label>
+            <label className="flex items-center gap-1.5 text-ink-mute"><input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} className="accent-accent" />ver los resueltos</label>
           </div>
         }
       >
