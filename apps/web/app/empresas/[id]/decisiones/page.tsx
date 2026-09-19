@@ -13,7 +13,8 @@ export default async function DecisionesPage({ params }: { params: Promise<{ id:
   const c = store.byId.get(id);
   if (!c) notFound();
   const sorted = rowsAt(store, idx).map((r) => r.score).sort((a, b) => a - b);
-  const provider = assessProvider(c, idx, sorted);
+  const withCash = { ...c, cash: store.months.map((m) => store.cash.get(`${id}|${m}`) ?? null) };
+  const provider = assessProvider(withCash, idx, sorted);
   const receiver = assessReceiver(c, idx);
   const snap = c.group ? groupSnapshot(store, c.group, month) : null;
   const me = snap?.entities.find((e) => e.companyId === id) ?? null;

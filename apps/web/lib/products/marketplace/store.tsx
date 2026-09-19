@@ -5,6 +5,13 @@ import type { CompanyIndex } from "@/lib/score/types";
 import { DEFAULT_CONFIG, type Network, type PortfolioConfig, type PortfolioResult } from "./portfolio";
 import { applyActions, type ExecutedAction } from "./actions";
 import { assessAll, type Assessed } from "./assess";
+import { deployableCapital as deployableAt } from "@/lib/score/derived";
+
+/** Tesorería desplegable real del prestamista en el último mes (ver lib/score/derived.ts). */
+export function deployableCapital(c: CompanyIndex, months: string[]) {
+  const r = deployableAt(c, months.length - 1);
+  return r ? { ...r, month: months[months.length - 1] } : null;
+}
 
 const KEY = "xray_marketplace_v1";
 
@@ -18,6 +25,8 @@ interface Ctx extends Persisted {
   /** cartera con las acciones ejecutadas aplicadas */
   effective: PortfolioResult | null;
   setLender: (id: string | null) => void;
+  openCompany: string | null;
+  setOpenCompany: (id: string | null) => void;
   setConfig: (patch: Partial<PortfolioConfig>) => void;
   setResult: (r: PortfolioResult | null) => void;
   setMonitorMonth: (m: string | null) => void;
@@ -29,7 +38,7 @@ const MarketplaceCtx = createContext<Ctx | null>(null);
 
 let cache: Promise<Network> | null = null;
 function loadNetwork(): Promise<Network> {
-  if (!cache) cache = fetch("/api/network").then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<Network>; });
+  if (!cache) cache = fetch("/api/network?v=2").then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<Network>; });
   return cache;
 }
 
@@ -47,6 +56,7 @@ export function MarketplaceProvider({ children, initialLender }: { children: Rea
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<Persisted>({ lenderId: null, config: DEFAULT_CONFIG, result: null, monitorMonth: null, executed: [] });
   const [hydrated, setHydrated] = useState(false);
+  const [openCompany, setOpenCompany] = useState<string | null>(null);
 
   useEffect(() => {
     const p = read();
@@ -61,14 +71,19 @@ export function MarketplaceProvider({ children, initialLender }: { children: Rea
   const byId = useMemo(() => new Map(network?.companies.map((c) => [c.id, c]) ?? []), [network]);
   const effective = useMemo(() => (state.result ? applyActions(state.result, state.executed) : null), [state.result, state.executed]);
 
-  const setLender = useCallback((lenderId: string | null) => setState((s) => ({ ...s, lenderId, config: { ...s.config, lenderId } })), []);
+  // al elegir prestamista, el capital pasa a ser su tesorería desplegable real (ver deployableCapital)
+  const setLender = useCallback((lenderId: string | null) => setState((s) => {
+    const c = lenderId ? network?.companies.find((x) => x.id === lenderId) ?? null : null;
+    const cap = c ? deployableCapital(c, network!.months) : null;
+    return { ...s, lenderId, config: { ...s.config, lenderId, ...(cap ? { capital: cap.deployable } : {}) } };
+  }), [network]);
   const setConfig = useCallback((patch: Partial<PortfolioConfig>) => setState((s) => ({ ...s, config: { ...s.config, ...patch } })), []);
   const setResult = useCallback((result: PortfolioResult | null) => setState((s) => ({ ...s, result, monitorMonth: result?.config.asOf ?? null, executed: [] })), []);
   const setMonitorMonth = useCallback((monitorMonth: string | null) => setState((s) => ({ ...s, monitorMonth })), []);
   const execute = useCallback((a: ExecutedAction) => setState((s) => (s.executed.some((x) => x.id === a.id && x.kind === a.kind && x.month === a.month) ? s : { ...s, executed: [...s.executed, a] })), []);
   const undoActions = useCallback(() => setState((s) => ({ ...s, executed: [] })), []);
 
-  const value: Ctx = { ...state, network, error, assessed, byId, effective, setLender, setConfig, setResult, setMonitorMonth, execute, undoActions };
+  const value: Ctx = { ...state, network, error, assessed, byId, effective, setLender, openCompany, setOpenCompany, setConfig, setResult, setMonitorMonth, execute, undoActions };
   return <MarketplaceCtx.Provider value={value}>{children}</MarketplaceCtx.Provider>;
 }
 

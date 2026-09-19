@@ -54,6 +54,8 @@ export interface CompanyIndex {
   stress: (number | null)[];
   components: Record<Dimension, (number | null)[]>;
   latest: LatestSnapshot;
+  /** caja real a fin de mes (EUR), alineada a los meses; solo en /api/network */
+  cash?: (number | null)[];
 }
 
 export interface NetworkMeta {

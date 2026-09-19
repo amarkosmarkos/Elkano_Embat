@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buildSeries, DEFAULT_SETTINGS, summarize, type Decision, type Entity, type EntityBase, type PoolSettings, type Proposal, type SeriesRow, type Snapshot, type Trend } from "@/lib/cashpool";
 import { eur, formatScore, monthLabel } from "@/lib/format";
+import PoolMap from "./PoolMap";
 
 
 type Group = { group_id: string; n: number; n_cur: number; curs: string };
-type Screen = "decisiones" | "filiales" | "historial";
+type Screen = "mapa" | "decisiones" | "filiales" | "historial";
 type DecisionEvent = { proposal: Proposal; decision: Decision | "pending"; at: string; settings: PoolSettings };
 const SCREENS: { id: Screen; label: string }[] = [
+  { id: "mapa", label: "Mapa" },
   { id: "decisiones", label: "Decisiones" },
   { id: "filiales", label: "Filiales" },
   { id: "historial", label: "Historial e impacto" },
@@ -127,6 +129,8 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
         </div>
 
         <ScenarioSettings settings={settings} onApply={setSettings} />
+
+        {screen === "mapa" && <PoolMap entities={cur.entities} proposals={active} decisions={decisions} onInspect={inspect} />}
 
         {screen === "decisiones" && (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">

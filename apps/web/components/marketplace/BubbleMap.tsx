@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { scoreScale } from "@/lib/score/colors";
 import { TXT } from "@/components/charts/axes";
 
-export interface BubbleDatum { id: string; name: string; score: number; momentum: number; size: number; qualified: boolean; alert: boolean; dimmed?: boolean }
+export interface BubbleDatum { id: string; name: string; score: number; momentum: number; size: number; sizeText?: string; qualified: boolean; alert: boolean; dimmed?: boolean }
 
 /** Mapa de la red: x = score, y = momentum a 3 meses, área = índice derivado, anillo = cualificada. */
 export function BubbleMap({ data, onSelect, sizeLabel, xThreshold, thresholdLabel, height = 420 }: { data: BubbleDatum[]; onSelect?: (id: string) => void; sizeLabel: string; xThreshold?: number; thresholdLabel?: string; height?: number }) {
@@ -42,7 +42,7 @@ export function BubbleMap({ data, onSelect, sizeLabel, xThreshold, thresholdLabe
           <div className="text-[13px] font-medium text-ink">{hover.name}</div>
           <div className="num text-ink-mute">{hover.id}</div>
           <div className="mt-1 flex items-center gap-3"><span className="num text-[16px] font-semibold text-ink">{hover.score.toFixed(0)}</span><span className={`num ${hover.momentum >= 0 ? "text-good" : "text-bad"}`}>{hover.momentum > 0 ? "+" : ""}{hover.momentum.toFixed(1)} / 3m</span></div>
-          <div className="text-ink-mute">{sizeLabel}: <span className="num text-ink">{hover.size}</span>{hover.qualified && <span className="ml-2 text-good">✦ cualificada</span>}</div>
+          <div className="text-ink-mute">{sizeLabel}: <span className="num text-ink">{hover.sizeText ?? Math.round(hover.size)}</span>{hover.qualified && <span className="ml-2 text-good">✦ cualificada</span>}</div>
         </div>
       )}
     </div>

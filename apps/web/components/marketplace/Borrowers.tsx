@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMarketplace } from "@/lib/products/marketplace/store";
+import { useMarketplace, deployableCapital } from "@/lib/products/marketplace/store";
 import { buildPortfolio, riskLabel, RISK_PRESETS, OVERLAP_PENALTY, type PortfolioResult, type RiskTolerance } from "@/lib/products/marketplace/portfolio";
 import { isRelated } from "@/lib/products/marketplace/assess";
 import { historyLength, TIER_LABEL, type Tier } from "@/lib/score/derived";
@@ -24,7 +24,7 @@ type Tab = "map" | "distribution" | "crew";
 
 /** Receptores: el universo de candidatos para el prestamista elegido, y la cartera construida para él. */
 export default function Borrowers() {
-  const { network, assessed, config, setConfig, lenderId, setLender, result: baseResult, setResult, executed, effective: result, byId } = useMarketplace();
+  const { network, assessed, config, setConfig, lenderId, setLender, result: baseResult, setResult, executed, effective: result, byId, setOpenCompany } = useMarketplace();
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [view, setView] = useState<View>("candidates");
@@ -37,6 +37,7 @@ export default function Borrowers() {
   const asOfOptions = useMemo(() => months.filter((_, i) => i >= 6), [months]);
   const asOfIdx = months.indexOf(config.asOf);
   const lender = useMemo(() => assessed.find((a) => a.c.id === lenderId) ?? null, [assessed, lenderId]);
+  const cap = useMemo(() => (lender && network ? deployableCapital(lender.c, network.months) : null), [lender, network]);
   const topLenders = useMemo(() => assessed.filter((a) => a.provider.qualified).sort((x, y) => y.provider.capacity - x.provider.capacity).slice(0, 5), [assessed]);
   const candidates = useMemo(() => assessed.filter((a) => a.receiver.eligible && a.receiver.need >= 25 && !isRelated(lender?.c ?? null, a.c)).sort((x, y) => y.receiver.fit - x.receiver.fit || y.c.latest.score - x.c.latest.score), [assessed, lender]);
   const excludedRelated = useMemo(() => (lender ? assessed.filter((a) => isRelated(lender.c, a.c)).length : 0), [assessed, lender]);
@@ -77,8 +78,16 @@ export default function Borrowers() {
         {lender ? (
           <div className="card p-4 ring-1 ring-ink/40">
             <div className="flex items-center justify-between text-[12px] text-ink-mute"><span>Presta como</span><Link href="/productos/marketplace" className="hover:text-ink">cambiar</Link></div>
-            <div className="mt-1 flex items-center justify-between gap-2"><Link href={`/empresas/${lender.c.id}`} className="truncate text-[16px] font-semibold text-ink hover:underline">{lender.c.name}</Link><span className="num text-[24px] font-semibold" style={{ color: scoreColor(lender.c.latest.score) }}>{lender.c.latest.score.toFixed(0)}</span></div>
-            <div className="mt-1 text-[12px] text-ink-mute">Capacidad {lender.provider.capacity} · {excludedRelated - 1 > 0 ? `${excludedRelated - 1} de su grupo excluidas` : "sin grupo que excluir"} · perfiles parecidos penalizados hasta {Math.round(OVERLAP_PENALTY * 100)} %</div>
+            <div className="mt-1 flex items-center justify-between gap-2"><button type="button" onClick={() => setOpenCompany(lender.c.id)} className="truncate text-left text-[16px] font-semibold text-ink hover:underline">{lender.c.name}</button><span className="num text-[24px] font-semibold" style={{ color: scoreColor(lender.c.latest.score) }}>{lender.c.latest.score.toFixed(0)}</span></div>
+            <div className="mt-2 rounded-lg bg-panel-2 p-3 text-[12px] text-ink-dim">
+              <div className="mb-1 text-ink">Cartera a medida de este prestamista</div>
+              <ul className="space-y-0.5">
+                <li>· Capital = <span className="num text-ink">{cap ? fmtMoney(cap.deployable) : "—"}</span>: 50 % de su suelo de caja de 12 meses (real, {cap ? fmtMoney(cap.floor12) : "—"}){cap && config.capital !== cap.deployable && <button type="button" onClick={() => setConfig({ capital: cap.deployable })} className="ml-1 text-ink underline">restaurar</button>}</li>
+                <li>· {excludedRelated - 1 > 0 ? `${excludedRelated - 1} empresas de su grupo excluidas` : "Sin grupo que excluir"} (nunca se financia a sí misma ni a filiales)</li>
+                <li>· Receptores con el mismo perfil de riesgo (coseno de las 5 contribuciones) penalizados hasta {Math.round(OVERLAP_PENALTY * 100)} %</li>
+                <li>· Capacidad {lender.provider.capacity}</li>
+              </ul>
+            </div>
           </div>
         ) : (
           <Card title="¿Quién presta?" sub="La cartera se construye para un prestamista: sin exposición a su grupo y menos a perfiles de riesgo parecidos.">
@@ -87,7 +96,7 @@ export default function Borrowers() {
         )}
         <Card title="Configuración de la cartera">
           <div className="space-y-4">
-            <Slider label="Capital disponible" value={config.capital} min={5_000_000} max={100_000_000} step={1_000_000} onChange={(v) => setConfig({ capital: v })} format={(v) => fmtMoney(v)} />
+            <Slider label="Capital disponible" value={config.capital} min={100_000} max={100_000_000} step={100_000} onChange={(v) => setConfig({ capital: v })} format={(v) => fmtMoney(v)} />
             <div><div className="mb-1.5 text-[13px] text-ink-mute">Tolerancia al riesgo</div><Seg className="w-full" value={config.risk} onChange={(v: RiskTolerance) => setConfig({ risk: v })} options={(Object.keys(RISK_PRESETS) as RiskTolerance[]).map((k) => ({ value: k, label: RISK_PRESETS[k].label }))} /><p className="mt-1.5 text-[12px] text-ink-mute">{RISK_PRESETS[config.risk].blurb}</p></div>
             <div className="grid grid-cols-2 gap-4">
               <Slider label="Exposición máx." value={config.maxExposure} min={0.04} max={0.25} step={0.01} onChange={(v) => setConfig({ maxExposure: v })} format={(v) => `${Math.round(v * 100)} %`} />
@@ -120,16 +129,16 @@ export default function Borrowers() {
             sub={`${candidates.length} empresas sanas con necesidad visible de capital${excludedRelated - 1 > 0 ? ` · ${excludedRelated - 1} del grupo del prestamista excluidas` : ""} · umbral 60 · necesidad ≥ 25 · área = encaje (√necesidad × salud)`}
             right={<div className="flex items-center gap-2">{builtForOtherLender && <Pill tone="warn">Cartera construida para otro prestamista</Pill>}{shown && <Seg value={view} onChange={setView} options={[{ value: "candidates", label: "Candidatos" }, { value: "portfolio", label: "Cartera" }]} />}</div>}
           >
-            <BubbleMap data={bubbles} onSelect={(id) => router.push(`/empresas/${id}`)} sizeLabel="Encaje" xThreshold={60} thresholdLabel="SUELO DE FINANCIACIÓN 60" height={380} />
+            <BubbleMap data={bubbles} onSelect={(id) => setOpenCompany(id)} sizeLabel="Encaje" xThreshold={60} thresholdLabel="SUELO DE FINANCIACIÓN 60" height={380} />
             <div className="mt-4 text-[13px] text-ink-mute">Mejor encaje · sanas y con necesidad de capital</div>
             <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4">
               {candidates.slice(0, 4).map((a) => (
-                <Link key={a.c.id} href={`/empresas/${a.c.id}`} className={`card flex flex-col p-4 transition-colors hover:bg-panel-2 ${inChest.has(a.c.id) ? "ring-1 ring-ink/50" : ""}`}>
+                <button type="button" key={a.c.id} onClick={() => setOpenCompany(a.c.id)} className={`card flex flex-col p-4 text-left transition-colors hover:bg-panel-2 ${inChest.has(a.c.id) ? "ring-1 ring-ink/50" : ""}`}>
                   <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-[14px] font-semibold text-ink">{a.c.name}</div><div className="num text-[11px] text-ink-mute">{a.c.id}</div></div><div className="text-right"><div className="num text-[24px] font-semibold leading-none" style={{ color: scoreColor(a.c.latest.score) }}>{a.c.latest.score.toFixed(0)}</div>{a.momentum != null && <div className={`num text-[11px] ${a.momentum >= 0 ? "text-good" : "text-bad"}`}>{fmtDelta(a.momentum)} / 3m</div>}</div></div>
                   <div className="mt-2 flex items-center justify-between"><TrendPill trend={a.trend} /><Sparkline values={a.c.scores} width={60} height={22} color={scoreColor(a.c.latest.score)} min={0} max={100} /></div>
                   <ul className="mt-2 space-y-0.5 text-[12px] text-ink-dim">{a.receiver.needSignals.slice(0, 2).map((r) => <li key={r} className="truncate">· {r}</li>)}</ul>
                   <div className="mt-auto flex items-center justify-between border-t border-line-soft pt-2 text-[12px] text-ink-mute"><span className="flex flex-1 items-center gap-2">Encaje<span className="h-1.5 flex-1 overflow-hidden rounded-full bg-panel-2"><span className="block h-full rounded-full bg-accent-2" style={{ width: `${a.receiver.fit}%` }} /></span><span className="num text-ink">{a.receiver.fit}</span></span>{inChest.has(a.c.id) && <Pill tone="accent" className="ml-2">En cartera</Pill>}</div>
-                </Link>
+                </button>
               ))}
             </div>
           </Card>
@@ -153,7 +162,7 @@ export default function Borrowers() {
             {tab === "map" && (
               <Card title={`Asignación · ${shown.positions.length} receptores`} sub={`a ${monthLabelLong(shown.config.asOf).toLowerCase()}${lender ? ` · presta ${lender.c.name}` : ""} · área = capital · color = score en la asignación · pincha para resaltar`}>
                 <Treemap items={shown.positions.map((p) => ({ id: p.id, name: p.name, value: p.amount, score: p.score, sub: `${(p.weight * 100).toFixed(1)} %${p.overlap != null ? ` · solap. ${p.overlap.toFixed(2)}` : ""}`, dimmed: selected != null && selected !== p.id }))} onSelect={(id) => setSelected((s) => (s === id ? null : id))} selected={selected} />
-                {selected && <div className="mt-2 text-[13px] text-ink-mute"><Link href={`/empresas/${selected}`} className="text-ink hover:underline">Abrir la ficha de {byId.get(selected)?.name ?? selected} →</Link></div>}
+                {selected && <div className="mt-2 text-[13px] text-ink-mute"><button type="button" onClick={() => setOpenCompany(selected)} className="text-ink hover:underline">Ver el detalle de {byId.get(selected)?.name ?? selected} →</button></div>}
               </Card>
             )}
             {tab === "distribution" && (
@@ -179,14 +188,14 @@ export default function Borrowers() {
                 <div className="grid grid-cols-[32px_minmax(0,1fr)_72px_80px_90px_100px] gap-3 border-b border-line-soft pb-2 text-[12px] font-medium text-ink-mute"><span>#</span><span>Empresa</span><span>Historia</span><span className="text-right">Score</span><span>Peso</span><span className="text-right">Importe</span></div>
                 <div className="divide-y divide-line-soft">
                   {shown.positions.map((p) => { const c = byId.get(p.id); return (
-                    <Link key={p.id} href={`/empresas/${p.id}`} className="grid grid-cols-[32px_minmax(0,1fr)_72px_80px_90px_100px] items-center gap-3 py-2 text-[13px] hover:bg-panel-2">
+                    <button type="button" key={p.id} onClick={() => setOpenCompany(p.id)} className="grid w-full grid-cols-[32px_minmax(0,1fr)_72px_80px_90px_100px] items-center gap-3 py-2 text-left text-[13px] hover:bg-panel-2">
                       <span className="num text-ink-mute">{String(p.rank).padStart(2, "0")}</span>
                       <span className="min-w-0"><span className="block truncate text-ink">{p.name}</span><span className="num block text-[11px] text-ink-mute">{p.id}{p.overlap != null ? ` · solap. ${p.overlap.toFixed(2)}` : ""}</span></span>
                       <span>{c && <Sparkline values={c.scores.slice(0, asOfIdx + 1)} width={64} height={20} color={scoreColor(p.score)} min={0} max={100} />}</span>
                       <span className="text-right"><span className="num font-medium" style={{ color: scoreColor(p.score) }}>{p.score.toFixed(0)}</span><span className={`num ml-1 text-[11px] ${(p.momentum ?? 0) >= 0 ? "text-good" : "text-bad"}`}>{fmtDelta(p.momentum)}</span></span>
                       <span><span className="block h-1.5 w-full overflow-hidden rounded-full bg-panel-2"><span className="block h-full rounded-full bg-ink" style={{ width: `${(p.weight / shown.topWeight) * 100}%` }} /></span><span className="num text-[11px] text-ink-mute">{(p.weight * 100).toFixed(1)} %</span></span>
                       <span className="num text-right font-medium text-ink">{fmtMoney(p.amount)}</span>
-                    </Link>
+                    </button>
                   ); })}
                 </div>
               </Card>

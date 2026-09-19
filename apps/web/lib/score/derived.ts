@@ -162,10 +162,29 @@ export function profileOverlap(a: Components, b: Components): number {
 // Evaluaciones del marketplace (prestamista / receptor), en castellano
 // --------------------------------------------------------------------------------------------
 
-export interface ProviderAssessment { qualified: boolean; capacity: number; reasons: string[]; blockers: string[] }
+export interface ProviderAssessment { qualified: boolean; capacity: number; reasons: string[]; blockers: string[]; /** tesorería desplegable real (EUR); null si no hay caja reconstruida */ deployable: number | null }
+
+/** Mínimo de tesorería desplegable para cualificar como prestamista (EUR). */
+export const MIN_DEPLOYABLE = 100_000;
+
+/**
+ * Tesorería desplegable con la caja real reconstruida: el 50 % del suelo de caja de los últimos 12 meses
+ * (lo que nunca ha bajado), redondeado a 10 k€. Null si no hay ≥ 6 meses de caja: no se inventa.
+ */
+export function deployableCapital(c: CompanyIndex, idx: number): { cashNow: number; floor12: number; deployable: number; nMonths: number } | null {
+  if (!c.cash) return null;
+  const last12 = c.cash.slice(Math.max(0, idx - 11), idx + 1).filter((v): v is number => v != null && Number.isFinite(v));
+  if (last12.length < 6) return null;
+  const cashNow = last12[last12.length - 1];
+  const floor12 = Math.min(...last12);
+  return { cashNow, floor12, deployable: floor12 <= 0 ? 0 : Math.floor((floor12 * 0.5) / 10_000) * 10_000, nMonths: last12.length };
+}
+
+const fmtM = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(1).replace(".", ",")} M€` : `${Math.round(v / 1e3)} k€`);
 
 export function assessProvider(c: CompanyIndex, idx: number, allScoresSorted: number[]): ProviderAssessment {
   const s = scoreAt(c.scores, idx) ?? 0;
+  const cap = deployableCapital(c, idx);
   const m = c.latest.metrics;
   const mom = momentum(c.scores, idx);
   const vol = scoreVolatility(c.scores, idx);
@@ -194,6 +213,11 @@ export function assessProvider(c: CompanyIndex, idx: number, allScoresSorted: nu
   } else blockers.push("La liquidez es el principal lastre del score");
   if (mom != null && mom >= 3) reasons.push(`Momentum +${mom.toFixed(1)} pts en 3 meses`);
   if (m.retraso_pago != null && m.retraso_pago <= 0) reasons.push("Paga a proveedores en plazo o antes");
+  // criterio real: sin tesorería no hay prestamista, por bueno que sea el score
+  if (cap) {
+    if (cap.deployable >= MIN_DEPLOYABLE) reasons.unshift(`Tesorería desplegable ${fmtM(cap.deployable)}: 50 % de un suelo de caja de ${fmtM(cap.floor12)} en ${cap.nMonths} meses`);
+    else blockers.unshift(`Tesorería desplegable ${fmtM(cap.deployable)} (suelo de caja ${fmtM(cap.floor12)}): por debajo de ${fmtM(MIN_DEPLOYABLE)}`);
+  }
   const qualified = blockers.length === 0;
   const scoreNorm = clamp01((s - 60) / 35);
   const stability = clamp01(1 - (vol ?? 4) / 12);
@@ -205,7 +229,7 @@ export function assessProvider(c: CompanyIndex, idx: number, allScoresSorted: nu
   const liqSignal = liqParts.length ? liqParts.reduce((a, b) => a + b, 0) / liqParts.length : 0.5;
   const momNorm = clamp01(((mom ?? 0) + 10) / 20);
   const capacity = Math.round(100 * (0.45 * scoreNorm + 0.2 * stability + 0.2 * liqSignal + 0.15 * momNorm));
-  return { qualified, capacity, reasons, blockers };
+  return { qualified, capacity, reasons, blockers, deployable: cap?.deployable ?? null };
 }
 
 export interface ReceiverAssessment { eligible: boolean; fit: number; need: number; health: number; needSignals: string[]; strengths: string[]; risks: string[] }
