@@ -80,8 +80,9 @@ const REGIME_LABEL: Record<RegimeCode, string> = {
   p: "Bache puntual",
 };
 
-/** Hash determinista (FNV-1a) de un id a [0,1) — cada empresa se queda siempre en el mismo "carril"
- * vertical del gráfico, así solo se mueve en horizontal (su score) al cambiar de mes. */
+/** Hash determinista (FNV-1a) de un id a [0,1) — solo para las empresas que este mes no tienen dato
+ * propio (entran/salen del dataset): se les da un carril estable para que su punto desvanecido
+ * ("fade out") no salte de sitio en vez de participar en el apilado por densidad. */
 function hashToUnit(id: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < id.length; i++) {
@@ -91,26 +92,88 @@ function hashToUnit(id: string): number {
   return ((h >>> 0) % 100000) / 100000;
 }
 
+/** Slot 0 → centro; slots impares suben, pares bajan, cada vez más lejos del centro
+ * (0, +1, -1, +2, -2, …) — así los puntos que comparten score se apilan en abanico y la nube
+ * entera dibuja la silueta de la distribución en vez de una fila plana. */
+function beeswarmOffset(slot: number): number {
+  if (slot === 0) return 0;
+  const k = Math.ceil(slot / 2);
+  return slot % 2 === 1 ? k : -k;
+}
+
 /**
- * Dispersión animada: un punto por empresa (score en X, régimen en color), un carril vertical fijo
- * por empresa para que el ojo pueda seguir "esta empresa se mueve a la derecha" mes a mes. Se anima
- * por transform/CSS al cambiar `monthIndex` (scrubber o play) — sin volver a pedir nada a Postgres,
- * `series` ya trae los 9 meses de las ~1.280 empresas de una vez.
+ * Beeswarm animado: un punto por empresa, posicionado en X por su score y apilado en Y según cuántas
+ * empresas más comparten ese mismo score este mes — así la propia nube de puntos es la distribución
+ * de la cartera (dónde se concentra, si hay dos modas, si se desplaza a la derecha con el tiempo),
+ * no solo un enjambre de puntos sueltos. Se recalcula el apilado en cada `monthIndex` y se anima por
+ * transform/CSS (scrubber o play) — sin volver a pedir nada a Postgres, `series` ya trae los 9 meses
+ * de las ~1.280 empresas de una vez.
  */
-function CompanyScatter({ series, monthIndex }: { series: CompanyScoreSeries[]; monthIndex: number }) {
+function CompanyScatter({
+  series,
+  monthIndex,
+  meanScore,
+}: {
+  series: CompanyScoreSeries[];
+  monthIndex: number;
+  meanScore?: number;
+}) {
   const W = 760;
-  const H = 220;
+  const H = 280;
   const padL = 22;
   const padR = 16;
   const padT = 14;
   const padB = 28;
+  const centerY = padT + (H - padT - padB) / 2;
+  const dotR = 2.2;
+  const spacing = 5.4;
+  const binWidth = 5;
   const x = (score: number) => padL + (score / 100) * (W - padL - padR);
 
-  const lanes = useMemo(() => new Map(series.map((s) => [s.companyId, hashToUnit(s.companyId)])), [series]);
+  const fallbackLanes = useMemo(() => new Map(series.map((s) => [s.companyId, hashToUnit(s.companyId)])), [series]);
+
+  const dots = useMemo(() => {
+    const live: { companyId: string; displayName: string; score: number; regime: RegimeCode }[] = [];
+    const faded: { companyId: string; displayName: string; score: number; regime: RegimeCode }[] = [];
+
+    for (const s of series) {
+      const current = s.points[monthIndex];
+      if (current) {
+        live.push({ companyId: s.companyId, displayName: s.displayName, score: current.score, regime: current.regime ?? "s" });
+        continue;
+      }
+      // sin dato este mes (entra/sale del dataset): se queda en su última posición conocida y se desvanece
+      let point = undefined as (typeof s.points)[number] | undefined;
+      for (let i = monthIndex - 1; i >= 0 && !point; i--) point = s.points[i];
+      for (let i = monthIndex + 1; i < s.points.length && !point; i++) point = s.points[i];
+      if (point) faded.push({ companyId: s.companyId, displayName: s.displayName, score: point.score, regime: point.regime ?? "s" });
+    }
+
+    // ordenar por score para que el apilado por bin salga limpio (izquierda→derecha, abanico simétrico)
+    live.sort((a, b) => a.score - b.score || a.companyId.localeCompare(b.companyId));
+    const slotByBin = new Map<number, number>();
+    const positioned = live.map((d) => {
+      const bin = Math.round((x(d.score) - padL) / binWidth);
+      const slot = slotByBin.get(bin) ?? 0;
+      slotByBin.set(bin, slot + 1);
+      const rawY = centerY + beeswarmOffset(slot) * spacing;
+      const y = Math.min(H - padB - dotR, Math.max(padT + dotR, rawY));
+      return { ...d, x: x(d.score), y, opacity: 0.75 };
+    });
+
+    const positionedFaded = faded.map((d) => ({
+      ...d,
+      x: x(d.score),
+      y: padT + fallbackLanes.get(d.companyId)! * (H - padT - padB),
+      opacity: 0,
+    }));
+
+    return [...positioned, ...positionedFaded];
+  }, [series, monthIndex, fallbackLanes]);
 
   return (
     <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Score de cada empresa, mes a mes">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Distribución de score de cada empresa, mes a mes">
         {[0, 40, 70, 100].map((v) => (
           <line key={v} x1={x(v)} x2={x(v)} y1={padT} y2={H - padB} stroke="var(--color-line-soft)" strokeWidth={1} />
         ))}
@@ -119,31 +182,25 @@ function CompanyScatter({ series, monthIndex }: { series: CompanyScoreSeries[]; 
             {v}
           </text>
         ))}
-        {series.map((s) => {
-          const lane = lanes.get(s.companyId)!;
-          const y = padT + lane * (H - padT - padB);
-          const current = s.points[monthIndex];
-          // si a esta empresa le falta el dato de este mes (entra/sale del dataset), se queda en su
-          // última posición conocida y se desvanece, en vez de saltar a 0 o desaparecer de golpe
-          let point = current;
-          if (!point) {
-            for (let i = monthIndex - 1; i >= 0 && !point; i--) point = s.points[i];
-            for (let i = monthIndex + 1; i < s.points.length && !point; i++) point = s.points[i];
-          }
-          if (!point) return null;
-          const color = REGIME_COLOR[point.regime ?? "s"];
-          return (
-            <g
-              key={s.companyId}
-              style={{ transform: `translate(${x(point.score)}px, ${y}px)`, transition: "transform 650ms cubic-bezier(.4,0,.2,1), opacity 300ms" }}
-              opacity={current ? 0.75 : 0}
-            >
-              <circle r={7} fill="transparent" />
-              <circle r={2.6} fill={color} />
-              <title>{`${s.displayName} · ${point.score} / 100 · ${REGIME_LABEL[point.regime ?? "s"]}`}</title>
-            </g>
-          );
-        })}
+        {meanScore != null && (
+          <g style={{ transform: `translateX(${x(meanScore)}px)`, transition: "transform 650ms cubic-bezier(.4,0,.2,1)" }}>
+            <line x1={0} x2={0} y1={padT} y2={H - padB} stroke="var(--color-accent)" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+            <text x={4} y={padT + 8} fontFamily="var(--font-mono)" fontSize={9.5} fill="var(--color-accent)">
+              media
+            </text>
+          </g>
+        )}
+        {dots.map((d) => (
+          <g
+            key={d.companyId}
+            style={{ transform: `translate(${d.x}px, ${d.y}px)`, transition: "transform 650ms cubic-bezier(.4,0,.2,1), opacity 300ms" }}
+            opacity={d.opacity}
+          >
+            <circle r={6} fill="transparent" />
+            <circle r={dotR} fill={REGIME_COLOR[d.regime]} />
+            <title>{`${d.displayName} · ${d.score} / 100 · ${REGIME_LABEL[d.regime]}`}</title>
+          </g>
+        ))}
       </svg>
       <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-[11px] text-ink-mute">
         {(["i", "s", "d", "p"] as const).map((code) => (
@@ -326,7 +383,7 @@ export function PortfolioScrubber({
         <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">
           Cómo se mueve la cartera · {formatCount(series.length)} empresas
         </div>
-        <CompanyScatter series={series} monthIndex={monthIndex} />
+        <CompanyScatter series={series} monthIndex={monthIndex} meanScore={kpis.portfolioScore} />
       </div>
 
       <div className="rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-8">
