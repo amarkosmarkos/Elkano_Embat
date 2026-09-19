@@ -1,10 +1,6 @@
 // Motor de cash pooling: reglas explícitas sobre datos reales de un grupo. Nada de caja negra —
 // es lo que un gestor aprueba con un clic, así que cada propuesta explica su número.
-//
-// Todo en EUR (toEur) porque cash_position viene en divisa local. Un traspaso entre dos filiales
-// de la misma divisa es "gratis" (corredor libre); entre divisas distintas paga spread FX.
-import { FX, GEO, fxSpread, resolveCountry, toEur } from "./fx";
-import { sane } from "./format";
+import { FX, toEur } from "./fx";
 
 export type EntityBase = {
   companyId: string;
@@ -12,162 +8,267 @@ export type EntityBase = {
   country: string | null;
 };
 
-export type MonthRow = { month: string; score: number; regime: string | null; cashLocal: number | null };
+export type PoolSettings = {
+  days: number;
+  bankRate: number;
+  depositRate: number;
+  transferFeeEur: number;
+  reserveEur: number;
+};
 
-export type Entity = EntityBase & {
-  iso: string;
-  countryInferred: boolean;
-  countryName: string;
-  lat: number;
-  lon: number;
+export const DEFAULT_SETTINGS: PoolSettings = {
+  days: 30,
+  bankRate: 6,
+  depositRate: 2,
+  transferFeeEur: 10,
+  reserveEur: 25_000,
+};
+
+export type SeriesRow = {
+  companyId: string;
+  month: string;
   score: number;
-  regime: string | null;
+  cashLocal: number | null;
+  explanation: string | null;
+};
+
+export type MonthRow = Omit<SeriesRow, "companyId"> & {
+  delta1m: number | null;
+  delta3m: number | null;
+  recentDrawdownEur: number;
+};
+
+export type Trend = "improving" | "stable" | "dip" | "deteriorating" | "unknown";
+export type Decision = "approved" | "rejected";
+export type Entity = EntityBase & {
+  score: number | null;
   cashLocal: number | null;
   cashEur: number | null;
-  role: "surplus" | "deficit" | "neutral";
+  delta3m: number | null;
+  trend: Trend;
+  explanation: string | null;
+  role: "surplus" | "deficit" | "neutral" | "unknown";
+  policy: "available" | "limited" | "review" | "none";
+  reason: string;
+  reserveEur: number;
+  recentDrawdownEur: number;
   needEur: number; // cuánto le falta para estar cómoda (0 si no le falta)
   spareEur: number; // cuánto podría prestar sin quedarse justa (0 si no puede)
+  receiveLimitEur: number;
 };
 
 export type Proposal = {
   id: string;
+  month: string;
   fromId: string;
   toId: string;
+  currency: string;
+  amountLocal: number;
   amountEur: number;
-  amountFromLocal: number;
-  amountToLocal: number;
-  sameCurrency: boolean;
-  internalRate: number; // % anual, por score de quien recibe
-  bankRate: number; // % anual que pagaría a un banco externo
-  fxCostEur: number; // coste único del cruce de divisa
-  savingEurYear: number; // ahorro anual de intereses vs banco
-  urgency: "alta" | "media" | "baja";
+  days: number;
+  bankInterestEur: number;
+  opportunityCostEur: number;
+  feeEur: number;
+  netSavingEur: number;
+  donorAfterEur: number;
+  receiverAfterEur: number;
+  donorReserveEur: number;
+  receiverReserveEur: number;
+  reason: string;
+  requiresReview: boolean;
 };
 
 export type Snapshot = {
   month: string;
   entities: Entity[];
   proposals: Proposal[];
-  totals: { cashEur: number; surplusEur: number; deficitEur: number; nSurplus: number; nDeficit: number; nCurrencies: number };
+  totals: { cashEur: number; surplusEur: number; deficitEur: number; unknown: number };
 };
 
-export type Counterfactual = {
-  months: number;
-  bankInterestEur: number; // lo que las filiales en déficit habrían pagado a bancos
-  poolInterestEur: number; // lo mismo, al tipo interno del grupo
-  fxCostEur: number; // cruces de divisa necesarios
-  netSavingEur: number;
-};
-
-const BUFFER_EUR = 25_000; // colchón mínimo que debe quedarle a una filial
 const CASH_CAP_EUR = 5_000_000; // outliers sintéticos: por encima no nos lo creemos
+const MIN_TRANSFER_EUR = 1_000;
 
-/** Tipo interno: interpola entre 2 % (score 90+) y 6 % (score 40−), como negociaría un banco pero en vivo. */
-export function rateForScore(score: number): number {
-  const s = Math.max(40, Math.min(90, score));
-  return Math.round((6 - ((s - 40) / 50) * 4) * 10) / 10;
+function cashInEur(cash: number | null | undefined, currency: string): number | null {
+  const converted = toEur(cash, currency);
+  return converted !== null && Math.abs(converted) <= CASH_CAP_EUR ? converted : null;
 }
 
-/** Lo que le costaría a un banco externo: tipo interno + prima por riesgo, más cara cuanto peor el score. */
-export function bankRateForScore(score: number): number {
-  return Math.round((rateForScore(score) + 2.5 + Math.max(0, 65 - score) * 0.06) * 10) / 10;
+function validScore(score: number | null | undefined): score is number {
+  return score != null && Number.isFinite(score) && score >= 0 && score <= 100;
 }
 
-export function buildEntities(base: EntityBase[], rows: Map<string, MonthRow>): Entity[] {
-  return base.flatMap((b) => {
+function trendFor(row?: MonthRow): Trend {
+  if (!row || !validScore(row.score) || row.delta3m === null || !Number.isFinite(row.delta3m)) return "unknown";
+  if (row.delta3m <= -6) return "deteriorating";
+  if (row.delta3m >= 6) return "improving";
+  if (row.delta1m !== null && row.delta1m <= -8) return "dip";
+  return "stable";
+}
+
+function validateSettings(s: PoolSettings) {
+  if (!Number.isInteger(s.days) || s.days < 1 || s.days > 90 ||
+      !Number.isFinite(s.bankRate) || s.bankRate < 0 || s.bankRate > 30 ||
+      !Number.isFinite(s.depositRate) || s.depositRate < 0 || s.depositRate > 30 ||
+      !Number.isFinite(s.transferFeeEur) || s.transferFeeEur < 0 || s.transferFeeEur > 10_000 ||
+      !Number.isFinite(s.reserveEur) || s.reserveEur < 0 || s.reserveEur > 1_000_000) {
+    throw new Error("Supuestos de simulación fuera de rango");
+  }
+}
+
+export function buildEntities(base: EntityBase[], rows: Map<string, MonthRow>, settings: PoolSettings): Entity[] {
+  return base.map((b) => {
     const r = rows.get(b.companyId);
-    if (!r) return [];
-    const cashLocal = sane(r.cashLocal, CASH_CAP_EUR * (FX[b.currency]?.perEur ?? 1));
-    const cashEur = toEur(cashLocal, b.currency);
-    const { iso, inferred } = resolveCountry(b.country, b.currency);
-    const g = GEO[iso];
-    let role: Entity["role"] = "neutral";
-    let needEur = 0;
+    const cashEur = cashInEur(r?.cashLocal, b.currency);
+    const score = validScore(r?.score) ? r.score : null;
+    const trend = trendFor(r);
+    const recentDrawdownEur = Math.max(0, r?.recentDrawdownEur ?? 0);
+    const reserveEur = Math.max(settings.reserveEur, recentDrawdownEur * settings.days / 30);
+    const needEur = cashEur === null ? 0 : Math.max(0, reserveEur - cashEur);
     let spareEur = 0;
-    if (cashEur !== null) {
-      if (cashEur < 0 || (r.score < 55 && cashEur < BUFFER_EUR)) {
-        role = "deficit";
-        needEur = Math.max(0, BUFFER_EUR - cashEur);
-      } else if (cashEur > 4 * BUFFER_EUR && r.score >= 60) {
-        role = "surplus";
-        spareEur = (cashEur - 2 * BUFFER_EUR) * 0.5; // presta hasta la mitad de lo que le sobra por encima de 2 colchones
-      }
+    let receiveLimitEur = 0;
+    let role: Entity["role"] = cashEur === null || score === null ? "unknown" : needEur > 0 ? "deficit" : "neutral";
+    let policy: Entity["policy"] = "none";
+    let reason = "La caja cubre la reserva de este escenario; no necesita financiación interna.";
+
+    if (role === "unknown") {
+      policy = "review";
+      reason = "Saldo o score ausente, fuera de rango o sin conversión conocida. Excluida del plan; no equivale a caja cero.";
+    } else if (trend === "unknown") {
+      policy = "review";
+      reason = "Falta un score comparable de hace tres meses. Revisar la historia antes de proponer una operación.";
+    } else if (trend === "deteriorating" || score! < 40) {
+      policy = "review";
+      reason = trend === "deteriorating"
+        ? "El score cae al menos 6 puntos en tres meses. No se propone nueva exposición ni se moviliza su caja sin revisión."
+        : "Score inferior a 40. Necesita una revisión específica, no financiación automática.";
+    } else if (needEur > 0) {
+      const fraction = trend === "dip" ? 0.5 : trend === "improving" ? 0.75 : score! >= 60 ? 1 : 0.5;
+      receiveLimitEur = needEur * fraction;
+      policy = fraction < 1 ? "limited" : "available";
+      reason = trend === "dip"
+        ? "Posible bache: caída mensual de 8 puntos o más sin caída sostenida de 6 puntos a tres meses. Cobertura limitada al 50 %; revisar la causa."
+        : trend === "improving"
+          ? "Mejora de al menos 6 puntos en tres meses. Se permite una cobertura gradual de hasta el 75 % de la necesidad."
+          : fraction === 1
+            ? "Trayectoria estable y score de al menos 60. Se puede cubrir la necesidad hasta la reserva, si hay liquidez compatible."
+            : "Trayectoria estable con score entre 40 y 60. Se limita la cobertura al 50 % de la necesidad.";
+    } else if (score! >= 60 && trend !== "dip" && cashEur! > reserveEur) {
+      spareEur = (cashEur! - reserveEur) * 0.5;
+      role = "surplus";
+      policy = "available";
+      reason = "Score de al menos 60 sin deterioro ni bache. Moviliza como máximo el 50 % del excedente sobre su reserva, incluyendo comisiones.";
+    } else if (cashEur! > reserveEur) {
+      policy = "review";
+      reason = "Tiene caja sobre la reserva, pero su score o posible bache aconsejan conservarla hasta una revisión.";
     }
-    return [{ ...b, iso, countryInferred: inferred, countryName: g?.name ?? iso, lat: g?.lat ?? 0, lon: g?.lon ?? 0,
-      score: r.score, regime: r.regime, cashLocal, cashEur, role, needEur, spareEur }];
+
+    return { ...b, score, cashEur, cashLocal: cashEur === null ? null : r!.cashLocal,
+      delta3m: r?.delta3m ?? null, trend, explanation: r?.explanation ?? null, role, policy, reason,
+      reserveEur, recentDrawdownEur, needEur, spareEur, receiveLimitEur };
   });
 }
 
-export function buildProposals(entities: Entity[], max = 6): Proposal[] {
-  const lenders = entities.filter((e) => e.role === "surplus").map((e) => ({ e, left: e.spareEur }));
-  const borrowers = entities.filter((e) => e.role === "deficit").sort((a, b) => b.needEur - a.needEur || a.score - b.score);
+export function buildProposals(month: string, entities: Entity[], settings: PoolSettings): Proposal[] {
+  const lenders = entities.filter((e) => e.spareEur > 0).map((e) => ({ e, left: e.spareEur, debit: 0 }));
+  const borrowers = entities.filter((e) => e.receiveLimitEur > 0)
+    .sort((a, b) => b.receiveLimitEur - a.receiveLimitEur || a.companyId.localeCompare(b.companyId));
   const out: Proposal[] = [];
   for (const b of borrowers) {
-    if (out.length >= max) break;
-    let need = b.needEur;
-    // primero corredores libres (misma divisa), luego el que más tenga
-    const ranked = [...lenders].sort((x, y) => {
-      const sx = x.e.currency === b.currency ? 1 : 0, sy = y.e.currency === b.currency ? 1 : 0;
-      return sy - sx || y.left - x.left;
-    });
+    let remaining = b.receiveLimitEur;
+    let credit = 0;
+    const ranked = lenders.filter((l) => l.e.currency === b.currency && l.e.companyId !== b.companyId)
+      .sort((a, b) => b.left - a.left || a.e.companyId.localeCompare(b.e.companyId));
     for (const l of ranked) {
-      if (need <= 5_000 || out.length >= max) break;
-      if (l.left < 5_000) continue;
-      const amountEur = Math.round(Math.min(need, l.left) / 1000) * 1000;
-      if (amountEur < 5_000) continue;
-      const same = l.e.currency === b.currency;
-      const internalRate = rateForScore(b.score);
-      const bankRate = bankRateForScore(b.score);
-      const fxCostEur = Math.round(amountEur * fxSpread(l.e.currency, b.currency));
+      const fx = FX[b.currency].perEur;
+      const amountLocal = Math.floor(Math.max(0, Math.min(remaining, l.left - settings.transferFeeEur)) * fx / 100) * 100;
+      const amountEur = amountLocal / fx;
+      if (amountEur < MIN_TRANSFER_EUR) continue;
+      const bankInterestEur = amountEur * (settings.bankRate / 100) * settings.days / 365;
+      const opportunityCostEur = amountEur * (settings.depositRate / 100) * settings.days / 365;
+      const netSavingEur = bankInterestEur - opportunityCostEur - settings.transferFeeEur;
+      if (netSavingEur <= 0) continue;
+      l.left -= amountEur + settings.transferFeeEur;
+      l.debit += amountEur + settings.transferFeeEur;
+      remaining -= amountEur;
+      credit += amountEur;
+      const donorAfterEur = l.e.cashEur! - l.debit;
+      const receiverAfterEur = b.cashEur! + credit;
       out.push({
-        id: `${l.e.companyId}-${b.companyId}`,
-        fromId: l.e.companyId,
-        toId: b.companyId,
-        amountEur,
-        amountFromLocal: Math.round(amountEur * (FX[l.e.currency]?.perEur ?? 1)),
-        amountToLocal: Math.round(amountEur * (FX[b.currency]?.perEur ?? 1)),
-        sameCurrency: same,
-        internalRate,
-        bankRate,
-        fxCostEur,
-        savingEurYear: Math.round((amountEur * (bankRate - internalRate)) / 100),
-        urgency: b.cashEur !== null && b.cashEur < 0 ? "alta" : b.score < 50 ? "media" : "baja",
+        id: JSON.stringify([month, l.e.companyId, b.companyId, amountLocal, settings.days, settings.bankRate,
+          settings.depositRate, settings.transferFeeEur, settings.reserveEur, l.e.score, b.score,
+          l.e.delta3m, b.delta3m, l.e.trend, b.trend, donorAfterEur, receiverAfterEur, l.e.reserveEur, b.reserveEur]),
+        month, fromId: l.e.companyId, toId: b.companyId, currency: b.currency, amountLocal, amountEur,
+        days: settings.days, bankInterestEur, opportunityCostEur, feeEur: settings.transferFeeEur, netSavingEur,
+        donorAfterEur, receiverAfterEur, donorReserveEur: l.e.reserveEur, receiverReserveEur: b.reserveEur,
+        reason: b.reason, requiresReview: b.policy === "limited",
       });
-      l.left -= amountEur;
-      need -= amountEur;
     }
   }
   return out;
 }
 
-export function snapshot(month: string, base: EntityBase[], rows: Map<string, MonthRow>): Snapshot {
-  const entities = buildEntities(base, rows);
-  const proposals = buildProposals(entities);
-  const withCash = entities.filter((e) => e.cashEur !== null);
+export function snapshot(month: string, base: EntityBase[], rows: Map<string, MonthRow>, settings: PoolSettings = DEFAULT_SETTINGS): Snapshot {
+  validateSettings(settings);
+  const entities = buildEntities(base, rows, settings);
   return {
-    month,
-    entities,
-    proposals,
+    month, entities, proposals: buildProposals(month, entities, settings),
     totals: {
-      cashEur: withCash.reduce((s, e) => s + (e.cashEur ?? 0), 0),
-      surplusEur: entities.filter((e) => e.role === "surplus").reduce((s, e) => s + e.spareEur, 0),
-      deficitEur: entities.filter((e) => e.role === "deficit").reduce((s, e) => s + e.needEur, 0),
-      nSurplus: entities.filter((e) => e.role === "surplus").length,
-      nDeficit: entities.filter((e) => e.role === "deficit").length,
-      nCurrencies: new Set(entities.map((e) => e.currency)).size,
+      cashEur: entities.reduce((s, e) => s + (e.cashEur ?? 0), 0),
+      surplusEur: entities.reduce((s, e) => s + e.spareEur, 0),
+      deficitEur: entities.reduce((s, e) => s + e.needEur, 0),
+      unknown: entities.filter((e) => e.role === "unknown").length,
     },
   };
 }
 
-/** Recorre todos los meses: cuánto habría costado financiar los déficits en el banco vs en el pool. */
-export function counterfactual(snaps: Snapshot[]): Counterfactual {
-  let bank = 0, pool = 0, fx = 0;
-  for (const s of snaps) {
-    for (const p of s.proposals) {
-      bank += (p.amountEur * p.bankRate) / 100 / 12;
-      pool += (p.amountEur * p.internalRate) / 100 / 12;
-      fx += p.fxCostEur / 12; // se asume que el cruce se renueva ~una vez al año
-    }
+function previousMonth(month: string, n: number) {
+  const [year, m] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year, m - 1 - n, 1));
+  return date.toISOString().slice(0, 7);
+}
+
+export function buildSeries(base: EntityBase[], rows: SeriesRow[], settings: PoolSettings = DEFAULT_SETTINGS): Snapshot[] {
+  const months = Array.from(new Set(rows.map((r) => r.month))).sort();
+  const byCompany = new Map<string, Map<string, SeriesRow>>();
+  for (const r of rows) {
+    if (!byCompany.has(r.companyId)) byCompany.set(r.companyId, new Map());
+    byCompany.get(r.companyId)!.set(r.month, r);
   }
-  return { months: snaps.length, bankInterestEur: Math.round(bank), poolInterestEur: Math.round(pool), fxCostEur: Math.round(fx), netSavingEur: Math.round(bank - pool - fx) };
+  return months.map((month) => {
+    const monthly = new Map<string, MonthRow>();
+    for (const b of base) {
+      const history = byCompany.get(b.companyId);
+      const r = history?.get(month);
+      if (!r) continue;
+      const delta = (n: number) => {
+        const past = history?.get(previousMonth(month, n));
+        return validScore(r.score) && validScore(past?.score) ? r.score - past.score : null;
+      };
+      let recentDrawdownEur = 0;
+      for (let i = 0; i < 3; i++) {
+        const current = cashInEur(history?.get(previousMonth(month, i))?.cashLocal, b.currency);
+        const previous = cashInEur(history?.get(previousMonth(month, i + 1))?.cashLocal, b.currency);
+        if (current !== null && previous !== null) recentDrawdownEur = Math.max(recentDrawdownEur, previous - current);
+      }
+      monthly.set(b.companyId, { ...r, delta1m: delta(1), delta3m: delta(3), recentDrawdownEur });
+    }
+    return snapshot(month, base, monthly, settings);
+  });
+}
+
+export function summarize(s: Snapshot, decisions: Record<string, Decision>) {
+  const active = s.proposals.filter((p) => decisions[p.id] !== "rejected");
+  const approved = active.filter((p) => decisions[p.id] === "approved");
+  const sum = (rows: Proposal[], key: "amountEur" | "netSavingEur" | "bankInterestEur" | "opportunityCostEur" | "feeEur") => rows.reduce((n, p) => n + p[key], 0);
+  return {
+    pending: active.length - approved.length,
+    proposedEur: sum(active, "amountEur"),
+    approvedEur: sum(approved, "amountEur"),
+    approvedSavingEur: sum(approved, "netSavingEur"),
+    netSavingEur: sum(active, "netSavingEur"),
+    bankInterestEur: sum(active, "bankInterestEur"),
+    opportunityCostEur: sum(active, "opportunityCostEur"),
+    feeEur: sum(active, "feeEur"),
+    uncoveredEur: Math.max(0, s.totals.deficitEur - sum(active, "amountEur")),
+  };
 }
