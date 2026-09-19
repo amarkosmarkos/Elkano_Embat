@@ -47,6 +47,7 @@ export const NAV: NavItem[] = [
     children: [
       { href: "/productos/marketplace", label: "01 · Marketplace" },
       { href: "/productos/cash-pooling", label: "02 · Cash pooling" },
+      { href: "/productos/seguro", label: "03 / Seguro de crédito" },
     ],
   },
 ];
