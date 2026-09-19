@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./embat-presentation.css";
 import type { Metadata } from "next";
 import { Shell } from "@/components/Shell";
 import { getFeaturedCompanyId, getFeaturedGroupId, getOverview } from "@/lib/data";

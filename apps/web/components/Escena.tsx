@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { presentation, presentationHref, sceneMedia, sectionLabel } from "@/lib/presentation";
+import { PresentationBrand } from "@/components/PresentationBrand";
 
 type WindowData={key:string;title:string;value:string;detail:string};
 const clamp=(x:number)=>Math.max(0,Math.min(1,x));
@@ -41,7 +42,7 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
     <section className="scene-stage" aria-label={media.title}>
       <video ref={video} className="scene-video" src={media.video} poster={media.poster} preload="auto" muted playsInline onError={()=>setError(true)} aria-label={`Plano de ${media.title}`}/>
       <div className="scene-shade"/>
-      <header className="scene-masthead"><Link href="/escena/1/" className="scene-wordmark">ELKANO<span>✧</span></Link><span>HACKSPAIN 2026, X RAY, EMBAT</span><span className="scene-chapter">{sectionLabel[number]}</span></header>
+      <header className="scene-masthead"><PresentationBrand/><span>HackSpain 2026, reto de Embat</span><span className="scene-chapter">{sectionLabel[number]}</span></header>
       {number===1&&<>
         <Layer p={Math.max(.05,p)} to={.46} position="right"><div className="story-intro-card"><p className="scene-eyebrow">QUIÉNES SOMOS</p><h1>Somos Elkano.</h1><p>Somos Luken, Nagore, Markos, David y Xuban. Nos subimos al barco de Embat con los datos de 1.286 empresas en 250 grupos: 24 meses, 2.556.437 movimientos y 897.894 facturas.</p></div></Layer>
         <Layer p={p} from={.48} position="right"><div className="story-intro-card"><p className="scene-eyebrow">POR QUÉ ESTE TRACK</p><h1>El dinero<br/><em>deja rastro.</em></h1><p>Elegimos este track porque el dinero deja rastro y casi nadie lo lee. Embat ve el de 400 empresas cada día. Nos ha dado los datos de 1.286 para probar que podemos detectar lo que ocurre antes de que sea evidente.</p></div></Layer>

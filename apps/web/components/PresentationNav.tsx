@@ -10,6 +10,7 @@ export function PresentationNav() {
   const path=(pathname??"").replace(/\/$/,"");
   const scene=path.startsWith("/escena")||path.startsWith("/producto")||path==="/calculo-score"||path==="/intro"||path==="/cierre";
   const canonical=path==="/intro"?"/escena/1":path==="/cierre"?"/escena/6":path;
+  const paper=path.startsWith("/producto")||path==="/calculo-score"||path==="/escena/8";
   const index=presentation.findIndex(([route])=>route===canonical);
   useEffect(()=>{setEnabled(scene||new URLSearchParams(location.search).get("present")==="1");setOpen(false);},[pathname,scene]);
   useEffect(()=>{
@@ -26,7 +27,7 @@ export function PresentationNav() {
   },[enabled,index,router]);
   if(!enabled||index<0)return null;
   const prev=presentation[index-1];const next=presentation[index+1];
-  return <nav className={`presentation-nav ${scene?"on-scene":"on-product"}`} aria-label="Recorrido de la presentación">
+  return <nav className={`presentation-nav ${scene&&!paper?"on-scene":"on-product"}`} aria-label="Recorrido de la presentación">
     <div className="presentation-controls">
       {prev?<Link href={presentationHref(prev[0])} aria-label={`Anterior: ${prev[1]}`} className="presentation-arrow">‹</Link>:<span className="presentation-arrow disabled">‹</span>}
       <button onClick={()=>setOpen(!open)} aria-expanded={open} aria-controls="presentation-index" className="presentation-current"><span>{String(index+1).padStart(2,"0")} / {presentation.length}</span> {presentation[index][1]} <span>☰</span></button>

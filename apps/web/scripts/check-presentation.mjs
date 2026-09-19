@@ -18,5 +18,6 @@ for (const name of ['zarpar', 'isla', 'estrellas', 'cofre', 'puerto', 'cierre'])
   if (bytes.byteLength !== 100) throw new Error(`${name}: wrong byte range`);
   const poster = await fetch(`${base}/video/${name}-seedance.jpg`);
   if (!poster.ok) throw new Error(`${name}: poster missing`);
+  await poster.arrayBuffer();
   console.log('OK video, poster and seek support', name);
 }
