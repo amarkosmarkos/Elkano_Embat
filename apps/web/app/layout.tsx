@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import "./globals.css";
 
 export const metadata = {
-  title: "Elkano X-Ray · Embat · HackSpain 2026",
+  title: "Elkano · Embat · HackSpain 2026",
   description: "Score de salud financiera y productos encima — reto X-Ray de Embat, HackSpain 2026.",
 };
 
