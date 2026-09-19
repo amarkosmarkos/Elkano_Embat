@@ -10,11 +10,13 @@ import { ValueHistogram } from "@/components/charts/Histogram";
 import { DIM_LABEL } from "@/lib/score/meta";
 import { monthLabel, formatCount } from "@/lib/format";
 import { scoreColor } from "@/lib/score/colors";
+import MonthScrubberSync from "@/components/cartera/MonthScrubberSync";
 
 export default async function MovimientosPage() {
   const store = await getStore();
   const { idx, month } = await currentMonth(store.months);
-  if (idx === 0) return <Empty>Elige un mes con anterior para ver movimientos.</Empty>;
+  const scrubber = <MonthScrubberSync months={store.months} initialIdx={idx} />;
+  if (idx === 0) return <div className="flex flex-col gap-5">{scrubber}<Empty>Elige un mes con anterior para ver movimientos.</Empty></div>;
   const rows = rowsAt(store, idx);
   const prev = new Map(rowsAt(store, idx - 1).map((r) => [r.id, r]));
   const withPrev = rows.filter((r) => r.d1 != null);
@@ -50,6 +52,7 @@ export default async function MovimientosPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      {scrubber}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         <Kpi icon="trend-up" label="Suben" value={formatCount(withPrev.filter((r) => (r.d1 as number) > 0.5).length)} tone="good" sub={`vs ${monthLabel(store.months[idx - 1])}`} />
         <Kpi icon="trend-down" label="Bajan" value={formatCount(withPrev.filter((r) => (r.d1 as number) < -0.5).length)} tone="bad" sub={`vs ${monthLabel(store.months[idx - 1])}`} />

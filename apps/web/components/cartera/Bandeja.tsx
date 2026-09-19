@@ -8,13 +8,14 @@ import { Pill } from "@/components/ui/Pill";
 import { CompanyLink } from "@/components/ui/CompanyLink";
 import { useOps } from "@/lib/ops";
 import { monthLabelLong, formatCount } from "@/lib/format";
+import MonthScrubberSync from "./MonthScrubberSync";
 
 const KEY = "xray_resolved";
 const SEV: Record<Severity, { label: string; tone: "bad" | "warn" | "accent" }> = { high: { label: "Alta", tone: "bad" }, medium: { label: "Media", tone: "warn" }, info: { label: "Mejora", tone: "accent" } };
 const KIND: Record<Alert["kind"], string> = { umbral: "Umbral", regimen: "Régimen", estres: "Alarma S", caida: "Caída", mejora: "Mejora" };
 
 /** Bandeja del monitor: el sistema levanta la mano. "Resuelto" se guarda en el navegador y en Operaciones. */
-export default function Bandeja({ alerts, month }: { alerts: Alert[]; month: string }) {
+export default function Bandeja({ alerts, month, months, initialIdx }: { alerts: Alert[]; month: string; months: string[]; initialIdx: number }) {
   const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [showResolved, setShowResolved] = useState(false);
   const [sev, setSev] = useState<"all" | Severity>("all");
@@ -30,6 +31,7 @@ export default function Bandeja({ alerts, month }: { alerts: Alert[]; month: str
   const n = (s: Severity) => alerts.filter((a) => a.severity === s && !resolved.has(a.id)).length;
   return (
     <div className="flex flex-col gap-5">
+      <MonthScrubberSync months={months} initialIdx={initialIdx} />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi icon="gauge" label="Avisos" value={formatCount(alerts.length - resolved.size)} sub={monthLabelLong(month)} />
         <Kpi icon="alert" label="Severidad alta" value={formatCount(n("high"))} tone="bad" sub="entra en el 20 % peor · alarma S1/S3/S8 · cae ≥ 15" />

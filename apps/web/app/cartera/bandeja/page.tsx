@@ -7,5 +7,5 @@ export default async function BandejaPage() {
   const store = await getStore();
   const { idx, month } = await currentMonth(store.months);
   const alerts = await alertsAt(store, idx);
-  return <Bandeja alerts={alerts} month={month} />;
+  return <Bandeja alerts={alerts} month={month} months={store.months} initialIdx={idx} />;
 }
