@@ -8,10 +8,31 @@
 
 ## Stack
 
-- Next.js (App Router)
-- Convex (backend, almacenamiento)
+- Next.js 15 (App Router) + React 19 + TypeScript
+- Postgres (Docker) + Drizzle ORM
 - Tailwind CSS v4
-- TypeScript
+
+## Arrancar la plataforma
+
+Requisitos: Node ≥ 22.12, pnpm 11.x, Docker.
+
+```bash
+git clone <repo> && cd Elkano_Embat
+docker compose up -d   # Postgres en :5433, con las tablas y los datos de demo ya cargados
+pnpm install
+pnpm dev                # http://localhost:4321
+```
+
+Eso es todo — `docker compose up -d` deja Postgres listo con datos desde la primera vez (carga
+`db/init/01_seed.sql.gz` solo). Si algo se lía, `docker compose down -v && docker compose up -d`
+lo recrea desde cero.
+
+Los datos son un score heurístico ("de reglas"), no el modelo real validado del pipeline
+(`analytics/`, Gini 0,55/0,44/0,38 — ver [analytics/README.md](analytics/README.md)). Están también
+en crudo en `data/*.json` (el contrato de [`docs/CONTRATO_DATOS.md`](docs/CONTRATO_DATOS.md)); si
+cambian, `pnpm --filter web db:push && pnpm --filter web db:seed` los recarga y
+`docker exec xray-db pg_dump -U xray -d xray --no-owner --no-privileges | gzip -9 > db/init/01_seed.sql.gz`
+regenera el dump.
 
 ## Knowledge base
 

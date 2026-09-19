@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+/* Mismos tokens que el artifact de pitch (Elkano X-Ray) — continuidad visual entre el pitch y la app real.
+   Paleta validada contra daltonismo (dataviz skill, scripts/validate_palette.js): status y diverging
+   pasan las seis comprobaciones sobre fondo #0a0e13. */
+@theme {
+  --color-ground: #0a0e13;
+  --color-panel: #121820;
+  --color-panel-2: #0d131a;
+  --color-panel-hi: #182029;
+  --color-line: #22303f;
+  --color-line-soft: #1a2430;
+
+  --color-ink: #eef3f6;
+  --color-ink-dim: #93a4b3;
+  --color-ink-mute: #5c7082;
+
+  --color-accent: #6fe3ff;
+  --color-good: #2f9e6e;
+  --color-good-dim: #12291f;
+  --color-warn: #b8890f;
+  --color-warn-dim: #2c2210;
+  --color-bad: #d6455a;
+  --color-bad-dim: #301419;
+  --color-pos: #3a9dc4;
+  --color-neg: #c46a30;
+
+  /* cargadas por <link> en app/layout.tsx (Big Shoulders Display / IBM Plex no están en el next/font
+     de esta versión de Next) */
+  --font-display: "Big Shoulders Display", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #03181f;
+}

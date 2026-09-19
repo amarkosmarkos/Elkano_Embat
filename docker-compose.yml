@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: xray-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: xray
+      POSTGRES_PASSWORD: xray
+      POSTGRES_DB: xray
+    ports:
+      - "5433:5432"
+    volumes:
+      - xray_pgdata:/var/lib/postgresql/data
+      # se carga solo la primera vez (volumen vacío): tablas + datos de demo ya listos, cero pasos extra.
+      # ":z" relabela para SELinux (Fedora/RHEL) — en Linux sin SELinux o en Mac no estorba.
+      # para forzar una recarga: docker compose down -v && docker compose up -d
+      - ./db/init:/docker-entrypoint-initdb.d:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xray -d xray"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  xray_pgdata:
