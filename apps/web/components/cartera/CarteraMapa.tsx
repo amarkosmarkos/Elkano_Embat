@@ -83,7 +83,7 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
         sub="Cada punto es una empresa. Pasa el ratón para verla; pincha para abrir su ficha."
         right={
           <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
-            <Seg value={axis} onChange={(v) => setAxis(v as Axis)} options={[["momentum", "Y: momentum 3m"], ["lane", "Y: carril fijo"], ["stress", "Y: alarmas"]]} />
+            <Seg value={axis} onChange={(v) => setAxis(v as Axis)} options={[["momentum", "Y: momentum 3m"], ["stress", "Y: alarmas"]]} />
             <Seg value={layer} onChange={(v) => setLayer(v as typeof layer)} options={[["alert", "Capa: 20 % peor"], ["none", "Sin capa"]]} />
           </div>
         }
