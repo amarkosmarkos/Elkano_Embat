@@ -24,12 +24,11 @@ export default function VentanasPage() {
             <div className="mt-auto pt-4 text-[11.5px] text-accent opacity-80 group-hover:opacity-100">{w.cta} →</div>
           </Link>
         ))}
-        <Link href="/score/arbol" className="card-hi flex flex-col justify-center p-5">
+        <div className="card-hi flex flex-col justify-center p-5">
           <div className="eyebrow text-accent">La respuesta</div>
           <div className="mt-2 text-[30px] font-semibold leading-none tracking-tight text-ink">1 número</div>
           <p className="mt-3 text-[12.5px] text-ink-dim">24 métricas, 5 dimensiones, 105 columnas. Un score por empresa y por mes, que se explica.</p>
-          <div className="mt-auto pt-4 text-[11.5px] text-accent">Ver el árbol del score →</div>
-        </Link>
+        </div>
       </div>
     </div>
   );

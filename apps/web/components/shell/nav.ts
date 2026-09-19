@@ -29,24 +29,12 @@ export const NAV: NavItem[] = [
     ],
   },
   {
-    href: "/score",
-    label: "Score",
-    children: [
-      { href: "/score/arbol", label: "Árbol" },
-      { href: "/score/versiones", label: "Versiones" },
-      { href: "/score/validacion", label: "Validación" },
-      { href: "/score/calibracion", label: "Calibración" },
-      { href: "/score/evento", label: "Evento" },
-      { href: "/score/casos", label: "Casos" },
-    ],
-  },
-  {
     href: "/productos",
     label: "Productos",
     children: [
       { href: "/productos/marketplace", label: "01 · Marketplace" },
       { href: "/productos/cash-pooling", label: "02 · Cash pooling" },
-      { href: "/productos/seguro", label: "03 / Seguro de crédito" },
+      { href: "/productos/seguro", label: "03 · Seguro de crédito" },
     ],
   },
 ];

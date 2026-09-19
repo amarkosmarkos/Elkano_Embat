@@ -9,7 +9,6 @@ const ICON: Record<string, string> = {
   "/empresas": "M3 21h18 M5 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16 M14 9h4a1 1 0 0 1 1 1v11 M8 8h2 M8 12h2 M8 16h2 M17 13h.01 M17 17h.01",
   "/grupos": "M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z M12 12l8-4.5 M12 12v9 M12 12L4 7.5",
   "/analisis": "M4 19h16 M7 15V9 M12 15V5 M17 15v-4",
-  "/score": "M12 3a9 9 0 1 0 9 9 M12 3v9l6.5-4",
   "/productos": "M3 7l9-4 9 4-9 4-9-4z M3 7v10l9 4 9-4V7 M12 11v10",
 };
 
