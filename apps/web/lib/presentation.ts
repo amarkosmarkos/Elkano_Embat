@@ -11,8 +11,8 @@ export const presentationHref = (path: string) => `${path}/?present=1`;
 export const sceneMedia: Record<number, { title: string; video: string; poster: string; height: number; still?: string }> = {
   1: { title: "Zarpar", video: "/video/zarpar-seedance.mp4", poster: "/video/zarpar-seedance.jpg", height: 650 },
   2: { title: "La isla", video: "/video/isla-seedance.mp4", poster: "/video/isla-seedance.jpg", height: 300 },
-  // Escena 3: fotograma fijo, la animación va en SkyStory sobre el cielo. Siete estados, ~1 pantalla de scroll cada uno.
-  3: { title: "Las estrellas", video: "/video/estrellas-seedance.mp4", poster: "/video/estrellas-seedance.jpg", still: "/video/estrellas-seedance.jpg", height: 760 },
+  // Escena 3: el vídeo sigue al scroll y SkyStory dibuja encima. Cuatro estados, ~1,3 pantallas cada uno.
+  3: { title: "Las estrellas", video: "/video/estrellas-seedance.mp4", poster: "/video/estrellas-seedance.jpg", height: 560 },
   4: { title: "El cofre", video: "/video/cofre-seedance.mp4", poster: "/video/cofre-seedance.jpg", height: 400 },
   5: { title: "El puerto", video: "/video/puerto-seedance.mp4", poster: "/video/puerto-seedance.jpg", height: 300 },
   6: { title: "Cierre", video: "/video/cierre-seedance.mp4", poster: "/video/cierre-seedance.jpg", height: 100 },

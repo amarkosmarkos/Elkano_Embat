@@ -2,22 +2,24 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
- * Escena 3, del ruido financiero al score. Capa transparente sobre el cielo.
+ * Escena 3, del ruido financiero al score. Capa transparente sobre el vídeo del cielo.
  * Todo se dibuja en un lienzo virtual de 1600x900 que cubre el viewport igual que
- * la imagen de fondo (cover), así los elementos quedan siempre sobre el mismo trozo
- * de cielo. El barco ocupa la esquina inferior izquierda y no se toca.
- * Siete estados, uno por tramo de scroll; click en el cielo salta al siguiente.
+ * el vídeo (cover), así los elementos quedan siempre sobre el mismo trozo de cielo.
+ * El barco ocupa la esquina inferior izquierda y no se toca.
+ * Cuatro estados por tramo de scroll: caos, dimensiones, score, logo de Embat en estrellas.
+ * Click en el cielo salta al siguiente punto.
  */
 const W=1600,H=900,CORE={x:1100,y:430};
-export const STATES=[0,.15,.30,.45,.58,.72,.85,1];
+export const STATES=[0,.2,.42,.68,1];
 /** Puntos de aterrizaje del click: la pregunta del estado 1 y el 60% de cada estado, con el build-in ya terminado. */
-const LANDINGS=[.09,...STATES.slice(1,-1).map((s,i)=>s+(STATES[i+2]-s)*.6)];
+const LANDINGS=[.12,...STATES.slice(1,-1).map((s,i)=>s+(STATES[i+2]-s)*.6)];
 const clamp=(x:number)=>Math.max(0,Math.min(1,x));
 const seg=(p:number,i:number)=>clamp((p-STATES[i-1])/(STATES[i]-STATES[i-1]));
 const ease=(t:number)=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const easeOut=(t:number)=>1-Math.pow(1-t,3);
 /** 1 dentro de [a,b] con fundidos de anchura f; b>=1 no funde al salir. */
 const win=(p:number,a:number,b:number,f=.03)=>clamp((p-a)/f)*(b>=1?1:clamp((b-p)/f));
-/** Capa activa en el estado i (1..7). */
+/** Capa activa en el estado i (1..4). */
 const on=(p:number,i:number)=>win(p,STATES[i-1],STATES[i]);
 const st=(i:number)=>STATES[i-1];
 const inSky=(x:number,y:number)=>y<170||x>640||(x>560&&y<330);
@@ -32,14 +34,20 @@ const CONSTELLATIONS:Constellation[]=[
   {name:"CONCENTRATION",label:[765,708],stars:[{x:700,y:600,m:"Top clients",side:"l"},{x:770,y:560},{x:820,y:630,m:"Shared counterparties"},{x:730,y:670}],edges:[[0,1],[1,2],[2,3],[3,0]]},
 ];
 const centroid=(c:Constellation)=>({x:c.stars.reduce((s,q)=>s+q.x,0)/c.stars.length,y:c.stars.reduce((s,q)=>s+q.y,0)/c.stars.length});
-const MONTHS=["JAN","FEB","MAR","APR","MAY","JUN","JUL"];
-const TL={x0:920,x1:1460,y:560};
-const mx=(i:number)=>TL.x0+(TL.x1-TL.x0)*i/6;
-const GINI=[{v:"0.54",m:1},{v:"0.44",m:3},{v:"0.38",m:6}];
+
+/** Logo de Embat trazado del isotipo: chevrón izquierdo (dos triángulos) y triángulo derecho. Unidades relativas al centro. */
+const LOGO={x:1100,y:560,s:3.1};
+const LOGO_TRIS:[number,number][][]=[
+  [[-42,-32],[18,-50],[-16,0]],
+  [[-42,32],[18,50],[-16,0]],
+  [[20,-52],[58,0],[20,52]],
+];
+const logoPt=([x,y]:[number,number])=>[LOGO.x+x*LOGO.s,LOGO.y+y*LOGO.s] as const;
 
 function mulberry(seed:number){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 type Particle={x:number;y:number;ox:number;oy:number;cx:number;cy:number;r:number;a:number;ph:number;dx:number;dy:number;grouped:boolean};
 type Streak={x:number;y:number;vx:number;vy:number;len:number;ph:number};
+type LogoStar={x:number;y:number;r:number;ph:number;d:number};
 function buildField(){
   const rnd=mulberry(20260919);const ps:Particle[]=[];const cs=CONSTELLATIONS.map(centroid);
   while(ps.length<1500){
@@ -51,15 +59,22 @@ function buildField(){
   }
   const streaks:Streak[]=[];
   while(streaks.length<48){const x=560+rnd()*1000,y=60+rnd()*680;if(!inSky(x,y))continue;const ang=rnd()*Math.PI*2,sp=8+rnd()*22;streaks.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len:24+rnd()*50,ph:rnd()*20});}
-  return {ps,streaks};
+  // Estrellitas del logo: relleno uniforme de cada triángulo más un reguero por las aristas.
+  const logo:LogoStar[]=[];
+  for(const tri of LOGO_TRIS){
+    const [a,b,c]=tri.map(logoPt);const area=Math.abs((b[0]-a[0])*(c[1]-a[1])-(c[0]-a[0])*(b[1]-a[1]))/2;
+    for(let k=0;k<area/38;k++){let u=rnd(),v=rnd();if(u+v>1){u=1-u;v=1-v;}const x=a[0]+(b[0]-a[0])*u+(c[0]-a[0])*v,y=a[1]+(b[1]-a[1])*u+(c[1]-a[1])*v;logo.push({x,y,r:.6+rnd()*1.3,ph:rnd()*Math.PI*2,d:rnd()});}
+    for(let e=0;e<3;e++){const p0=[a,b,c][e],p1=[a,b,c][(e+1)%3];const n=Math.hypot(p1[0]-p0[0],p1[1]-p0[1])/9;for(let k=0;k<=n;k++){const u=k/n;logo.push({x:p0[0]+(p1[0]-p0[0])*u,y:p0[1]+(p1[1]-p0[1])*u,r:1.1+rnd()*1.1,ph:rnd()*Math.PI*2,d:rnd()*.6});}}
+  }
+  return {ps,streaks,logo};
 }
 
-/** Partículas en canvas: miles de señales, luego nubes alrededor de cada dimensión, luego convergen en el score. */
+/** Partículas en canvas: miles de señales, nubes alrededor de cada dimensión, convergen en el score, y al final el logo. */
 function Particles({pRef,reduced}:{pRef:{current:number};reduced:boolean}){
   const ref=useRef<HTMLCanvasElement>(null);
   useEffect(()=>{
     const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext("2d");if(!ctx)return;
-    const {ps,streaks}=buildField();let raf=0;let last=-1;let w=0,h=0,dpr=1;
+    const {ps,streaks,logo}=buildField();let raf=0;let last=-1;let w=0,h=0,dpr=1;
     const resize=()=>{dpr=Math.min(devicePixelRatio||1,2);w=canvas.clientWidth;h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;last=-1;};
     const draw=(now:number)=>{
       raf=requestAnimationFrame(draw);
@@ -67,10 +82,10 @@ function Particles({pRef,reduced}:{pRef:{current:number};reduced:boolean}){
       if(reduced&&p===last)return;last=p;
       const s=Math.max(w/W,h/H),offx=(w-W*s)/2,offy=(h-H*s)/2;
       ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.setTransform(s*dpr,0,0,s*dpr,offx*dpr,offy*dpr);
-      const t1=seg(p,1),order=ease(seg(p,2)),gather=ease(seg(p,3)),back=ease(seg(p,7));
+      const t1=seg(p,1),order=ease(seg(p,2)),gather=ease(seg(p,3)),t4=seg(p,4),back=ease(clamp(t4*2));
       // Trayectorias: solo mientras reina el caos.
       const streakA=clamp(t1*3)*(1-order);
-      if(streakA>0){ctx.lineWidth=.8;ctx.lineCap="round";for(const k of streaks){const q=((t*.06+k.ph)%1);const px=k.x+k.vx*q*6,py=k.y+k.vy*q*6;if(!inSky(px,py))continue;const g=ctx.createLinearGradient(px-k.vx/Math.hypot(k.vx,k.vy)*k.len,py-k.vy/Math.hypot(k.vx,k.vy)*k.len,px,py);g.addColorStop(0,"rgba(190,235,245,0)");g.addColorStop(1,`rgba(190,235,245,${.35*streakA*Math.sin(q*Math.PI)})`);ctx.strokeStyle=g;ctx.beginPath();ctx.moveTo(px-k.vx/Math.hypot(k.vx,k.vy)*k.len,py-k.vy/Math.hypot(k.vx,k.vy)*k.len);ctx.lineTo(px,py);ctx.stroke();}}
+      if(streakA>0){ctx.lineWidth=.8;ctx.lineCap="round";for(const k of streaks){const q=((t*.06+k.ph)%1);const px=k.x+k.vx*q*6,py=k.y+k.vy*q*6;if(!inSky(px,py))continue;const L=Math.hypot(k.vx,k.vy);const x0=px-k.vx/L*k.len,y0=py-k.vy/L*k.len;const g=ctx.createLinearGradient(x0,y0,px,py);g.addColorStop(0,"rgba(190,235,245,0)");g.addColorStop(1,`rgba(190,235,245,${.35*streakA*Math.sin(q*Math.PI)})`);ctx.strokeStyle=g;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(px,py);ctx.stroke();}}
       const appear=clamp(t1*2.2);
       for(let i=0;i<ps.length;i++){
         const q=ps[i];const born=clamp((appear*1500-i*.9)/60);if(born<=0)continue;
@@ -78,9 +93,20 @@ function Particles({pRef,reduced}:{pRef:{current:number};reduced:boolean}){
         let x=jx+(q.ox-jx)*order,y=jy+(q.oy-jy)*order;
         let a=q.a*(q.grouped?1:1-order*.8);
         x+=(q.cx-x)*gather;y+=(q.cy-y)*gather;a*=1-gather;
-        if(back>0){x+=(q.ox-x)*back;y+=(q.oy-y)*back;a+= (q.grouped?q.a*.9:q.a*.25)*back;}
+        if(back>0){x+=(q.ox-x)*back;y+=(q.oy-y)*back;a+=(q.grouped?q.a*.7:q.a*.2)*back;}
         const tw=reduced?1:.75+.25*Math.sin(t*1.7+q.ph*3);
         ctx.fillStyle=`rgba(205,238,248,${clamp(a*born*tw)})`;ctx.beginPath();ctx.arc(x,y,q.r,0,6.283);ctx.fill();
+      }
+      // El logo: de repente, un montón de estrellitas encendiéndose casi a la vez.
+      const burst=clamp(t4*4-.8);
+      if(burst>0){
+        for(const q of logo){
+          const lit=easeOut(clamp((burst-q.d*.55)/.45));if(lit<=0)continue;
+          const tw=reduced?1:.7+.3*Math.sin(t*2.3+q.ph*5);
+          const flash=1+(1-lit)*1.6;
+          ctx.fillStyle=`rgba(255,255,255,${clamp(lit*tw*.95)})`;ctx.beginPath();ctx.arc(q.x,q.y,q.r*flash,0,6.283);ctx.fill();
+          if(q.r>1.4){ctx.fillStyle=`rgba(199,236,246,${clamp(lit*.25)})`;ctx.beginPath();ctx.arc(q.x,q.y,q.r*3.2,0,6.283);ctx.fill();}
+        }
       }
     };
     resize();window.addEventListener("resize",resize);raf=requestAnimationFrame(draw);
@@ -95,26 +121,27 @@ const Label=({x,y,size=12,children,anchor="middle",cls="sky-sans",fill="#dff4fa"
 export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
   const pRef=useRef(p);pRef.current=p;
   const [hover,setHover]=useState<number|null>(null);
-  const t1=seg(p,1),t2=seg(p,2),t3=seg(p,3),t4=seg(p,4),t5=seg(p,5),t7=seg(p,7);
+  const t1=seg(p,1),t2=seg(p,2),t3=seg(p,3),t4=seg(p,4);
   const advance=(e:React.MouseEvent)=>{
     if((e.target as HTMLElement).closest("a,button"))return;
     const track=(e.currentTarget as HTMLElement).closest(".scene-track") as HTMLElement|null;if(!track)return;
     const next=LANDINGS.find(s=>s>p+.01);if(next===undefined)return;
     window.scrollTo({top:track.offsetTop+next*(track.offsetHeight-innerHeight),behavior:reduced?"auto":"smooth"});
   };
-  // Constelaciones: nacen en el estado 2, se apagan mientras hablan el score y la validación, vuelven en el cierre.
-  const constA=Math.max(on(p,2),win(p,st(3),st(7),.06)*.22,t7*.75);
-  const linksA=Math.max(win(p,st(3),st(4)),win(p,st(4),st(7),.06)*.18,t7);
+  // Constelaciones: nacen en el estado 2, se atenúan mientras habla el score, vuelven suaves con el logo.
+  const constA=Math.max(on(p,2),win(p,st(3),1,.06)*.22,t4*.5);
+  const linksA=Math.max(win(p,st(3),1),t4*.6);
   const score=Math.round(78*ease(clamp(t3*2.2)));
-  const small=win(p,st(4),st(7),.05);const big=Math.max(on(p,3),t7);
-  const scoreA=Math.max(big,small);const sc=1-.45*small*(1-t7);const sy=CORE.y-(CORE.y-300)*small*(1-t7);
+  // En el cierre el score sube y deja el centro del cielo al logo.
+  const lift=ease(clamp(t4*2.5));const sc=1-.45*lift;const sy=CORE.y-(CORE.y-250)*lift;
+  const scoreA=win(p,st(3),1);
   const linkA=(i:number)=>clamp(linksA*Math.min(1,(t3*8-i*.6)));
+  const logoEdges=clamp(t4*4-1.4);
   return <div className="sky-story" onClick={advance}>
     <Particles pRef={pRef} reduced={reduced}/>
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" className="sky-svg" role="img" aria-label="Del ruido financiero a una señal predictiva">
       <defs>
         <filter id="sky-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
-        <filter id="sky-glow-lg" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="14"/></filter>
         <radialGradient id="sky-core"><stop offset="0" stopColor="#ffffff" stopOpacity=".95"/><stop offset=".35" stopColor="#c7ecf6" stopOpacity=".5"/><stop offset="1" stopColor="#c7ecf6" stopOpacity="0"/></radialGradient>
       </defs>
 
@@ -127,7 +154,7 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
 
       {/* ESTADO 2, cinco dimensiones */}
       <G o={constA}>
-        {CONSTELLATIONS.map((c,i)=>{const ti=clamp(t2*8-i*.7);const hv=hover===i;return <g key={c.name} className="sky-constellation" style={{opacity:Math.max(ti,t7)}} onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(null)}>
+        {CONSTELLATIONS.map((c,i)=>{const ti=clamp(t2*8-i*.7);const hv=hover===i;return <g key={c.name} className="sky-constellation" style={{opacity:Math.max(ti,t4)}} onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(null)}>
           {c.edges.map(([a,b])=><line key={a+"-"+b} x1={c.stars[a].x} y1={c.stars[a].y} x2={c.stars[b].x} y2={c.stars[b].y} stroke="#cfeaf3" strokeOpacity=".5" strokeWidth=".8" pathLength={1} strokeDasharray={1} strokeDashoffset={1-ease(ti)}/>)}
           {c.stars.map((s,k)=><g key={k}><circle cx={s.x} cy={s.y} r={7} fill="#c7ecf6" opacity=".35" filter="url(#sky-glow)"/><circle cx={s.x} cy={s.y} r={2.4} fill="#ffffff"/>
             {s.m&&<Label x={s.side==="l"?s.x-9:s.x+9} y={s.y+4} size={10.5} anchor={s.side==="l"?"end":"start"} fill="#a9cfdb" o={hv?1:.6}>{s.m}</Label>}</g>)}
@@ -136,14 +163,14 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
         <Label x={CORE.x} y={760} size={19} cls="sky-serif sky-italic" fill="#dff4fa" o={on(p,2)*clamp(t2*2-.5)}>We organize complexity into interpretable financial dimensions.</Label>
       </G>
 
-      {/* ESTADO 3, las dimensiones convergen en un núcleo */}
+      {/* ESTADO 3, las dimensiones convergen en un núcleo: el score */}
       <G o={linksA}>
         {CONSTELLATIONS.map((c,i)=>{const q=centroid(c);return <line key={c.name} x1={q.x} y1={q.y} x2={CORE.x} y2={sy} stroke="#c7ecf6" strokeOpacity=".45" strokeWidth=".7" pathLength={1} strokeDasharray={1} strokeDashoffset={1-linkA(i)}/>;})}
       </G>
       <G o={scoreA}>
         <g style={{transform:`translate(${CORE.x}px,${sy}px)`,transition:"transform .8s ease"}}>
           <g style={{transform:`scale(${sc})`,transition:"transform .8s ease"}}>
-            <circle r={170} fill="url(#sky-core)" opacity={.55*clamp(t3*2)*(1-small*.7+t7*.7)} style={{transition:"opacity .8s"}}/>
+            <circle r={170} fill="url(#sky-core)" opacity={.55*clamp(t3*2)*(1-lift*.6)} style={{transition:"opacity .8s"}}/>
             <circle r={9} fill="#ffffff" opacity={clamp(t3*3)*(1-clamp(t3*3-1))} filter="url(#sky-glow)"/>
             <Label x={0} y={48} size={150} cls="sky-serif sky-num" fill="#ffffff" o={clamp(t3*4-.8)}>{score}</Label>
             <Label x={0} y={92} size={12.5} cls="sky-sans sky-track" fill="#c7ecf6" o={clamp(t3*4-1.4)}>FINANCIAL HEALTH SCORE</Label>
@@ -158,52 +185,9 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
         <Label x={1330} y={536} size={15} cls="sky-serif sky-italic" fill="#ffffff" anchor="start">one actionable signal</Label>
       </G>
 
-      {/* ESTADO 4, ¿es predictivo? Línea temporal */}
-      <G o={on(p,4)}><Label x={CORE.x} y={215} size={32} cls="sky-serif sky-italic" fill="#c7ecf6" o={clamp(t4*3)}>But is this score actually predictive?</Label></G>
-      <G o={win(p,st(4),st(7),.05)}>
-        <line x1={TL.x0} y1={TL.y} x2={TL.x1} y2={TL.y} stroke="#cfeaf3" strokeOpacity=".55" strokeWidth=".8" pathLength={1} strokeDasharray={1} strokeDashoffset={1-ease(clamp(t4*2.5-.2))}/>
-        {MONTHS.map((m,i)=>{const a=clamp(t4*10-i*.9);return <g key={m} opacity={a}><circle cx={mx(i)} cy={TL.y} r={i===0?4:2.2} fill={i===0?"#ffffff":"#c7ecf6"} filter={i===0?"url(#sky-glow)":undefined}/><Label x={mx(i)} y={TL.y+26} size={10.5} cls="sky-sans sky-track" fill={i===0?"#ffffff":"#a9cfdb"}>{m}</Label></g>;})}
-        <Label x={mx(0)} y={TL.y-18} size={10} cls="sky-sans sky-track" fill="#ffffff" o={clamp(t4*3-1)}>SCORE COMPUTED</Label>
-        <path d={`M${mx(1)} ${TL.y-14} v-6 H${mx(6)} v6`} fill="none" stroke="#c7ecf6" strokeOpacity=".5" strokeWidth=".7" pathLength={1} strokeDasharray={1} strokeDashoffset={1-ease(clamp(t4*3-1))} opacity={1-clamp(t5*3)}/>
-        <Label x={(mx(1)+mx(6))/2} y={TL.y-30} size={10} cls="sky-sans sky-track" fill="#a9cfdb" o={clamp(t4*4-1.6)*(1-clamp(t5*3))}>WHAT HAPPENS NEXT</Label>
-        <G o={clamp(t4*4-1.6)*(1-clamp(t5*3))}>
-          <Label x={CORE.x} y={640} size={17} cls="sky-serif" fill="#dff4fa">Score computed today.</Label>
-          <Label x={CORE.x} y={666} size={17} cls="sky-serif" fill="#dff4fa">Validated on what happens next.</Label>
-        </G>
-      </G>
-
-      {/* ESTADO 5, Gini: los tres faros */}
-      <G o={win(p,st(5),st(7),.05)}>
-        {GINI.map((g,i)=>{const a=ease(clamp(t5*4-i*.7));const x=mx(g.m);return <g key={g.v} opacity={a}>
-          <line x1={x} y1={TL.y-6} x2={x} y2={TL.y-46-(1-a)*20} stroke="#c7ecf6" strokeOpacity=".35" strokeWidth=".7"/>
-          <circle cx={x} cy={TL.y} r={10} fill="#ffffff" opacity=".55" filter="url(#sky-glow)"/><circle cx={x} cy={TL.y} r={3.2} fill="#ffffff"/>
-          <circle cx={x} cy={TL.y-108} r={60} fill="url(#sky-core)" opacity=".28"/>
-          <Label x={x} y={TL.y-88} size={68} cls="sky-serif sky-num" fill="#ffffff">{g.v}</Label>
-          <Label x={x} y={TL.y-60} size={10.5} cls="sky-sans sky-track" fill="#c7ecf6">GINI · {g.m}M</Label>
-        </g>;})}
-        <Label x={CORE.x} y={640} size={17} cls="sky-serif" fill="#dff4fa" o={clamp(t5*4-1.8)}>The score ranks future risk, not just current status.</Label>
-        <Label x={CORE.x} y={664} size={11} cls="sky-sans sky-track" fill="#9fc7d4" o={clamp(t5*4-2.2)}>VALIDATED OUT-OF-SAMPLE AND OUT-OF-TIME</Label>
-      </G>
-
-      {/* ESTADO 6, con qué predecimos: nota técnica ligera */}
-      <G o={on(p,6)}>
-        <Label x={CORE.x} y={712} size={10.5} cls="sky-sans sky-track sky-track-tight" fill="#a9cfdb"><tspan fill="#dff4fa">PREDICTED FROM</tspan>   liquidity · payment behavior · cash generation · debt load · counterparty concentration</Label>
-        <Label x={CORE.x} y={738} size={11} cls="sky-sans" fill="#8db4c2">100+ engineered features, temporal trends and stress signals</Label>
-        <Label x={CORE.x} y={760} size={10.5} cls="sky-sans sky-italic" fill="#7ea3b1">Stress signals such as overdraft, rising financial costs or missing critical payments reinforce the score.</Label>
-      </G>
-
-      {/* ESTADO 7, cierre: mapa de navegación alrededor del score */}
-      <G o={t7}>
-        {(()=>{const pts=Array.from({length:16},(_,k)=>{const r=k%2?66:158,a=k*Math.PI/8-Math.PI/2;return `${CORE.x+Math.cos(a)*r},${CORE.y+Math.sin(a)*r}`;});return <>
-          <polygon points={pts.join(" ")} fill="none" stroke="#dff4fa" strokeOpacity=".55" strokeWidth=".7" pathLength={1} strokeDasharray={1} strokeDashoffset={1-ease(clamp(t7*1.8))}/>
-          <circle cx={CORE.x} cy={CORE.y} r={182} fill="none" stroke="#c7ecf6" strokeOpacity=".3" strokeWidth=".6" strokeDasharray="2 6" opacity={clamp(t7*2-.6)}/>
-          {[0,4,8,12].map(k=>{const a=k*Math.PI/8-Math.PI/2;return <circle key={k} cx={CORE.x+Math.cos(a)*182} cy={CORE.y+Math.sin(a)*182} r={2.6} fill="#ffffff" opacity={clamp(t7*2-.8)}/>;})}
-        </>;})()}
-        <G o={clamp(t7*3-.6)}>
-          <Label x={CORE.x} y={650} size={54} cls="sky-serif" fill="#f5fbfd">From financial noise</Label>
-          <Label x={CORE.x} y={708} size={54} cls="sky-serif sky-italic" fill="#c7ecf6">to financial foresight.</Label>
-          <Label x={CORE.x} y={746} size={14} cls="sky-sans" fill="#b8d9e3" o={clamp(t7*3-1)}>See which companies need attention before the problem becomes obvious.</Label>
-        </G>
+      {/* ESTADO 4, el logo de Embat en estrellas: las aristas se insinúan tras el estallido */}
+      <G o={t4}>
+        {LOGO_TRIS.map((tri,i)=><polygon key={i} points={tri.map(q=>logoPt(q).join(",")).join(" ")} fill="none" stroke="#dff4fa" strokeOpacity=".35" strokeWidth=".7" pathLength={1} strokeDasharray={1} strokeDashoffset={1-ease(logoEdges)}/>)}
       </G>
     </svg>
   </div>;

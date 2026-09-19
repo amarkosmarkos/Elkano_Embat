@@ -108,7 +108,6 @@ body { color: var(--color-ink); font-family: var(--font-sans); font-variant-nume
 .sky-num{letter-spacing:-.05em}
 .sky-sans{font-family:var(--font-sans)}
 .sky-track{letter-spacing:.26em;text-transform:uppercase}
-.sky-track-tight{letter-spacing:.16em}
 .sky-italic{font-style:italic}
 .sky-constellation{pointer-events:auto;transition:opacity .8s ease}
 .sky-constellation text{transition:opacity .4s}
