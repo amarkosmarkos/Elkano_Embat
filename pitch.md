@@ -24,9 +24,11 @@ Siete ventanas, siete verdades parciales. Ningún financiero puede mirar las sie
 
 Ese número es el score. Cinco dimensiones: liquidez, calidad de cobros, disciplina de pago, carga financiera y momento. Se calcula por empresa y por mes, y lo importante no es el nivel sino la dirección.
 
-[Empresa de ejemplo: esta empresa saca [N] y hace seis meses sacaba [N]. Lo que se movió fue [dimensión]: [señal concreta]. Nuestro sistema lo marcó [k] meses antes de que se viera en la caja.]
+Ejemplo, COMP_0945. En febrero sacaba 72. Hoy saca 45. Lo que se movió fue la disciplina de pago y la concentración de clientes: en abril el componente de pago pasó de sumar 6 puntos a restar 4, y en agosto resta 22. La caja bajó de 391.000 a 99.000 en tres meses y el runway cayó de 24 meses a uno. Hoy la caja se ha recuperado a 236.000 y en la foto parece una empresa normal. La trayectoria dice otra cosa.
 
-Y va en las dos direcciones: reconoce a la que está mejorando igual que a la que se tuerce.
+Y va en las dos direcciones. COMP_0640 pasó de 52 a 82 en seis meses porque dejó de pagar tarde a sus proveedores. Hoy es la empresa que más caja puede colocar de su grupo.
+
+En 182 empresas del dataset el sistema levantó la alerta antes del evento de impago, con una mediana de cuatro meses de antelación.
 
 ## 3. Los productos, 75 s
 
@@ -40,9 +42,11 @@ Y un monitor que levanta la mano solo: en julio te faltan 40.000, dispón el dí
 
 ## 4. Dos empresas, 60 s
 
-Empresa A, [ID]. Score [alto] y estable, [X] euros que no bajan en doce meses, sin ningún producto de inversión. Un producto: coloca [X] a seis meses. Al 2,5% son [Y] euros al año que hoy no gana.
+Empresa A, COMP_0054. Score 71 y estable, 15 millones en cuenta corriente en el Santander y un suelo de 7,4 millones que no ha bajado en doce meses. No tiene ningún producto de inversión. Un producto: coloca 5,9 millones a seis meses. Al 2,5% son 147.000 euros al año que hoy no gana.
 
-Grupo B, [ID]. Tres filiales. Una con [X] de excedente, otra dispuesta [Y] en póliza al 5%, y una tercera cuyo score cae desde marzo por retraso a proveedores. Dos productos: pooling de la primera a la segunda con límite por score, y alerta de la tercera, que no cubre las cuotas de julio. El grupo se ahorra [Z] en intereses y ve el problema cuatro meses antes.
+Grupo B, GROUP_0067. Seis filiales. COMP_1048 tiene score 85 y 2,1 millones parados. Otras tres tiran de póliza: COMP_0929 con 520.000 dispuestos y score 72, COMP_0407 con 438.000 y score 56 cayendo, COMP_0216 con 301.000 y score 60 cayendo. El sistema propone tres préstamos internos desde COMP_1048: cubre todo lo dispuesto de la primera porque su score lo aguanta, y solo la mitad de las otras dos porque están empeorando. 890.000 euros movidos dentro del grupo, unos 44.000 euros al año de intereses que dejan de pagar al banco, y las dos filiales que se tuercen quedan señaladas antes de que el problema llegue a la matriz.
+
+Y el monitor: COMP_0636 sacaba 87 en mayo y saca 42 hoy. Ha levantado dos avisos solos: el score cae 45 puntos en tres meses por liquidez, y las cuotas del próximo trimestre no están cubiertas ni con líneas. Recomendación: mover caja del grupo o renegociar, ahora.
 
 ## 5. Comprador y dinero, 30 s
 
@@ -57,4 +61,5 @@ Agicap vende estas decisiones como módulos sueltos, sin score. Embat las tendr�
 - Evaluación real según Embat por chat: complejidad y definición de algoritmos y dimensiones, qué producto se entrega y cómo lo usan los clientes, cómo de monetizable es. El guion sigue ese orden.
 - No hay test oculto ni leaderboard. La generalización se demuestra con la validación propia fuera de muestra.
 - La demo corre sobre datos precalculados. Embat no va a meter datos nuevos.
-- Los huecos de las secciones 2 y 4 se rellenan cuando el score esté cerrado. Las empresas A y B se pueden elegir antes con los análisis de la carpeta analysis.
+- Las empresas del guion salen de scores_v3 (pipeline de Markos) y de las tarjetas que construye apps/web/scripts/build_demo_data.py. Ruta en la demo: /empresa/COMP_0945, /empresa/COMP_0640, /empresa/COMP_0054, /grupo/GROUP_0067, /empresa/COMP_0636.
+- La antelación de 4 meses es la mediana, en 182 empresas, entre la primera alerta del score y el primer mes del episodio de impago siguiente (ventana de 6 meses). El lead time del informe de validación de Markos usa otra definición (percentil 20 del mes) y sale más bajo; en el pitch usamos la de las tarjetas y lo decimos si preguntan.
