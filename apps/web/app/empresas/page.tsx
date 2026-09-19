@@ -1,21 +1,9 @@
 import Link from "next/link";
-import { db } from "@/lib/db/client";
-import { companies, scores } from "@/lib/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { listCompaniesRanked } from "@/lib/queries";
 import { ScoreChip } from "@/components/ScoreBadge";
 
-async function listWithLastScore(limit: number) {
-  const lastMonth = (await db.execute<{ m: string }>(sql`select max(month) as m from scores`))[0]?.m;
-  return db
-    .select({ companyId: companies.companyId, displayName: companies.displayName, groupId: companies.groupId, score: scores.score, regime: scores.regime })
-    .from(companies)
-    .leftJoin(scores, sql`${scores.companyId} = ${companies.companyId} and ${scores.month} = ${lastMonth}`)
-    .orderBy(desc(scores.score))
-    .limit(limit);
-}
-
 export default async function EmpresasPage() {
-  const rows = await listWithLastScore(60);
+  const rows = await listCompaniesRanked(60);
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
       <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Explorador</div>

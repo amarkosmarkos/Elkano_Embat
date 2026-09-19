@@ -1,20 +1,38 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./db/client";
-import { alerts, companies, explanations, scores } from "./db/schema";
+import { companies, scores } from "./db/schema";
 
-export type Signals = {
-  cash_position: number | null;
-  net_cash_flow: number | null;
-  runway_months: number | null;
-  dso_days: number | null;
-  dpo_days: number | null;
-  overdue_ar_ratio: number | null;
-  overdue_ap_ratio: number | null;
-  debt_utilization: number | null;
-  debt_service_ratio: number | null;
-  inflow_volatility: number | null;
-  top_customer_share: number | null;
-};
+/**
+ * `scores` no lleva `regime` (ver schema.ts: solo las columnas reales de scores_v3.csv). Se
+ * calcula al vuelo con esta CTE: delta_1m/3m/6m por auto-join sobre el mes calendario (no la fila
+ * anterior, por si hay huecos) y un umbral simple y documentado — el pipeline no clasifica
+ * "régimen", es una lectura de producto sobre el score real. 'dip' = mal 1 mes suelto que no llega
+ * a ser un deterioro sostenido a 3 meses (ver docs/CONTRATO_DATOS.md).
+ */
+const REGIMED_CTE = `
+  with dated as (
+    select company_id, month, score, to_date(month, 'YYYY-MM') as d from scores
+  ), deltas as (
+    select a.company_id, a.month, a.score,
+      a.score - b1.score as delta_1m,
+      a.score - b3.score as delta_3m,
+      a.score - b6.score as delta_6m
+    from dated a
+    left join dated b1 on b1.company_id = a.company_id and b1.d = a.d - interval '1 month'
+    left join dated b3 on b3.company_id = a.company_id and b3.d = a.d - interval '3 month'
+    left join dated b6 on b6.company_id = a.company_id and b6.d = a.d - interval '6 month'
+  ), regimed as (
+    select *,
+      case
+        when delta_3m <= -6 then 'deteriorating'
+        when delta_3m >= 6 then 'improving'
+        when delta_1m <= -8 then 'dip'
+        else 'stable'
+      end as regime
+    from deltas
+  )
+`;
+const regimedCte = sql.raw(REGIMED_CTE);
 
 export async function listCompanies(limit = 60) {
   return db
@@ -34,21 +52,43 @@ export async function getScoreSeries(companyId: string) {
 }
 
 export async function getLastScore(companyId: string) {
-  const [row] = await db.select().from(scores).where(eq(scores.companyId, companyId)).orderBy(desc(scores.month)).limit(1);
-  return row ?? null;
+  const rows = await db.execute<{
+    month: string; score: number; regime: string; c_deuda: number | null; cash_position: number | null; alert: boolean;
+  }>(sql`${regimedCte} select r.month, r.score, r.regime, s.c_deuda, s.cash_position, s.alert
+         from regimed r join scores s on s.company_id = r.company_id and s.month = r.month
+         where r.company_id = ${companyId} order by r.month desc limit 1`);
+  const row = rows[0];
+  if (!row) return null;
+  return { month: row.month, score: row.score, regime: row.regime, cDeuda: row.c_deuda, cashPosition: row.cash_position, alert: row.alert };
 }
 
-export async function getExplanation(companyId: string, month: string) {
+/** Texto real de `scores.explanation` ("bajó 31,1 pts: liquidez"), o null si ese mes no tiene
+ * (el primer mes puntuado de cada empresa no tiene mes anterior con el que compararse). */
+export async function getExplanation(companyId: string, month: string): Promise<{ text: string } | null> {
   const [row] = await db
-    .select()
-    .from(explanations)
-    .where(and(eq(explanations.companyId, companyId), eq(explanations.month, month)))
+    .select({ explanation: scores.explanation })
+    .from(scores)
+    .where(and(eq(scores.companyId, companyId), eq(scores.month, month)))
     .limit(1);
-  return row ?? null;
+  if (!row?.explanation) return null;
+  return { text: row.explanation[0].toUpperCase() + row.explanation.slice(1) };
 }
 
+/** "Alertas" = meses reales con `alert = true` (20% peor del mes, ver output/README.md), no una
+ * tabla aparte con tipos inventados. severity es una lectura simple sobre el score. */
 export async function getRecentAlerts(companyId: string, n = 5) {
-  return db.select().from(alerts).where(eq(alerts.companyId, companyId)).orderBy(desc(alerts.month)).limit(n);
+  const rows = await db
+    .select({ month: scores.month, score: scores.score, explanation: scores.explanation })
+    .from(scores)
+    .where(and(eq(scores.companyId, companyId), eq(scores.alert, true)))
+    .orderBy(desc(scores.month))
+    .limit(n);
+  return rows.map((r) => ({
+    key: `${companyId}-${r.month}`,
+    month: r.month,
+    severity: r.score < 40 ? "high" : "medium",
+    title: r.explanation || `Entre el 20% peor del mes (${Math.round(r.score)} pts)`,
+  }));
 }
 
 /** Última foto de cada empresa del mismo grupo (para cash-pooling: quién sobra, quién falta). */
@@ -57,7 +97,7 @@ export async function getGroupLatestScores(groupId: string, excludeCompanyId?: s
   const ids = siblings.map((s) => s.companyId).filter((id) => id !== excludeCompanyId);
   if (ids.length === 0) return [];
   const last = await db
-    .select({ companyId: scores.companyId, month: scores.month, score: scores.score, signals: scores.signals })
+    .select({ companyId: scores.companyId, month: scores.month, score: scores.score, cashPosition: scores.cashPosition })
     .from(scores)
     .where(inArray(scores.companyId, ids))
     .orderBy(desc(scores.month));
@@ -82,11 +122,11 @@ export async function findCashPoolingCandidateGroup() {
   const rows = await db.execute<{ group_id: string; n: number; spread: number }>(sql`
     select c.group_id,
            count(*)::int as n,
-           (max((s.signals->>'cash_position')::numeric) - min((s.signals->>'cash_position')::numeric))::float as spread
+           (max(s.cash_position) - min(s.cash_position))::float as spread
     from companies c
     join scores s on s.company_id = c.company_id and s.month = (select max(month) from scores s2 where s2.company_id = c.company_id)
     where c.group_id is not null
-      and (s.signals->>'cash_position')::numeric between 0 and 5000000
+      and s.cash_position between 0 and 5000000
     group by c.group_id
     having count(*) > 3
     order by spread desc
@@ -118,14 +158,15 @@ export async function getGroupSeries(groupId: string) {
     .orderBy(asc(companies.companyId));
   const ids = base.map((b) => b.companyId);
   if (ids.length === 0) return { base: [], rows: [] };
-  const rows = await db
-    .select({ companyId: scores.companyId, month: scores.month, score: scores.score, regime: scores.regime, signals: scores.signals })
-    .from(scores)
-    .where(inArray(scores.companyId, ids))
-    .orderBy(asc(scores.month));
+  const rows = await db.execute<{ company_id: string; month: string; score: number; regime: string; cash_position: number | null }>(sql`
+    ${regimedCte} select r.company_id, r.month, r.score, r.regime, s.cash_position
+    from regimed r join scores s on s.company_id = r.company_id and s.month = r.month
+    where r.company_id in ${ids}
+    order by r.month asc
+  `);
   return {
     base: base.map((b) => ({ ...b, currency: b.currency ?? "EUR" })),
-    rows: rows.map((r) => ({ companyId: r.companyId, month: r.month, score: r.score, regime: r.regime, cashLocal: r.signals?.cash_position ?? null })),
+    rows: rows.map((r) => ({ companyId: r.company_id, month: r.month, score: r.score, regime: r.regime, cashLocal: r.cash_position })),
   };
 }
 
@@ -144,16 +185,15 @@ export async function scoreStats() {
 }
 
 export async function regimeBreakdown(month: string) {
-  const rows = await db.execute<{ regime: string | null; n: number }>(sql`
-    select regime, count(*)::int as n from scores where month = ${month} group by regime order by n desc
+  return db.execute<{ regime: string | null; n: number }>(sql`
+    ${regimedCte} select regime, count(*)::int as n from regimed where month = ${month} group by regime order by n desc
   `);
-  return rows;
 }
 
 export type MonthPortfolioKpis = {
   month: string;
   portfolioScore: number;
-  /** score medio de este mes menos el de hace 6 meses (media de delta_6m, ya calculado por empresa). null si no hay datos suficientes. */
+  /** score medio de este mes menos el de hace 6 meses (media de delta_6m). null si no hay datos suficientes. */
   portfolioScoreDelta6m: number | null;
   improvingCompanies: number;
   deterioratingCompanies: number;
@@ -161,12 +201,11 @@ export type MonthPortfolioKpis = {
 };
 
 /**
- * KPIs de cartera por mes, para el widget "Embat · Salud financiera de la cartera" de /datos
- * (móvil por meses, animado en el cliente). Trae todos los meses de una vez — son ~9 filas, no
- * hace falta ir a la base en cada cambio de mes. `regime` ya viene calculado por el pipeline
- * (docs/CONTRATO_DATOS.md); "deteriorando" cuenta solo `deteriorating`, no `dip` (bache puntual,
- * no deterioro, según el propio contrato). "Alertas nuevas" excluye las de tipo `improvement`
- * (son informativas, no alertas).
+ * KPIs de cartera por mes, para el widget "Embat · Salud financiera de la cartera" de /datos.
+ * `regime` se calcula al vuelo (ver REGIMED_CTE) sobre el score real; "deteriorando" cuenta solo
+ * `deteriorating`, no `dip` (bache puntual). "Alertas nuevas" = meses con `alert = true` (el 20%
+ * peor del mes), ya no hay tipos "improvement" que excluir porque esa taxonomía no existía en el
+ * score real.
  */
 export async function portfolioKpisByMonth(): Promise<{ months: MonthPortfolioKpis[]; defaultMonth: string | null }> {
   const scoreRows = await db.execute<{
@@ -176,25 +215,22 @@ export async function portfolioKpisByMonth(): Promise<{ months: MonthPortfolioKp
     improving: number;
     deteriorating: number;
   }>(sql`
-    select month,
+    ${regimedCte} select month,
            avg(score)::float as avg,
            avg(delta_6m)::float as delta6m,
            count(*) filter (where regime = 'improving')::int as improving,
            count(*) filter (where regime = 'deteriorating')::int as deteriorating
-    from scores
+    from regimed
     group by month
     order by month
   `);
 
   const alertRows = await db.execute<{ month: string; n: number }>(sql`
-    select month, count(*)::int as n
-    from alerts
-    where type != 'improvement'
-    group by month
+    select month, count(*)::int as n from scores where alert = true group by month
   `);
   const alertsByMonth = new Map(alertRows.map((r) => [r.month, r.n]));
 
-  const [maxAlertRow] = await db.execute<{ month: string | null }>(sql`select max(month) as month from alerts`);
+  const [maxAlertRow] = await db.execute<{ month: string | null }>(sql`select max(month) as month from scores where alert = true`);
 
   return {
     months: scoreRows.map((r) => ({
@@ -223,10 +259,10 @@ export type CompanyScoreSeries = { companyId: string; displayName: string; point
  */
 export async function companyScoreSeries(months: string[]): Promise<CompanyScoreSeries[]> {
   const rows = await db.execute<{ company_id: string; display_name: string; month: string; score: number; regime: string | null }>(sql`
-    select c.company_id, c.display_name, s.month, s.score, s.regime
-    from scores s
-    join companies c on c.company_id = s.company_id
-    order by c.company_id, s.month
+    ${regimedCte} select r.company_id, c.display_name, r.month, r.score, r.regime
+    from regimed r
+    join companies c on c.company_id = r.company_id
+    order by r.company_id, r.month
   `);
 
   const byCompany = new Map<string, { displayName: string; byMonth: Map<string, CompanyScorePoint> }>();
@@ -244,4 +280,16 @@ export async function companyScoreSeries(months: string[]): Promise<CompanyScore
     displayName,
     points: months.map((m) => byMonth.get(m) ?? null),
   }));
+}
+
+/** Empresas rankeadas por score del último mes, con régimen — para /empresas. */
+export async function listCompaniesRanked(limit = 60) {
+  const rows = await db.execute<{ company_id: string; display_name: string; group_id: string | null; score: number | null; regime: string | null }>(sql`
+    ${regimedCte} select c.company_id, c.display_name, c.group_id, r.score, r.regime
+    from companies c
+    left join regimed r on r.company_id = c.company_id and r.month = (select max(month) from scores s2 where s2.company_id = c.company_id)
+    order by r.score desc nulls last
+    limit ${limit}
+  `);
+  return rows.map((r) => ({ companyId: r.company_id, displayName: r.display_name, groupId: r.group_id, score: r.score, regime: r.regime }));
 }

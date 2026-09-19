@@ -1,7 +1,9 @@
-// Esquema Drizzle — refleja tal cual el Postgres ya levantado (docker-compose.yml, puerto 5433),
-// que sigue el contrato de ../../../docs/CONTRATO_DATOS.md. No lo cambies sin migrar la base real:
-// esto es un *mapeo* del esquema existente, no la fuente de verdad de la forma de los datos.
-import { pgTable, text, integer, real, boolean, jsonb, primaryKey, index } from "drizzle-orm/pg-core";
+// Esquema Drizzle — refleja tal cual el Postgres ya levantado (docker-compose.yml, puerto 5433).
+// `scores` es 1:1 con output/02_score/scores_v3.csv (el score real de analytics/, Gini 0.54/0.44/0.38):
+// nada de signals/subscores/regime/confidence inventados — eso era del contrato viejo
+// (docs/CONTRATO_DATOS.md), de antes de que existiera el pipeline de análisis. Si hace falta alguno
+// de esos campos, se recalcula desde metrics_v1.parquet o gold/, no se resucita el esquema viejo.
+import { pgTable, text, integer, real, boolean, primaryKey, index } from "drizzle-orm/pg-core";
 
 export const companies = pgTable("companies", {
   companyId: text("company_id").primaryKey(),
@@ -17,22 +19,30 @@ export const companies = pgTable("companies", {
   nMonths: integer("n_months"),
 });
 
-// signals: cash_position, net_cash_flow, runway_months, dso_days, dpo_days, overdue_ar_ratio,
-// overdue_ap_ratio, debt_utilization, debt_service_ratio, inflow_volatility, top_customer_share
-// subscores: liquidity, collections, payments, debt, activity (0-100 o null)
+// columnas tal cual output/02_score/scores_v3.csv (ver output/README.md). `score_oot` y
+// `trained_without_fold` son auditoría de la validación — se guardan pero no se enseñan en la UI.
 export const scores = pgTable(
   "scores",
   {
     companyId: text("company_id").notNull().references(() => companies.companyId),
     month: text("month").notNull(),
-    score: integer("score").notNull(),
-    confidence: real("confidence"),
-    delta1m: integer("delta_1m"),
-    delta3m: integer("delta_3m"),
-    delta6m: integer("delta_6m"),
-    regime: text("regime"), // improving · stable · deteriorating · dip
-    subscores: jsonb("subscores").$type<Record<string, number | null>>(),
-    signals: jsonb("signals").$type<Record<string, number | null>>(),
+    scoreRaw: real("score_raw"),
+    score: real("score").notNull(),
+    scoreVersion: text("score_version"),
+    cPago: real("c_pago"),
+    cLiquidez: real("c_liquidez"),
+    cCaja: real("c_caja"),
+    cDeuda: real("c_deuda"),
+    cConcentracion: real("c_concentracion"),
+    trainedWithoutFold: integer("trained_without_fold"),
+    scoreOot: real("score_oot"),
+    alert: boolean("alert").notNull().default(false),
+    explanation: text("explanation"),
+    // único campo que no sale de scores_v3.csv: saldo bancario real a fin de mes (EUR), de
+    // gold/company_month.parquet (tools/export_cash_position.py) — cash-pooling y "excedentes"
+    // necesitan un importe real y el score no lo lleva. Es un hecho anterior al modelo, no cambia
+    // aunque se reentrene v3. Puede ser null si la empresa no tiene cuenta corriente ese mes.
+    cashPosition: real("cash_position"),
   },
   (t) => [
     primaryKey({ columns: [t.companyId, t.month] }),
@@ -40,71 +50,3 @@ export const scores = pgTable(
     index("scores_month_idx").on(t.month),
   ],
 );
-
-// mismo esquema que scores; test oculto del reto (60-80 empresas nunca vistas)
-export const predictions = pgTable(
-  "predictions",
-  {
-    companyId: text("company_id").notNull(),
-    month: text("month").notNull(),
-    score: integer("score").notNull(),
-    confidence: real("confidence"),
-    subscores: jsonb("subscores").$type<Record<string, number | null>>(),
-    signals: jsonb("signals").$type<Record<string, number | null>>(),
-  },
-  (t) => [primaryKey({ columns: [t.companyId, t.month] })],
-);
-
-export const anticipation = pgTable("anticipation", {
-  id: text("id").primaryKey(),
-  companyId: text("company_id").notNull(),
-  eventMonth: text("event_month").notNull(),
-  eventType: text("event_type").notNull(), // deterioration · improvement
-  detectedMonth: text("detected_month").notNull(),
-  leadMonths: integer("lead_months").notNull(),
-});
-
-export type Driver = {
-  signal: string;
-  label: string;
-  direction: "better" | "worse" | "neutral";
-  impact: number;
-  from: number;
-  to: number;
-  since: string;
-};
-export type Recommendation = { action: string; urgency: "high" | "medium" | "low"; expected_impact: string };
-
-export const explanations = pgTable(
-  "explanations",
-  {
-    companyId: text("company_id").notNull(),
-    month: text("month").notNull(),
-    headline: text("headline").notNull(),
-    summary: text("summary").notNull(),
-    drivers: jsonb("drivers").$type<Driver[]>(),
-    recommendations: jsonb("recommendations").$type<Recommendation[]>(),
-  },
-  (t) => [primaryKey({ columns: [t.companyId, t.month] })],
-);
-
-export const alerts = pgTable(
-  "alerts",
-  {
-    alertId: text("alert_id").primaryKey(),
-    companyId: text("company_id").notNull(),
-    month: text("month").notNull(),
-    type: text("type").notNull(), // regime_change · threshold · anomaly · improvement
-    severity: text("severity").notNull(), // high · medium · info
-    title: text("title").notNull(),
-    message: text("message").notNull(),
-    leadMonths: integer("lead_months"),
-  },
-  (t) => [index("alerts_company_idx").on(t.companyId), index("alerts_month_idx").on(t.month)],
-);
-
-// fila única: hasta qué mes "existe" el dato durante la demo — se avanza en vivo para simular tiempo real
-export const demoState = pgTable("demo_state", {
-  id: integer("id").primaryKey().default(1),
-  visibleUntil: text("visible_until").notNull(),
-});

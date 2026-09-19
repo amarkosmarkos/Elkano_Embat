@@ -20,6 +20,8 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 ssh_key.txt
+__pycache__/
+*.pyc
 
 # output/: los datos crudos del reto (646 MB, se descomprimen de output_hackspain_data.zip) y
 # 01_preprocessed/ (regenerable con ./pipeline/run.sh, ~1 min) NO van al repo.

@@ -20,10 +20,11 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
   const recos = recommend({
     score: last?.score ?? null,
     regime: last?.regime ?? null,
-    signals: last?.signals ?? null,
+    cashPosition: last?.cashPosition ?? null,
+    cDeuda: last?.cDeuda ?? null,
     hasDebt: co.hasDebt,
-    recentAlerts: alerts.map((a) => ({ type: a.type, severity: a.severity, title: a.title })),
-    groupSiblings: siblings.map((s) => ({ companyId: s.companyId, displayName: s.displayName, score: s.score, signals: s.signals })),
+    recentAlerts: alerts.map((a) => ({ severity: a.severity, title: a.title })),
+    groupSiblings: siblings.map((s) => ({ companyId: s.companyId, displayName: s.displayName, score: s.score, cashPosition: s.cashPosition })),
   });
 
   return (
@@ -32,7 +33,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         <div>
           <div className="font-mono text-[12px] tracking-wide text-ink-mute">{co.companyId}{co.groupId ? ` · ${co.groupId}` : ""}</div>
           <h1 className="mt-1 text-4xl font-bold tracking-tight text-ink">{co.displayName}</h1>
-          {explanation && <p className="mt-3 max-w-xl text-ink-dim">{explanation.headline}</p>}
+          {explanation && <p className="mt-3 max-w-xl text-ink-dim">{explanation.text}</p>}
         </div>
         <div className={`rounded-2xl border px-5 py-3 text-right shadow-sm ${last ? BORDER[band(last.score)] : "border-line"}`}>
           <ScoreNumber score={last?.score ?? null} />
@@ -47,18 +48,12 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex flex-col gap-4">
-          {explanation?.summary && (
-            <div className="rounded-2xl border border-line-soft bg-panel-2 p-5">
-              <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Explicación</div>
-              <p className="text-sm italic text-ink-dim">&quot;{explanation.summary}&quot;</p>
-            </div>
-          )}
           {alerts.length > 0 && (
             <div className="rounded-2xl border border-line-soft bg-panel-2 p-5">
               <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Alertas recientes</div>
               <div className="flex flex-col gap-2">
                 {alerts.map((a) => (
-                  <div key={a.alertId} className="text-xs">
+                  <div key={a.key} className="text-xs">
                     <span className={a.severity === "high" ? "text-bad" : "text-ink-dim"}>{a.month} · {a.title}</span>
                   </div>
                 ))}

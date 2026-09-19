@@ -4,17 +4,16 @@ import { eur, sane } from "./format";
 
 export type ProductId = "excedentes" | "cash-pooling" | "monitor";
 
-// laxo a propósito: viene directo del jsonb de Postgres — ver Signals en queries.ts para el esquema completo
-type SignalMap = Record<string, number | null> | null;
-
-export type GroupSibling = { companyId: string; displayName: string; score: number; signals: SignalMap };
+export type GroupSibling = { companyId: string; displayName: string; score: number; cashPosition: number | null };
 
 export type RecoInput = {
   score: number | null;
   regime: string | null;
-  signals: SignalMap;
+  cashPosition: number | null;
+  /** contribución de la dimensión deuda al score este mes (scores.c_deuda) — negativa = pesa en contra. */
+  cDeuda: number | null;
   hasDebt: boolean | null;
-  recentAlerts: { type: string; severity: string; title: string }[];
+  recentAlerts: { severity: string; title: string }[];
   groupSiblings: GroupSibling[]; // ya excluye a la propia empresa
 };
 
@@ -33,22 +32,20 @@ const PRODUCT_TITLE: Record<ProductId, string> = {
 };
 
 export function recommend(input: RecoInput): Recommendation[] {
-  const { score, regime, signals, recentAlerts, groupSiblings } = input;
+  const { score, regime, cashPosition, cDeuda, recentAlerts, groupSiblings } = input;
   const out: Recommendation[] = [];
 
-  // ---- 1. Colocación de excedentes: caja alta, runway largo, score que aguanta -----------------
-  const cash = sane(signals?.cash_position);
-  const runway = signals?.runway_months ?? null;
+  // ---- 1. Colocación de excedentes: caja alta y score que aguanta -------------------------------
+  const cash = sane(cashPosition);
   if (cash !== null && cash > 60_000) {
-    const runwayOk = runway === null ? 0.5 : Math.min(1, runway / 18); // 18m+ = colchón claro
     const scoreOk = score === null ? 0.5 : Math.min(1, Math.max(0, (score - 50) / 35));
-    const fit = Math.round(100 * (0.55 * Math.min(1, cash / 400_000) + 0.3 * runwayOk + 0.15 * scoreOk));
+    const fit = Math.round(100 * (0.7 * Math.min(1, cash / 400_000) + 0.3 * scoreOk));
     const safe = Math.round(cash * 0.45); // estimación orientativa: mitad del suelo de caja, redondeado a la baja
     out.push({
       product: "excedentes",
       title: PRODUCT_TITLE.excedentes,
       fit,
-      reason: `Caja de ${eur(cash)}${runway !== null ? ` y runway de ${runway.toFixed(0)} meses` : ""} — hay margen para inmovilizar parte sin tocar el circulante.`,
+      reason: `Caja de ${eur(cash)} — hay margen para inmovilizar parte sin tocar el circulante.`,
       detail: `Estimación orientativa: ~${eur(safe)} colocables a plazo sin bajar del colchón de seguridad.`,
     });
   }
@@ -56,7 +53,7 @@ export function recommend(input: RecoInput): Recommendation[] {
   // ---- 2. Cash pooling: compararse con las hermanas del mismo grupo ----------------------------
   if (groupSiblings.length > 0) {
     const withCash = groupSiblings
-      .map((s) => ({ s, cash: sane(s.signals?.cash_position) }))
+      .map((s) => ({ s, cash: sane(s.cashPosition) }))
       .filter((x): x is { s: GroupSibling; cash: number } => x.cash != null);
     if (withCash.length > 0) {
       const sorted = [...withCash].sort((a, b) => b.cash - a.cash);
@@ -93,15 +90,15 @@ export function recommend(input: RecoInput): Recommendation[] {
     }
   }
 
-  // ---- 3. Monitor de cuotas y pronto pago: deterioro, score bajo o alertas recientes -----------
+  // ---- 3. Monitor de cuotas y pronto pago: deterioro, score bajo, alertas o deuda que pesa -------
   const highAlerts = recentAlerts.filter((a) => a.severity === "high");
-  const debtService = signals?.debt_service_ratio ?? null;
-  if (regime === "deteriorating" || (score !== null && score < 58) || highAlerts.length > 0 || (debtService !== null && debtService > 0.25)) {
+  const debtDrag = cDeuda !== null && cDeuda < -8 ? Math.abs(cDeuda) : 0;
+  if (regime === "deteriorating" || (score !== null && score < 58) || highAlerts.length > 0 || debtDrag > 0) {
     const fit =
       (regime === "deteriorating" ? 35 : 0) +
       (score !== null ? Math.max(0, 45 - score) : 20) +
       highAlerts.length * 12 +
-      (debtService !== null ? Math.min(20, debtService * 60) : 0);
+      Math.min(20, debtDrag);
     out.push({
       product: "monitor",
       title: PRODUCT_TITLE.monitor,
@@ -111,7 +108,9 @@ export function recommend(input: RecoInput): Recommendation[] {
           ? `${highAlerts.length} alerta(s) activa(s) este trimestre — "${highAlerts[0].title}".`
           : regime === "deteriorating"
             ? "El score lleva varios meses cayendo: conviene ver las cuotas de los próximos 3 meses contra la caja prevista antes de que apriete."
-            : `Score de ${score} pts: margen justo para encajar impuestos, nóminas y cuotas del trimestre.`,
+            : debtDrag > 0
+              ? `La deuda está restando ${debtDrag.toFixed(1)} pts al score este mes: conviene revisar el servicio de la deuda antes de que apriete.`
+              : `Score de ${score} pts: margen justo para encajar impuestos, nóminas y cuotas del trimestre.`,
     });
   }
 
