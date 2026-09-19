@@ -9,7 +9,7 @@ export function Nav({ companyId, groupId, monthLast }: { companyId: string; grou
   const { ops } = useOps();
   const items: { href: string; label: string; n: number; active: boolean; badge?: number }[] = [
     { href: "/intro/", label: "Barco", n: 0, active: path.startsWith("/intro") },
-    { href: "/", label: "Datos", n: 1, active: path === "/" },
+    { href: "/", label: "Datos", n: 1, active: path === "/" || path.startsWith("/plataforma") },
     { href: "/score/", label: "Score", n: 2, active: path.startsWith("/score") },
     { href: `/empresa/${companyId}/`, label: "Empresa", n: 3, active: path.startsWith("/empresa") },
     { href: `/grupo/${groupId}/`, label: "Grupo", n: 4, active: path.startsWith("/grupo") },
