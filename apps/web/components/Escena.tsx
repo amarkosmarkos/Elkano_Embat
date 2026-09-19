@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { presentation, presentationHref, sceneMedia, sectionLabel } from "@/lib/presentation";
+import { SkyStory } from "@/components/SkyStory";
 
 type WindowData={key:string;title:string;value:string;detail:string};
 const clamp=(x:number)=>Math.max(0,Math.min(1,x));
@@ -18,10 +19,18 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
     const change=()=>setReduced(mq.matches);mq.addEventListener("change",change);return()=>mq.removeEventListener("change",change);
   },[]);
   useEffect(()=>{
-    const el=track.current;const v=video.current;if(!el||!v)return;
+    const el=track.current;if(!el)return;
     let raf=0;let disposed=false;
     const query=new URLSearchParams(location.search).get("p");
     const initial=query!==null&&Number.isFinite(Number(query))?clamp(Number(query)):null;
+    const v=video.current;
+    if(!v){
+      // Fondo fijo: el scroll solo mueve el progreso, no hay vídeo que buscar.
+      const scroll=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const total=el.offsetHeight-innerHeight;setP(total>0?clamp(-el.getBoundingClientRect().top/total):1);});};
+      if(initial!==null)window.scrollTo(0,el.offsetTop+initial*(el.offsetHeight-innerHeight));
+      window.addEventListener("scroll",scroll,{passive:true});window.addEventListener("resize",scroll);scroll();
+      return()=>{cancelAnimationFrame(raf);window.removeEventListener("scroll",scroll);window.removeEventListener("resize",scroll);};
+    }
     const seek=()=>{if(disposed||v.seeking||!Number.isFinite(v.duration)||v.readyState<1)return;const target=Math.min(Math.max(0,v.duration-.05),desired.current*v.duration);if(Math.abs(v.currentTime-target)>.03)v.currentTime=target;};
     const scroll=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(autoplay)return;const total=el.offsetHeight-innerHeight;const progress=total>0?clamp(-el.getBoundingClientRect().top/total):1;desired.current=progress;setP(progress);if(!reduced)seek();});};
     const ready=()=>{
@@ -39,14 +48,15 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
   const index=presentation.findIndex(([route])=>route===`/escena/${number}`);const next=index>=0?presentation[index+1]:undefined;
   return <div ref={track} className={`scene-track scene-number-${number}`} style={{height:`${autoplay?100:media.height}svh`}}>
     <section className="scene-stage" aria-label={media.title}>
-      <video ref={video} className="scene-video" src={media.video} poster={media.poster} preload="auto" muted playsInline onError={()=>setError(true)} aria-label={`Plano de ${media.title}`}/>
+      {media.still?<img className="scene-video" src={media.still} alt={`Plano de ${media.title}`} onError={()=>setError(true)}/>
+        :<video ref={video} className="scene-video" src={media.video} poster={media.poster} preload="auto" muted playsInline onError={()=>setError(true)} aria-label={`Plano de ${media.title}`}/>}
       <div className="scene-shade"/>
       <header className="scene-masthead"><Link href="/escena/1/" className="scene-wordmark">ELKANO<span>✧</span></Link><span>HACKSPAIN 2026, X RAY, EMBAT</span><span className="scene-chapter">{sectionLabel[number]}</span></header>
       {number===1&&<>
         <Layer p={Math.max(.05,p)} to={.46} position="right"><div className="story-intro-card"><p className="scene-eyebrow">QUIÉNES SOMOS</p><h1>Somos Elkano.</h1><p>Somos Luken, Nagore, Markos, David y Xuban. Nos subimos al barco de Embat con los datos de 1.286 empresas en 250 grupos: 24 meses, 2.556.437 movimientos y 897.894 facturas.</p></div></Layer>
         <Layer p={p} from={.48} position="right"><div className="story-intro-card"><p className="scene-eyebrow">POR QUÉ ESTE TRACK</p><h1>El dinero<br/><em>deja rastro.</em></h1><p>Elegimos este track porque el dinero deja rastro y casi nadie lo lee. Embat ve el de 400 empresas cada día. Nos ha dado los datos de 1.286 para probar que podemos detectar lo que ocurre antes de que sea evidente.</p></div></Layer>
       </>}
-      {number===3&&<><Layer p={Math.max(.05,p)} to={.7} position="right"><div className="story-overlay-placeholder"><p className="scene-eyebrow">EL PROBLEMA, ANIMACIÓN PENDIENTE</p><h2>Patrones en los datos</h2><p>Cinco constelaciones para leer la caja, la deuda, los cobros, los pagos y el grupo.</p><span>Espacio reservado para las constelaciones SVG.</span></div></Layer><Layer p={p} from={.72}><h1>¿Y si hubiera una manera más directa de entender la salud de una empresa?</h1><div className="story-logo-placeholder">Pendiente: constelación con el símbolo de Embat</div></Layer></>}
+      {number===3&&<SkyStory p={p} reduced={reduced}/>}
       {number===4&&<div className="story-video-pending"><span>NUEVO PLANO PENDIENTE</span> Cofre con tres papiros; uno se desenrolla. Vídeo actual como referencia temporal.</div>}
       {number===5&&<><Layer p={Math.max(.05,p)} to={.54} position="right"><p className="scene-eyebrow">QUIÉN GANA CON ESTO</p><div className="scene-product"><h2>La empresa</h2><p>Gana interés que hoy no gana, deja de pagar intereses por dinero que ya tiene y evita el descubierto de julio.</p></div><div className="scene-product"><h2>Embat</h2><p>Dos módulos nuevos sobre 400 clientes, comisión por cada colocación, y una razón para que el financiero entre cada día.</p></div></Layer><Layer p={p} from={.52}><p className="scene-eyebrow">SOLO EN ESTE DATASET</p><div className="scene-metrics"><div><strong>535 M€</strong><p>parados en 312 empresas</p></div><div><strong>85 M€</strong><p>neteables hoy</p></div><div><strong>182</strong><p>empresas avisadas antes del impago con cuatro meses de antelación</p></div></div></Layer></>}
       {number===6&&<Layer p={p} from={.5}><h1 className="story-thanks">Gracias por escuchar.</h1><p className="scene-credits">Luken, Nagore, Markos, David y Xuban</p><p className="scene-eyebrow">HackSpain 2026, Reto X Ray de Embat</p></Layer>}

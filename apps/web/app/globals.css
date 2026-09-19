@@ -99,6 +99,22 @@ body { color: var(--color-ink); font-family: var(--font-sans); font-variant-nume
 @media(max-width:800px){.scene-masthead{top:18px;gap:12px}.scene-masthead>span:not(.scene-chapter){display:none}.scene-wordmark{font-size:20px}.scene-opening{top:13%;width:90%}.scene-stage h1{font-size:36px}.scene-opening h1{font-size:32px}.scene-windows{top:34%;right:5%;width:90%;max-width:none;gap:3px}.scene-window{padding:5px 10px}.scene-window strong{font-size:17px}.scene-window p{font-size:10px}.scene-bottom-left{bottom:125px;max-width:80%;font-size:12px}.scene-number-1 .scene-bottom-left{bottom:115px}.scene-center{inset:22% 6% auto}.scene-left{top:23%;left:6%;right:6%}.scene-right,.scene-products{width:88%;right:6%;top:20%;max-width:none}.scene-product{padding:16px}.scene-product h2{font-size:23px}.scene-product p{font-size:13px}.scene-products{gap:9px}.constellation{width:100%;right:0;top:18%}.scene-number-3 .scene-bottom-left{bottom:130px}.scene-metrics{grid-template-columns:1fr;gap:20px;padding:22px;margin-top:20px}.scene-metrics strong{font-size:33px}.scene-metrics p{margin:2px 0 0;font-size:12px}.scene-number-5 .scene-center{top:15%}.scene-bottom{bottom:80px}.scene-next{bottom:35px}.presentation-nav{bottom:20px;right:5vw}.scene-stage h1.scene-finale{font-size:80px}.scene-credits{font-size:12px}.scene-number-6 .scene-center{top:20%}}
 @media(prefers-reduced-motion:reduce){.scene-layer,.scene-window,.scene-product{transform:none!important;will-change:auto}}
 
+/* Escena 3, SkyStory: capa transparente sobre el cielo, lienzo virtual 1600x900 en modo cover. */
+.sky-story{position:absolute;inset:0;z-index:2;cursor:pointer}
+.sky-canvas,.sky-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sky-svg{pointer-events:none;overflow:visible}
+.sky-svg text{pointer-events:none;paint-order:stroke;stroke:#04101f;stroke-width:0;text-shadow:0 0 18px #04101fcc}
+.sky-serif{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.02em}
+.sky-num{letter-spacing:-.05em}
+.sky-sans{font-family:var(--font-sans)}
+.sky-track{letter-spacing:.26em;text-transform:uppercase}
+.sky-track-tight{letter-spacing:.16em}
+.sky-italic{font-style:italic}
+.sky-constellation{pointer-events:auto;transition:opacity .8s ease}
+.sky-constellation text{transition:opacity .4s}
+.scene-number-3 .scene-shade{background:linear-gradient(180deg,rgba(4,16,31,.45),transparent 28%,transparent 62%,rgba(4,16,31,.55))}
+@media(prefers-reduced-motion:reduce){.sky-svg *{transition:none!important}}
+
 /* Storyboard V2: explicit placeholders, not invented product or quant content. */
 .story-placeholder{min-height:100svh;background:#071625;color:#edf3f0;padding:28px 5vw 110px}
 .story-header{display:flex;align-items:center;gap:30px;font-size:10px;letter-spacing:.13em;color:#b9cbc9}
