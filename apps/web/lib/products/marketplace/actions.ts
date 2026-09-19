@@ -10,7 +10,21 @@ export type ActionKind = "pause" | "reduce" | "review" | "monitor" | "increase";
 
 export interface ExecutedAction { id: string; kind: ActionKind; multiplier: number; month: string; scoreThen: number }
 
-export interface Recommendation { id: string; kind: ActionKind; title: string; severity: 0 | 1 | 2 | 3; reasons: string[]; multiplier: number; timeline: PositionTimeline }
+export interface Recommendation {
+  id: string; kind: ActionKind; title: string; severity: 0 | 1 | 2 | 3; reasons: string[]; multiplier: number; timeline: PositionTimeline;
+  /** La regla exacta que ha disparado la acción, con los valores reales de la posición: de dónde sale el porcentaje. */
+  rule: string;
+}
+
+/** Reglas que deciden cada acción, en el orden en que se evalúan (la primera que se cumple gana). */
+export const ACTION_RULES: { kind: ActionKind; when: string; then: string }[] = [
+  { kind: "reduce", when: "el score cae ≥ 15 pts desde el cierre y el movimiento es persistente (no un mes puntual)", then: "posición × 0,50 (−50 %)" },
+  { kind: "pause", when: "cae ≥ 8 pts y está en alerta (20 % peor de la red), o cae ≥ 20 pts", then: "posición × 0,75 (−25 %)" },
+  { kind: "review", when: "cae ≥ 8 pts, o lleva 3 meses seguidos bajando", then: "posición × 0,85 (−15 %)" },
+  { kind: "increase", when: "sube ≥ 10 pts, score ≥ 75 y 2 meses seguidos al alza", then: "posición × 1,25 (+25 %, hasta el tope)" },
+  { kind: "review", when: "estado «vigilar» sin cumplir lo anterior", then: "sin recorte (× 1,00)" },
+  { kind: "monitor", when: "ninguna de las anteriores", then: "sin cambios" },
+];
 
 export const ACTION_META: Record<ActionKind, { label: string; verb: string; tone: "bad" | "warn" | "neutral" | "good"; effect: string }> = {
   pause: { label: "Pausar financiación adicional", verb: "Pausar", tone: "bad", effect: "Congela nueva financiación y recorta la posición un 25 %" },
@@ -56,13 +70,16 @@ export function recommend(snapshot: MonitorSnapshot, network: Network): Recommen
     let kind: ActionKind = "monitor";
     let severity: Recommendation["severity"] = 0;
     let multiplier = 1;
-    if (t.delta <= -15 && t.persistent) { kind = "reduce"; severity = 3; multiplier = 0.5; }
-    else if ((t.alertNow && t.delta <= -8) || t.delta <= -20) { kind = "pause"; severity = 3; multiplier = 0.75; }
-    else if (t.delta <= -8 || t.declineStreak >= 3) { kind = "review"; severity = 2; multiplier = 0.85; }
-    else if (t.delta >= 10 && t.scoreNow >= 75 && t.riseStreak >= 2) { kind = "increase"; severity = 1; multiplier = 1.25; }
-    else if (t.status === "watch") { kind = "review"; severity = 1; multiplier = 1; }
+    let rule = "";
+    const d = fmtDelta(t.delta, 1);
+    if (t.delta <= -15 && t.persistent) { kind = "reduce"; severity = 3; multiplier = 0.5; rule = `Δscore ${d} ≤ −15 y persistente → ×0,50`; }
+    else if ((t.alertNow && t.delta <= -8) || t.delta <= -20) { kind = "pause"; severity = 3; multiplier = 0.75; rule = t.delta <= -20 ? `Δscore ${d} ≤ −20 → ×0,75` : `Δscore ${d} ≤ −8 y en alerta → ×0,75`; }
+    else if (t.delta <= -8 || t.declineStreak >= 3) { kind = "review"; severity = 2; multiplier = 0.85; rule = t.delta <= -8 ? `Δscore ${d} ≤ −8 → ×0,85` : `${t.declineStreak} meses seguidos bajando (≥ 3) → ×0,85`; }
+    else if (t.delta >= 10 && t.scoreNow >= 75 && t.riseStreak >= 2) { kind = "increase"; severity = 1; multiplier = 1.25; rule = `Δscore ${d} ≥ +10, score ${to} ≥ 75 y ${t.riseStreak} meses al alza → ×1,25`; }
+    else if (t.status === "watch") { kind = "review"; severity = 1; multiplier = 1; rule = `estado «vigilar» (Δscore ${d}) → sin recorte`; }
+    else rule = `Δscore ${d}: ninguna regla se cumple`;
     if (kind === "monitor" && reasons.length === 0) reasons.push(`Score ${to}, ${fmtDelta(t.delta, 1)} pts desde la asignación: dentro del rango normal`);
-    return { id: t.position.id, kind, title: ACTION_META[kind].label, severity, reasons, multiplier, timeline: t };
+    return { id: t.position.id, kind, title: ACTION_META[kind].label, severity, reasons, multiplier, timeline: t, rule };
   });
   return recs.sort((a, b) => b.severity - a.severity || a.timeline.delta - b.timeline.delta);
 }

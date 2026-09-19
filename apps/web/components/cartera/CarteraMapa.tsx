@@ -70,12 +70,12 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="Score medio" value={formatScore(k.mean)} delta={k.meanPrev == null ? null : k.mean - k.meanPrev} sub="vs mes anterior" />
-        <Kpi label="Cambio a 6 meses" value={k.meanD6 == null ? "—" : `${k.meanD6 >= 0 ? "+" : "−"}${Math.abs(k.meanD6).toFixed(1)}`} tone={k.meanD6 == null ? "neutral" : k.meanD6 >= 0 ? "good" : "bad"} sub="media por empresa" />
-        <Kpi label="Mejorando" value={formatCount(k.nImproving)} tone="good" sub="3 meses al alza" />
-        <Kpi label="Deteriorando" value={formatCount(k.nDeteriorating)} tone="bad" sub="3 meses a peor" />
+        <Kpi icon="gauge" label="Score medio" value={formatScore(k.mean)} delta={k.meanPrev == null ? null : k.mean - k.meanPrev} sub="vs mes anterior" />
+        <Kpi icon="clock" label="Cambio a 6 meses" value={k.meanD6 == null ? "—" : `${k.meanD6 >= 0 ? "+" : "−"}${Math.abs(k.meanD6).toFixed(1)}`} tone={k.meanD6 == null ? "neutral" : k.meanD6 >= 0 ? "good" : "bad"} sub="media por empresa" />
+        <Kpi icon="trend-up" label="Mejorando" value={formatCount(k.nImproving)} tone="good" sub="3 meses al alza" />
+        <Kpi icon="trend-down" label="Deteriorando" value={formatCount(k.nDeteriorating)} tone="bad" sub="3 meses a peor" />
         <Kpi label="En el 20 % peor" value={formatCount(k.nAlert)} tone="warn" sub="alert = 1" />
-        <Kpi label="Con alarma S" value={formatCount(k.nStress)} tone="warn" sub="≥ 1 de las 8" />
+        <Kpi icon="alert" label="Con alarma S" value={formatCount(k.nStress)} tone="warn" sub="≥ 1 de las 8" />
       </div>
 
       <Card

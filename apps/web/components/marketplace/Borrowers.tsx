@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMarketplace, deployableCapital } from "@/lib/products/marketplace/store";
-import { buildPortfolio, RISK_PRESETS, OVERLAP_PENALTY, type PortfolioResult, type RiskTolerance } from "@/lib/products/marketplace/portfolio";
+import { buildPortfolio, RISK_PRESETS, OVERLAP_PENALTY, DEFAULT_CONFIG as DEFAULT_CFG, type PortfolioResult, type RiskTolerance } from "@/lib/products/marketplace/portfolio";
 import { TERMS, type Term } from "@/lib/products/marketplace/pricing";
 import { isRelated } from "@/lib/products/marketplace/assess";
 import { TIER_LABEL, type Tier } from "@/lib/score/derived";
@@ -22,10 +22,13 @@ import { fmtMoney, monthLabel, monthLabelLong } from "@/lib/format";
 type Tab = "map" | "distribution" | "crew";
 const pct = (v: number, d = 1) => `${(v * 100).toFixed(d).replace(".", ",")} %`;
 
+const STEP_MS = 320;
+const CONFIG_KEYS: (keyof import("@/lib/products/marketplace/portfolio").PortfolioConfig)[] = ["capital", "risk", "maxExposure", "minScore", "maxPerGroup", "targetPositions", "asOf", "lenderId", "term", "targetReturn", "ticket", "maxPd"];
+
 /**
- * Paso 2 · receptoras y cartera. La cartera se recalcula al instante con cada cambio de configuración
- * (perfil de riesgo, plazo, rentabilidad objetivo, capital, ticket, exposición, diversificación) y el
- * embudo enseña cuántas candidatas descarta cada criterio.
+ * Paso 2 · receptoras y cartera. La cartera NO se calcula sola: se configura (perfil de riesgo, plazo,
+ * rentabilidad objetivo, capital, ticket, exposición, diversificación), se pulsa «Calcular» y se ve el
+ * proceso paso a paso (embudo, ranking, selección, pesos, precio) antes del resultado.
  */
 export default function Borrowers() {
   const { network, assessed, config, setConfig, setRisk, lenderId, setLender, result, setResult, byId, openCompany, setOpenCompany } = useMarketplace();
@@ -39,10 +42,20 @@ export default function Borrowers() {
   const cap = useMemo(() => (lender && network ? deployableCapital(lender.c, network.months) : null), [lender, network]);
   const topLenders = useMemo(() => assessed.filter((a) => a.provider.qualified).sort((x, y) => (y.provider.deployable ?? 0) - (x.provider.deployable ?? 0)).slice(0, 5), [assessed]);
 
-  // la cartera es una función pura de (red, configuración): cada cambio la reconstruye
+  // la cartera es una función pura de (red, configuración), pero solo se materializa al pulsar «Calcular»
   const preview: PortfolioResult | null = useMemo(() => (network && months.includes(config.asOf) ? buildPortfolio(network, { ...config, lenderId }) : null), [network, config, lenderId, months]);
-  useEffect(() => { if (preview) setResult(preview); }, [preview, setResult]);
-  const shown = result ?? preview;
+  const [phase, setPhase] = useState<"idle" | "running" | "done">(result ? "done" : "idle");
+  const [step, setStep] = useState(0);
+  const stale = !!result && CONFIG_KEYS.some((k) => result.config[k] !== (k === "lenderId" ? lenderId : config[k]));
+  const steps = useMemo(() => (preview ? processSteps(preview, config, preset0(config.risk)) : []), [preview, config]);
+  useEffect(() => {
+    if (phase !== "running") return;
+    if (step >= steps.length) { setResult(preview); setPhase("done"); return; }
+    const t = setTimeout(() => setStep((x) => x + 1), STEP_MS);
+    return () => clearTimeout(t);
+  }, [phase, step, steps.length, preview, setResult]);
+  const compute = () => { if (!preview) return; setView("portfolio"); setStep(0); setPhase("running"); };
+  const shown = phase === "done" ? result : null;
 
   const candidates = useMemo(() => assessed.filter((a) => a.receiver.eligible && a.receiver.need >= 25 && !isRelated(lender?.c ?? null, a.c)).sort((x, y) => y.receiver.fit - x.receiver.fit), [assessed, lender]);
   const inChest = useMemo(() => new Set(shown?.positions.map((p) => p.id) ?? []), [shown]);
@@ -65,7 +78,7 @@ export default function Borrowers() {
             <div className="flex flex-wrap gap-1.5">{topLenders.map((a) => <button key={a.c.id} type="button" onClick={() => setLender(a.c.id)} className="rounded-lg border border-line px-2.5 py-1 text-[12px] text-ink hover:bg-panel-2">{a.c.name} <span className="num text-ink-mute">{fmtMoney(a.provider.deployable ?? 0)}</span></button>)}</div>
           </Card>
         )}
-        <Card title="Configuración" sub="cada cambio reconstruye la cartera">
+        <Card title="Configuración" sub="ajusta y pulsa Calcular para construir la cartera">
           <div className="space-y-4">
             <div><div className="mb-1.5 text-[13px] text-ink-mute">Perfil de riesgo</div><Seg className="w-full" value={config.risk} onChange={(v: RiskTolerance) => setRisk(v)} options={(Object.keys(RISK_PRESETS) as RiskTolerance[]).map((k) => ({ value: k, label: RISK_PRESETS[k].label }))} /><p className="mt-1.5 text-[12px] text-ink-mute">{preset.blurb}</p></div>
             <div><div className="mb-1.5 text-[13px] text-ink-mute">Plazo</div><Seg className="w-full" value={String(config.term)} onChange={(v) => setConfig({ term: Number(v) as Term })} options={TERMS.map((t) => ({ value: String(t), label: `${t} meses` }))} /><p className="mt-1.5 text-[12px] text-ink-mute">Más plazo ⇒ más probabilidad de impago en la ventana, más tipo y más rendimiento bruto.</p></div>
@@ -80,6 +93,8 @@ export default function Borrowers() {
               <Slider label="Máx. por grupo" value={config.maxPerGroup} min={1} max={3} step={1} onChange={(v) => setConfig({ maxPerGroup: v })} />
             </div>
             <div><div className="mb-1.5 text-[13px] text-ink-mute">Mes de asignación</div><div className="flex flex-wrap gap-1">{asOfOptions.map((m) => <button key={m} type="button" onClick={() => setConfig({ asOf: m })} className={`num rounded-lg border px-2 py-0.5 text-[11px] transition-colors ${config.asOf === m ? "border-ink bg-ink text-panel" : "border-line text-ink-dim hover:bg-panel-2"}`}>{monthLabel(m)}</button>)}</div></div>
+            <Btn size="lg" className="w-full" onClick={compute} disabled={!preview || !lender || phase === "running"}>{phase === "running" ? "Calculando…" : shown && !stale ? "Recalcular cartera" : stale ? "Recalcular · configuración cambiada" : "Calcular cartera"}</Btn>
+            {!lender && <p className="text-[12px] text-warn">Elige primero quién presta.</p>}
           </div>
         </Card>
         {shown && (
@@ -92,8 +107,17 @@ export default function Borrowers() {
       </aside>
 
       <section className="flex min-w-0 flex-col gap-4">
-        {!network || !shown ? <Skeleton className="h-[520px]" /> : (
+        {!network ? <Skeleton className="h-[520px]" /> : phase === "running" ? <Process steps={steps} step={step} /> : !shown ? (
+          <Card>
+            <div className="flex flex-col items-center py-14 text-center">
+              <div className="text-[18px] font-semibold text-ink">{lender ? `Cartera para ${lender.c.name}` : "Sin prestamista"}</div>
+              <p className="mt-2 max-w-md text-[14px] text-ink-mute">{lender ? `Con ${fmtMoney(config.capital)} de tesorería desplegable, perfil ${preset.label.toLowerCase()} a ${config.term} meses. Ajusta la configuración y calcula: verás el embudo, el ranking, la selección y el precio de cada receptora.` : "Elige quién presta en el paso 1 o en la lista de la izquierda."}</p>
+              <Btn size="lg" className="mt-5" onClick={compute} disabled={!preview || !lender}>Calcular cartera</Btn>
+            </div>
+          </Card>
+        ) : (
           <>
+            {stale && <div className="flex items-center justify-between gap-3 rounded-lg border border-warn/40 bg-warn/10 px-4 py-2 text-[13px] text-ink"><span>La configuración ha cambiado desde el último cálculo: esta cartera ya no la refleja.</span><Btn size="sm" onClick={compute}>Recalcular</Btn></div>}
             <div className="card flex flex-col gap-4 px-6 py-4">
               <div className="flex flex-wrap items-center gap-6">
                 <ScoreRing score={shown.avgScore} size={84} stroke={7} label="cartera" />
@@ -107,7 +131,7 @@ export default function Borrowers() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-4">
                 <div className="flex flex-wrap items-center gap-2"><Seg value={view} onChange={setView} options={[{ value: "portfolio", label: "Cartera" }, { value: "candidates", label: "Candidatas" }]} />{view === "portfolio" && <Seg value={tab} onChange={setTab} options={[{ value: "map", label: "Mapa" }, { value: "distribution", label: "Distribución" }, { value: "crew", label: "Posiciones" }]} />}</div>
-                <Btn size="sm" onClick={() => router.push("/productos/marketplace/estructurar")} disabled={shown.positions.length === 0}>Paso 3 · Estructurar →</Btn>
+                <Btn size="sm" onClick={() => router.push("/productos/marketplace/cierre")} disabled={shown.positions.length === 0}>Paso 3 · Cierre →</Btn>
               </div>
             </div>
 
@@ -145,5 +169,49 @@ export default function Borrowers() {
       </section>
       <CompanyViewer mode="borrower" term={config.term} />
     </div>
+  );
+}
+
+type Step = { title: string; detail: string; value: string; tone?: "bad" | "good" };
+const preset0 = (r: RiskTolerance) => RISK_PRESETS[r];
+
+/** Los pasos del cálculo, con la cifra real que produce cada uno en esta configuración. */
+function processSteps(r: PortfolioResult, cfg: typeof DEFAULT_CFG, preset: (typeof RISK_PRESETS)["balanced"]): Step[] {
+  const f = r.funnel, e = r.economics;
+  const rates = r.positions.map((p) => p.pricing.rate);
+  return [
+    { title: "Universo", detail: `empresas con score en ${monthLabelLong(cfg.asOf).toLowerCase()}`, value: `${f.scored}` },
+    { title: "Fuera el prestamista y su grupo", detail: "no se financia a sí mismo ni a sus filiales", value: `−${f.related}`, tone: "bad" },
+    { title: "Fuera el 20 % peor de la red", detail: "empresas en alerta este mes", value: `−${f.alerted}`, tone: "bad" },
+    { title: `Más de ${preset.maxStress} alarma de estrés`, detail: "descubiertos, coste disparado, cobros vencidos…", value: `−${f.stressed}`, tone: "bad" },
+    { title: "Menos de 6 meses de historia", detail: "sin trayectoria no hay señal", value: `−${f.history}`, tone: "bad" },
+    { title: `Score < ${cfg.minScore}`, detail: `suelo del perfil ${preset.label.toLowerCase()}`, value: `−${f.belowScore}`, tone: "bad" },
+    { title: `PD a ${cfg.term} meses > ${pct(cfg.maxPd, 0)}`, detail: "probabilidad de evento de la calibración medida del score", value: `−${f.abovePd}`, tone: "bad" },
+    { title: `Rendimiento neto < ${pct(cfg.targetReturn)}`, detail: "tras pérdida esperada y comisión, no compensa", value: `−${f.belowReturn}`, tone: "bad" },
+    { title: "Elegibles", detail: "candidatas que superan todos los filtros", value: `${f.eligible}`, tone: "good" },
+    { title: "Ranking", detail: `${Math.round(preset.wScore * 100)} % score · ${Math.round(preset.wMomentum * 100)} % momentum · ${Math.round(preset.wStability * 100)} % estabilidad · ${Math.round(preset.wReturn * 100)} % rendimiento · −${Math.round(OVERLAP_PENALTY * 100)} % si se parece al prestamista`, value: `${f.eligible} ordenadas` },
+    { title: "Selección", detail: `máx. ${cfg.maxPerGroup} por grupo · capital ÷ ticket ${fmtMoney(cfg.ticket)} · tope ${cfg.targetPositions} posiciones`, value: `${r.positions.length} receptoras`, tone: "good" },
+    { title: "Pesos", detail: `∝ rango^${preset.gamma}, ninguna por encima del ${Math.round(cfg.maxExposure * 100)} %`, value: `mayor ${(r.topWeight * 100).toFixed(1)} %` },
+    { title: "Precio", detail: `${pct(0.025)} base + PD anual × 10 % LGD + margen por banda`, value: rates.length ? `${pct(Math.min(...rates))} – ${pct(Math.max(...rates))}` : "—" },
+    { title: "Cartera", detail: `${fmtMoney(r.allocated)} asignados · rendimiento neto ${pct(e.netYield)} · PD media ${pct(e.avgPd)}`, value: fmtMoney(r.allocated), tone: "good" },
+  ];
+}
+
+function Process({ steps, step }: { steps: Step[]; step: number }) {
+  return (
+    <Card title="Calculando la cartera" sub="cada paso, con lo que hace y lo que deja">
+      <div className="space-y-1">
+        {steps.map((s, i) => {
+          const done = i < step, cur = i === step;
+          return (
+            <div key={s.title} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-300 ${cur ? "bg-panel-2" : ""} ${done || cur ? "opacity-100" : "opacity-25"}`}>
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${done ? "bg-good/20 text-good" : cur ? "animate-pulse bg-ink text-panel" : "bg-panel-2 text-ink-mute"}`}>{done ? "✓" : i + 1}</span>
+              <div className="min-w-0 flex-1"><div className="text-[13.5px] font-medium text-ink">{s.title}</div><div className="truncate text-[12px] text-ink-mute">{s.detail}</div></div>
+              <span className={`num shrink-0 text-[14px] font-semibold ${!(done || cur) ? "text-transparent" : s.tone === "bad" ? "text-bad" : s.tone === "good" ? "text-good" : "text-ink"}`}>{s.value}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
