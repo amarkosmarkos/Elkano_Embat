@@ -59,9 +59,11 @@ export const COMPANY_TABS = (id: string) => [
   { href: `/empresas/${id}/decisiones`, label: "Decisiones" },
 ];
 
-export const MARKETPLACE_TABS = [
-  { href: "/productos/marketplace", label: "Prestamistas" },
-  { href: "/productos/marketplace/receptores", label: "Receptores y cartera" },
-  { href: "/productos/marketplace/monitor", label: "Monitor" },
-  { href: "/productos/marketplace/acciones", label: "Acciones" },
+export const MARKETPLACE_STEPS = [
+  { href: "/productos/marketplace", label: "Prestamista", n: 1 },
+  { href: "/productos/marketplace/receptores", label: "Receptores", n: 2 },
+  { href: "/productos/marketplace/estructurar", label: "Estructurar", n: 3 },
+  { href: "/productos/marketplace/economia", label: "Economía y cierre", n: 4 },
+  { href: "/productos/marketplace/monitor", label: "Monitor y acciones", n: 5 },
 ];
+export const MARKETPLACE_TABS = [...MARKETPLACE_STEPS.map(({ href, label }) => ({ href, label })), { href: "/productos/marketplace/operaciones", label: "Operaciones" }];

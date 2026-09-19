@@ -3,7 +3,8 @@ import { DIM_LABEL, STRESS } from "@/lib/score/meta";
 import { STRESS_FLAGS, type StressFlag } from "@/lib/score/types";
 import { fmtDelta, monthLabelLong } from "@/lib/format";
 import type { MonitorSnapshot, PositionTimeline } from "./monitor";
-import { summarize, type Network, type PortfolioResult, type Position } from "./portfolio";
+import { reprice, summarize, type Network, type PortfolioResult, type Position } from "./portfolio";
+import type { CalibrationRow } from "./pricing";
 
 export type ActionKind = "pause" | "reduce" | "review" | "monitor" | "increase";
 
@@ -19,7 +20,7 @@ export const ACTION_META: Record<ActionKind, { label: string; verb: string; tone
   increase: { label: "Aumentar exposición", verb: "Aumentar", tone: "good", effect: "Crece la posición un 25 %, hasta el tope de exposición" },
 };
 
-export function applyActions(result: PortfolioResult, executed: ExecutedAction[]): PortfolioResult {
+export function applyActions(result: PortfolioResult, executed: ExecutedAction[], cal: CalibrationRow[] = []): PortfolioResult {
   if (executed.length === 0) return result;
   const mult = new Map<string, number>();
   for (const a of executed) mult.set(a.id, (mult.get(a.id) ?? 1) * a.multiplier);
@@ -30,7 +31,7 @@ export function applyActions(result: PortfolioResult, executed: ExecutedAction[]
     return { ...p, weight: w, amount: Math.round(w * result.config.capital) };
   });
   const share = positions.reduce((s, p) => s + p.weight, 0);
-  return summarize(result.config, positions, result.universe, result.eligible, Math.min(1, share), result.excludedRelated);
+  return summarize(result.config, cal.length ? reprice(positions, result.config, cal) : positions, result.universe, result.eligible, Math.min(1, share), result.excludedRelated, result.funnel);
 }
 
 export function recommend(snapshot: MonitorSnapshot, network: Network): Recommendation[] {
@@ -66,10 +67,11 @@ export function recommend(snapshot: MonitorSnapshot, network: Network): Recommen
   return recs.sort((a, b) => b.severity - a.severity || a.timeline.delta - b.timeline.delta);
 }
 
-/** La misma cartera revalorada en el mes del monitor, sin acciones (base de la simulación). */
-export function revalue(result: PortfolioResult, snapshot: MonitorSnapshot): PortfolioResult {
+/** La misma cartera revalorada con los scores del mes del monitor (PD, pérdida esperada y rendimiento recalculados), sin acciones. */
+export function revalue(result: PortfolioResult, snapshot: MonitorSnapshot, cal: CalibrationRow[] = []): PortfolioResult {
   const nowScore = new Map(snapshot.positions.map((t) => [t.position.id, t.scoreNow]));
-  const positions = result.positions.map((p) => ({ ...p, score: nowScore.get(p.id) ?? p.score }));
+  let positions = result.positions.map((p) => ({ ...p, score: nowScore.get(p.id) ?? p.score }));
+  if (cal.length) positions = reprice(positions, result.config, cal);
   const share = positions.reduce((s, p) => s + p.weight, 0);
-  return summarize(result.config, positions, result.universe, result.eligible, Math.min(1, share), result.excludedRelated);
+  return summarize(result.config, positions, result.universe, result.eligible, Math.min(1, share), result.excludedRelated, result.funnel);
 }

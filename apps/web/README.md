@@ -46,9 +46,13 @@ lo mueve también.
 
 ## Productos
 
-- **Marketplace** (`lib/products/marketplace/`, `components/marketplace/`): el motor de `apps/marketplace` (asignador, monitor,
-  centro de acciones) portado tal cual y las cuatro pantallas nativas. El estado (prestamista, configuración, cartera, mes del
-  monitor, acciones) vive en el navegador; la red se sirve en `/api/network`.
+- **Marketplace** (`lib/products/marketplace/`, `components/marketplace/`): flujo por pasos Prestamista → Receptores →
+  Estructurar → Economía y cierre → Monitor y acciones, más Operaciones (las cerradas). `pricing.ts` valora cada operación con
+  la calibración medida del score (PD por decil a 1/3/6 meses): tipo = base + PD anual × LGD + margen por banda, comisión de
+  Embat = 20 % del interés, rendimiento neto del prestamista tras pérdida esperada. `portfolio.ts` construye la cartera en
+  función del perfil de riesgo, plazo, rentabilidad objetivo, capital real del prestamista (50 % de su suelo de caja), ticket,
+  exposición, PD máxima y diversificación, con un embudo que explica cada descarte. El estado (prestamista, configuración,
+  borrador, operaciones cerradas con sus acciones) vive en el navegador; la red se sirve en `/api/network`.
 - **Cash pooling** (`lib/cashpool.ts`, `components/cashpool/CashPoolApp.tsx`, de Luken): motor con política por filial y
   propuestas con ahorro neto; `lib/products/pooling.ts` lo alimenta con el score v3 y la caja real. `pnpm test` corre sus tests.
 

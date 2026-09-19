@@ -34,7 +34,7 @@ export function Stat({ label, value, hint, tone, big }: { label: string; value: 
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
       <div className="text-[13px] text-ink-mute">{label}</div>
-      <div className={`num font-semibold leading-none tracking-tight ${big ? "text-[30px]" : "text-[22px]"} ${t}`}>{value}</div>
+      <div className={`num whitespace-nowrap font-semibold leading-none tracking-tight ${big ? "text-[28px]" : "text-[19px]"} ${t}`}>{value}</div>
       {hint && <div className="truncate text-[12px] text-ink-mute">{hint}</div>}
     </div>
   );

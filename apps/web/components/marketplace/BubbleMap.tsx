@@ -7,7 +7,7 @@ import { TXT } from "@/components/charts/axes";
 export interface BubbleDatum { id: string; name: string; score: number; momentum: number; size: number; sizeText?: string; qualified: boolean; alert: boolean; dimmed?: boolean }
 
 /** Mapa de la red: x = score, y = momentum a 3 meses, área = índice derivado, anillo = cualificada. */
-export function BubbleMap({ data, onSelect, sizeLabel, xThreshold, thresholdLabel, height = 420 }: { data: BubbleDatum[]; onSelect?: (id: string) => void; sizeLabel: string; xThreshold?: number; thresholdLabel?: string; height?: number }) {
+export function BubbleMap({ data, onSelect, selected, sizeLabel, xThreshold, thresholdLabel, height = 420 }: { data: BubbleDatum[]; onSelect?: (id: string) => void; selected?: string | null; sizeLabel: string; xThreshold?: number; thresholdLabel?: string; height?: number }) {
   const W = 1000, H = height, padL = 40, padR = 18, padT = 22, padB = 34;
   const [hover, setHover] = useState<BubbleDatum | null>(null);
   const yDom = useMemo(() => Math.min(40, Math.max(15, Math.ceil(Math.max(...data.map((d) => Math.abs(d.momentum)), 0) / 5) * 5)), [data]);
@@ -32,6 +32,7 @@ export function BubbleMap({ data, onSelect, sizeLabel, xThreshold, thresholdLabe
             <g key={d.id} style={{ cursor: "pointer", opacity: d.dimmed ? 0.12 : 1, transition: "opacity 300ms" }} onMouseEnter={() => setHover(d)} onClick={() => onSelect?.(d.id)}>
               <circle cx={x(d.score)} cy={y(d.momentum)} r={rr + 6} fill="transparent" />
               <circle cx={x(d.score)} cy={y(d.momentum)} r={rr} fill={c} fillOpacity={d.qualified ? 0.95 : 0.4} stroke={d.qualified ? "#fafafa" : c} strokeOpacity={d.qualified ? 0.9 : 0.6} strokeWidth={d.qualified ? 1.4 : 0.7} />
+              {selected === d.id && <circle cx={x(d.score)} cy={y(d.momentum)} r={rr + 5} fill="none" stroke="#fafafa" strokeWidth={1.6} />}
               {d.alert && <circle cx={x(d.score)} cy={y(d.momentum)} r={rr + 2.5} fill="none" stroke="#ef4444" strokeWidth={1} strokeDasharray="2 2" />}
             </g>
           );
