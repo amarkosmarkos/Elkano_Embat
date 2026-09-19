@@ -9,9 +9,9 @@ import { ScoreHistory } from "@/components/charts/ScoreHistory";
 import { AutoSize } from "@/components/ui/AutoSize";
 import { TrendPill } from "@/components/ui/TrendPill";
 import { Badge, Button, Eyebrow, Skeleton } from "@/components/ui/primitives";
-import { assessProvider, assessReceiver, componentPercentiles, componentRanks, declineStreak, momentum, percentile, riseStreak, scoreVolatility, tier, TIER_LABEL, trend } from "@/lib/derived";
+import { addMonths, assessProvider, assessReceiver, buildScenarioBuckets, componentPercentiles, componentRanks, declineStreak, momentum, percentile, riseStreak, scenarioFan, scoreVolatility, tier, TIER_LABEL, trend, HORIZON } from "@/lib/derived";
 import { scoreColor, DIM_COLOR } from "@/lib/colors";
-import { DIM_LABEL, fmtDelta, fmtMetric, fmtMonth, METRIC_META, parseExplanation, parseExplanationV2, STRESS_LABEL } from "@/lib/format";
+import { DIM_LABEL, fmtDelta, fmtMetric, fmtMonth, METRIC_META, METRIC_NEEDS, parseExplanation, parseExplanationV2, STRESS_LABEL } from "@/lib/format";
 import type { MetricId, StressFlag } from "@/lib/types";
 import { DIMENSIONS } from "@/lib/types";
 
@@ -32,12 +32,13 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
   const idx = months.length - 1;
   const all = useMemo(() => data?.companies.map((x) => x.latest.score) ?? [], [data]);
   const ranks = useMemo(() => (data ? componentRanks(data.companies) : null), [data]);
+  const buckets = useMemo(() => (data ? buildScenarioBuckets(data.companies) : null), [data]);
+  const fan = useMemo(() => (c && buckets ? scenarioFan(buckets, c.scores, idx) : null), [c, buckets, idx]);
   const provider = useMemo(() => (c ? assessProvider(c, months, all) : null), [c, months, all]);
   const receiver = useMemo(() => (c ? assessReceiver(c, months) : null), [c, months]);
   if (!data || !c || !provider || !receiver || !ranks) return <PanelSkeleton />;
 
   const s = c.latest.score;
-  const color = scoreColor(s);
   const axes = componentPercentiles(c.latest.components, ranks);
   const tr = trend(c.scores, idx);
   const mom = momentum(c.scores, idx);
@@ -89,7 +90,6 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
               <KV label="Streak" value={ds >= 2 ? `↓ ${ds} mo` : rs >= 2 ? `↑ ${rs} mo` : "—"} color={ds >= 2 ? "#8b1e2d" : rs >= 2 ? "#2d6a4f" : undefined} />
             </div>
             <div className="mt-2 flex items-center gap-3">
-              <Sparkline values={c.scores} color={color} width={150} height={30} animate={false} />
               <div className="min-w-0 flex-1 text-[11.5px] leading-snug text-fg-2">
                 {ex ? <>Last month it <span className="font-semibold">{ex.delta >= 0 ? "rose" : "fell"} {Math.abs(ex.delta).toFixed(1)} pts</span>, driven by {DIM_LABEL[ex.dim].toLowerCase()}{ex2 && METRIC_META[ex2.metric] ? <> — <span className="font-semibold">{METRIC_META[ex2.metric].label}</span> {fmtMetric(ex2.metric, ex2.from)} → {fmtMetric(ex2.metric, ex2.to)}</> : null}.</> : <>{c.nScored} months scored since {fmtMonth(c.firstMonth, "long")}.</>}
               </div>
@@ -110,13 +110,13 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
         {/* all metrics */}
         <div className="card flex min-h-0 min-w-0 flex-col p-3">
           <div className="flex items-center justify-between">
-            <Eyebrow>All computed metrics · 24 base metrics ({detail ? detail.metricMonths.length : "…"} months) + trajectory · 8 stress flags</Eyebrow>
-            <div className="text-[10px] italic text-muted">value at {fmtMonth(c.latest.month)} · sparkline = full history · ▲▼ = pipeline delta_3m / delta_12m (green = better) · racha = months worsening · n/a = not measurable (no invoices / debt data)</div>
+            <Eyebrow>All computed metrics · {detail ? `${(Object.keys(METRIC_META) as MetricId[]).filter((m) => { const i = detail.metricMonths.indexOf(c.latest.month); return detail.metrics[m][i >= 0 ? i : detail.metrics[m].length - 1] != null; }).length} of 24 measurable this month` : "24 base metrics"} · {detail ? detail.metricMonths.length : "…"} months of history · 8 stress flags</Eyebrow>
+            <div className="text-[10px] italic text-muted">value at {fmtMonth(c.latest.month)} · sparkline = full history · ▲▼ = pipeline delta_3m / delta_12m (green = better) · racha = months worsening · a metric is "not measured" when the data it needs (ERP invoices, revolving lines, loan schedule) is not connected</div>
           </div>
           {!detail ? (
             <div className="mt-2 grid flex-1 grid-cols-5 gap-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-full" />)}</div>
           ) : (
-            <div className="mt-2 grid shrink-0 grid-cols-5 gap-2">
+            <div className="mt-2 grid shrink-0 grid-cols-5 gap-2 overflow-hidden">
               {DIMENSIONS.map((dim) => {
                 const ids = (Object.keys(METRIC_META) as MetricId[]).filter((m) => METRIC_META[m].dim === dim);
                 return (
@@ -130,7 +130,12 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
                         const meta = METRIC_META[m];
                         const series = detail.metrics[m];
                         const li = detail.metricMonths.indexOf(c.latest.month);
-                        const last = li >= 0 ? series[li] : series[series.length - 1];
+                        const current = li >= 0 ? series[li] : series[series.length - 1];
+                        // null this month → fall back to the last month the pipeline could measure it
+                        let lastIdx = -1;
+                        if (current == null) for (let i = (li >= 0 ? li : series.length - 1); i >= 0; i--) if (series[i] != null) { lastIdx = i; break; }
+                        const last = current ?? (lastIdx >= 0 ? series[lastIdx] : null);
+                        const stale = current == null && lastIdx >= 0 ? detail.metricMonths[lastIdx] : null;
                         // trajectory as computed by the pipeline (metrics_v1.parquet: __delta_3m, __delta_12m, __racha)
                         const tr = detail.trajectory[m];
                         const d3 = tr?.delta3 ?? null, d12 = tr?.delta12 ?? null, streak = tr?.streak ?? 0;
@@ -139,14 +144,19 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
                         const vals = series.filter((v): v is number => v != null);
                         const lo = vals.length ? Math.min(...vals) : 0, hi = vals.length ? Math.max(...vals) : 1;
                         return (
-                          <div key={m} className="py-1.5" title={meta.hint}>
+                          <div key={m} className={last == null ? "py-1" : "py-1.5"} title={meta.hint}>
                             <div className="flex items-baseline justify-between gap-2">
-                              <div className="min-w-0 truncate text-[12.5px] leading-tight text-fg">{meta.label}</div>
-                              <div className={`tnum font-caps shrink-0 text-[13px] font-bold leading-tight ${last == null ? "text-faint" : ""}`}>{last == null ? "n/a" : fmtMetric(m, last)}</div>
+                              <div className={`min-w-0 truncate text-[12.5px] leading-tight ${last == null ? "text-muted" : "text-fg"}`}>{meta.label}</div>
+                              <div className={`tnum font-caps shrink-0 text-[13px] font-bold leading-tight ${last == null ? "text-faint" : stale ? "text-muted" : ""}`}>{last == null ? "—" : fmtMetric(m, last)}</div>
                             </div>
-                            <div className="hidden truncate text-[9.5px] italic leading-tight text-muted [@media(min-height:800px)]:block">{meta.hint}</div>
+                            {stale && <div className="text-right text-[9px] italic leading-tight text-warn">last measured {fmtMonth(stale, "long")}</div>}
+                            {last == null ? (
+                              <div className="truncate text-[9.5px] italic leading-tight text-faint">not measured · {METRIC_NEEDS[m]}</div>
+                            ) : (
+                              <div className="hidden truncate text-[9.5px] italic leading-tight text-muted [@media(min-height:800px)]:block">{meta.hint}</div>
+                            )}
                             {last != null && (
-                              <div className="mt-1 flex items-center gap-2">
+                              <div className="mt-1 hidden items-center gap-2 [@media(min-height:800px)]:flex">
                                 <Sparkline values={series} domain={[lo === hi ? lo - 1 : lo, hi === lo ? hi + 1 : hi]} width={52} height={16} color={DIM_COLOR[dim]} animate={false} className="shrink-0" />
                                 <div className="flex min-w-0 flex-wrap gap-x-2 font-caps text-[9px] leading-none text-muted">
                                   <span>3m <span className="tnum" style={{ color: d3 == null ? undefined : good3 ? "#2d6a4f" : "#8b1e2d" }}>{d3 == null ? "—" : `${d3 > 0 ? "▲" : "▼"}${fmtMetric(m, Math.abs(d3))}`}</span></span>
@@ -164,10 +174,35 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
               })}
             </div>
           )}
-          {/* score route */}
-          <div className="mt-2 hidden min-h-[110px] min-w-0 flex-1 flex-col border-t border-line pt-2 [@media(min-height:800px)]:flex">
-            <div className="flex items-center justify-between"><Eyebrow>Score history · {fmtMonth(c.firstMonth)} → {fmtMonth(c.lastMonth)}</Eyebrow><span className="text-[10px] italic text-muted">hover for the monthly explanation · ✕ = latest</span></div>
-            <div className="min-h-0 flex-1"><AutoSize>{(w, h) => <ScoreHistory width={w} height={h} points={months.map((m, i) => ({ month: m, score: c.scores[i], alert: c.alerts[i] === 1, note: detail ? noteFor(detail.explanation[detail.months.indexOf(m)]) : null }))} />}</AutoSize></div>
+          {/* direction & scenarios */}
+          <div className="mt-2 grid min-h-[140px] min-w-0 flex-1 grid-cols-[230px_1fr] gap-3 overflow-hidden border-t border-line pt-2">
+            <div className="flex min-h-0 flex-col overflow-hidden">
+              <div className="flex items-center justify-between"><Eyebrow>Direction</Eyebrow><span className="text-[9.5px] italic text-muted">{tr}</span></div>
+              <div className="mt-0.5 font-display text-[24px] leading-none" style={{ color: tr === "improving" ? "#2d6a4f" : tr === "deteriorating" ? "#8b1e2d" : "#4a3319" }}>{tr === "improving" ? "Rising ↗" : tr === "deteriorating" ? "Falling ↘" : "Stable →"}</div>
+              <div className="mt-0.5 text-[11px] leading-snug text-fg-2">
+                {mom != null && <><span className="tnum font-caps font-bold">{fmtDelta(mom)}</span> pts / 3 mo · </>}
+                {d6 != null && <><span className="tnum font-caps font-bold">{fmtDelta(d6)}</span> / 6 mo · </>}
+                {ds >= 2 ? <>down <span className="font-bold">{ds}</span> in a row</> : rs >= 2 ? <>up <span className="font-bold">{rs}</span> in a row</> : "no streak"}
+              </div>
+              <div className="mt-1.5 flex items-center justify-between border-t border-line pt-1.5">
+                <div><Eyebrow>Stress event · 3–6 mo</Eyebrow><div className="text-[9px] italic leading-tight text-muted">model: score = 100 − P(event)</div></div>
+                <span className="tnum font-caps text-xl font-bold leading-none" style={{ color: scoreColor(s) }}>{Math.round(fan ? fan.pStress * 100 : 100 - s)}%</span>
+              </div>
+              {fan ? (
+                <div className="mt-1.5 border-t border-line pt-1.5">
+                  <div className="flex items-center justify-between"><Eyebrow>Score in {HORIZON} months</Eyebrow><span className="tnum font-caps text-[10px] font-bold">median {fmtDelta(fan.p50[HORIZON - 1] - s)}</span></div>
+                  <div className="mt-1 flex h-2 w-full overflow-hidden rounded-sm">
+                    <div style={{ width: `${fan.pUp * 100}%`, background: "#2d6a4f" }} /><div style={{ width: `${fan.pFlat * 100}%`, background: "#b8861a" }} /><div style={{ width: `${fan.pDown * 100}%`, background: "#8b1e2d" }} />
+                  </div>
+                  <div className="mt-0.5 flex justify-between font-caps text-[10px] font-bold"><span className="text-positive">↑ {Math.round(fan.pUp * 100)}% up</span><span className="text-warn">→ {Math.round(fan.pFlat * 100)}% flat</span><span className="text-negative">↓ {Math.round(fan.pDown * 100)}% down</span></div>
+                  <div className="mt-0.5 text-[9px] italic leading-tight text-muted">what {fan.n.toLocaleString()} similar company-months did ({TIER_LABEL[tier(s)].toLowerCase()}, {tr}); ±3 pts = move</div>
+                </div>
+              ) : <div className="mt-1.5 text-[10px] italic text-muted">Not enough similar company-months for scenarios.</div>}
+            </div>
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <div className="flex items-center justify-between"><Eyebrow>Score route & scenarios · {fmtMonth(c.firstMonth)} → {fmtMonth(addMonths(c.lastMonth, HORIZON))}</Eyebrow><span className="text-[10px] italic text-muted">band = p10–p90 (dark: p25–p75) of what similar companies did · dashed = median · ✕ = latest</span></div>
+              <div className="min-h-0 flex-1"><AutoSize>{(w, h) => <ScoreHistory width={w} height={h} points={months.map((m, i) => ({ month: m, score: c.scores[i], alert: c.alerts[i] === 1, note: detail ? noteFor(detail.explanation[detail.months.indexOf(m)]) : null }))} fan={fan ? { months: fan.horizons.map((k) => addMonths(c.lastMonth, k)), p10: fan.p10, p25: fan.p25, p50: fan.p50, p75: fan.p75, p90: fan.p90 } : undefined} />}</AutoSize></div>
+            </div>
           </div>
           {/* stress flags */}
           <div className="mt-2 flex shrink-0 items-center gap-2 border-t border-line pt-2">

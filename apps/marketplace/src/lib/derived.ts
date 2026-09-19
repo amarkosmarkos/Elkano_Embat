@@ -309,3 +309,79 @@ export function profileOverlap(a: Record<Dimension, number | null>, b: Record<Di
   if (na === 0 || nb === 0) return 0;
   return dot / Math.sqrt(na * nb);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Direction & scenarios — empirical, from the score dataset itself
+// ---------------------------------------------------------------------------------------------
+
+export const HORIZON = 6;
+
+export type ScenarioBuckets = Map<string, number[][]>; // key tier|trend → deltas[k] for k = 1..HORIZON
+
+/** Group every company-month by (tier, trend) and collect the score change k months later. */
+export function buildScenarioBuckets(companies: CompanyIndex[]): ScenarioBuckets {
+  const buckets: ScenarioBuckets = new Map();
+  for (const c of companies) {
+    for (let i = 0; i < c.scores.length; i++) {
+      const s = c.scores[i];
+      if (s == null || historyLength(c.scores, i) < 3) continue;
+      const key = `${tier(s)}|${trend(c.scores, i)}`;
+      let arr = buckets.get(key);
+      if (!arr) { arr = Array.from({ length: HORIZON + 1 }, () => []); buckets.set(key, arr); }
+      for (let k = 1; k <= HORIZON; k++) {
+        const f = c.scores[i + k];
+        if (f != null) arr[k].push(f - s);
+      }
+    }
+  }
+  return buckets;
+}
+
+function quantile(sorted: number[], q: number): number {
+  if (sorted.length === 0) return 0;
+  const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+export interface ScenarioFan {
+  key: string;
+  n: number;                      // company-months in the bucket at the 6-month horizon
+  horizons: number[];             // 1..HORIZON
+  p10: number[]; p25: number[]; p50: number[]; p75: number[]; p90: number[];   // projected score paths
+  /** at HORIZON months: share of similar company-months that ended ≥ +3, within ±3, ≤ −3 */
+  pUp: number; pFlat: number; pDown: number;
+  /** model's own probability of a stress event in the next 3–6 months = 1 − score/100 */
+  pStress: number;
+}
+
+/** Scenario fan for a company: what happened next to similar companies (same tier and trend). */
+export function scenarioFan(buckets: ScenarioBuckets, scores: (number | null)[], idx: number): ScenarioFan | null {
+  const s = scores[idx];
+  if (s == null) return null;
+  const key = `${tier(s)}|${trend(scores, idx)}`;
+  const arr = buckets.get(key);
+  if (!arr || arr[HORIZON].length < 20) return null;
+  const clip = (v: number) => Math.max(0, Math.min(100, v));
+  const out: ScenarioFan = { key, n: arr[HORIZON].length, horizons: [], p10: [], p25: [], p50: [], p75: [], p90: [], pUp: 0, pFlat: 0, pDown: 0, pStress: 1 - s / 100 };
+  for (let k = 1; k <= HORIZON; k++) {
+    const sorted = [...arr[k]].sort((a, b) => a - b);
+    out.horizons.push(k);
+    out.p10.push(clip(s + quantile(sorted, 0.1)));
+    out.p25.push(clip(s + quantile(sorted, 0.25)));
+    out.p50.push(clip(s + quantile(sorted, 0.5)));
+    out.p75.push(clip(s + quantile(sorted, 0.75)));
+    out.p90.push(clip(s + quantile(sorted, 0.9)));
+  }
+  const last = arr[HORIZON];
+  out.pUp = last.filter((d) => d >= 3).length / last.length;
+  out.pDown = last.filter((d) => d <= -3).length / last.length;
+  out.pFlat = 1 - out.pUp - out.pDown;
+  return out;
+}
+
+/** "2026-08" + k months. */
+export function addMonths(month: string, k: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const t = (y * 12 + (m - 1)) + k;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}`;
+}

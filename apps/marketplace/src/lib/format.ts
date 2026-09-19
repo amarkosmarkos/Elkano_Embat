@@ -96,6 +96,34 @@ export const METRIC_META: Record<MetricId, MetricMeta> = {
   clientes_activos: { label: "Active customers", unit: "count", higherIsBetter: true, dim: "concentracion", hint: "customers invoiced this month" },
 };
 
+/** Why a metric can be null in the pipeline output: the data it needs is not connected for that company. */
+export const METRIC_NEEDS: Record<MetricId, string> = {
+  retraso_pago: "needs payables paid this month (ERP invoices)",
+  pct_pago_tarde: "needs payables paid this month (ERP invoices)",
+  falta_regular: "needs bank transactions",
+  dso: "needs receivables collected this month (ERP invoices)",
+  pct_cobro_vencido: "needs issued invoices in the last 90 days",
+  devoluciones: "needs bank transactions",
+  colchon: "needs a checking account with movements this month",
+  runway: "needs balances and outflows",
+  dias_negativo: "needs daily balances",
+  credito_disponible: "needs revolving lines (credit line, confirming, factoring)",
+  neto_operativo: "needs bank transactions this month",
+  tendencia_3m: "needs 3 months of net cash",
+  tendencia_6m: "needs 6 months of net cash",
+  volatilidad: "needs 12 months of net cash",
+  ratio_cobros_pagos: "needs categorised collections and payments",
+  crecimiento_cobros: "needs collections in the same month a year ago",
+  pct_dispuesto: "needs revolving lines (credit line, confirming, factoring)",
+  servicio_deuda: "needs a loan amortisation schedule (87 products in the dataset)",
+  coste_financiero: "needs bank transactions this month",
+  deuda_cobros: "needs debt products and 12 months of collections",
+  top5_clientes: "needs issued invoices (ERP)",
+  hhi: "needs issued invoices (ERP)",
+  rating_cartera: "needs issued invoices to shared counterparties",
+  clientes_activos: "needs issued invoices this month (ERP)",
+};
+
 export function fmtMetric(id: MetricId, v: number | null | undefined): string {
   if (v == null || Number.isNaN(v)) return "—";
   const m = METRIC_META[id];

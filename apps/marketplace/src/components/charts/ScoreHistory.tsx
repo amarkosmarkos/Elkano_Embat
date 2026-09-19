@@ -16,16 +16,19 @@ interface Props {
   bands?: boolean;
   compare?: { label: string; points: (number | null)[]; color?: string };
   minY?: number;
+  /** forward scenarios drawn after the last point: paths per horizon month */
+  fan?: { months: string[]; p10: number[]; p25: number[]; p50: number[]; p75: number[]; p90: number[] };
 }
 
 /** Score trajectory drawn as an ink route on parchment, with an X at the latest point. */
-export function ScoreHistory({ points, width: W, height: H, color, markers = [], bands = true, compare, minY }: Props) {
+export function ScoreHistory({ points, width: W, height: H, color, markers = [], bands = true, compare, minY, fan }: Props) {
   const id = useId();
-  const padL = 34, padR = 14, padT = 14, padB = 24;
+  const padL = 34, padR = fan ? 44 : 14, padT = 14, padB = 24;
   const [hover, setHover] = useState<number | null>(null);
   const valid = points.map((p, i) => [i, p.score] as [number, number | null]).filter((d): d is [number, number] => d[1] != null);
-  const lo = minY ?? Math.max(0, Math.min(...valid.map((d) => d[1]), ...(compare?.points.filter((v): v is number => v != null) ?? [100])) - 10);
-  const x = scaleLinear().domain([0, Math.max(1, points.length - 1)]).range([padL, W - padR]);
+  const fanN = fan ? fan.months.length : 0;
+  const lo = minY ?? Math.max(0, Math.min(...valid.map((d) => d[1]), ...(compare?.points.filter((v): v is number => v != null) ?? [100]), ...(fan?.p10 ?? [100])) - 10);
+  const x = scaleLinear().domain([0, Math.max(1, points.length - 1 + fanN)]).range([padL, W - padR]);
   const y = scaleLinear().domain([Math.floor(lo / 10) * 10, 100]).range([H - padB, padT]);
   const l = line<[number, number]>().x((d) => x(d[0])).y((d) => y(d[1])).curve(curveMonotoneX);
   const a = area<[number, number]>().x((d) => x(d[0])).y0(H - padB).y1((d) => y(d[1])).curve(curveMonotoneX);
@@ -33,7 +36,16 @@ export function ScoreHistory({ points, width: W, height: H, color, markers = [],
   const stroke = color ?? scoreColor(last?.[1] ?? null);
   const ticks = useMemo(() => y.ticks(4), [y]);
   const cmp = compare?.points.map((v, i) => [i, v] as [number, number | null]).filter((d): d is [number, number] => d[1] != null) ?? [];
-  const labelEvery = Math.max(1, Math.ceil(points.length / Math.max(3, Math.floor(W / 90))));
+  const labelEvery = Math.max(1, Math.ceil((points.length + fanN) / Math.max(3, Math.floor(W / 90))));
+  const lastI = valid.length ? valid[valid.length - 1][0] : 0;
+  const fanPath = (arr: number[]) => valid.length ? l([[lastI, valid[valid.length - 1][1]] as [number, number], ...arr.map((v, k) => [lastI + k + 1, v] as [number, number])]) ?? "" : "";
+  const fanArea = (hi: number[], loArr: number[]) => {
+    if (!valid.length) return "";
+    const s0 = valid[valid.length - 1][1];
+    const up = [[lastI, s0], ...hi.map((v, k) => [lastI + k + 1, v])] as [number, number][];
+    const dn = [[lastI, s0], ...loArr.map((v, k) => [lastI + k + 1, v])] as [number, number][];
+    return `${l(up) ?? ""} L ${dn.slice().reverse().map((p) => `${x(p[0])} ${y(p[1])}`).join(" L ")} Z`;
+  };
 
   function onMove(e: React.MouseEvent<SVGSVGElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -63,9 +75,25 @@ export function ScoreHistory({ points, width: W, height: H, color, markers = [],
             <text x={padL - 6} y={y(t) + 4} textAnchor="end" fill="rgba(60,38,14,0.6)" fontSize={11} fontFamily="var(--font-caps)">{t}</text>
           </g>
         ))}
-        {points.map((p, i) => (i % labelEvery === 0 || i === points.length - 1) && (
-          <text key={p.month} x={x(i)} y={H - 7} textAnchor={i === points.length - 1 ? "end" : i === 0 ? "start" : "middle"} fill="rgba(60,38,14,0.6)" fontSize={11} fontFamily="var(--font-mono)">{fmtMonth(p.month)}</text>
+        {points.map((p, i) => (i % labelEvery === 0 || (i === points.length - 1 && !fan)) && (
+          <text key={p.month} x={x(i)} y={H - 7} textAnchor={i === 0 ? "start" : "middle"} fill="rgba(60,38,14,0.6)" fontSize={11} fontFamily="var(--font-mono)">{fmtMonth(p.month)}</text>
         ))}
+        {fan && (
+          <g>
+            <rect x={x(lastI)} y={padT} width={x(lastI + fanN) - x(lastI)} height={H - padB - padT} fill="rgba(60,38,14,0.04)" />
+            <line x1={x(lastI)} x2={x(lastI)} y1={padT} y2={H - padB} stroke="#4a3319" strokeOpacity={0.5} strokeDasharray="3 3" />
+            <text x={x(lastI) + 5} y={padT + 9} fill="#4a3319" fontSize={9} fontFamily="var(--font-caps)" letterSpacing={1.5}>SCENARIOS →</text>
+            <path d={fanArea(fan.p90, fan.p10)} fill="#8a6512" fillOpacity={0.12} />
+            <path d={fanArea(fan.p75, fan.p25)} fill="#8a6512" fillOpacity={0.18} />
+            <path d={fanPath(fan.p90)} fill="none" stroke="#2d6a4f" strokeWidth={1} strokeDasharray="2 3" />
+            <path d={fanPath(fan.p10)} fill="none" stroke="#8b1e2d" strokeWidth={1} strokeDasharray="2 3" />
+            <path d={fanPath(fan.p50)} fill="none" stroke="#4a3319" strokeWidth={1.8} strokeDasharray="5 3" />
+            {fan.months.map((m, k) => (k === fanN - 1 || (k + 1) % 3 === 0) && <text key={m} x={x(lastI + k + 1)} y={H - 7} textAnchor="middle" fill="rgba(60,38,14,0.6)" fontSize={11} fontFamily="var(--font-mono)">{fmtMonth(m)}</text>)}
+            {([["p90", fan.p90, "#2d6a4f"], ["median", fan.p50, "#4a3319"], ["p10", fan.p10, "#8b1e2d"]] as const).map(([lab, arr, col]) => (
+              <text key={lab} x={x(lastI + fanN) + 4} y={y(arr[fanN - 1]) + 3} fill={col} fontSize={9} fontFamily="var(--font-caps)" fontWeight={700}>{lab} {arr[fanN - 1].toFixed(0)}</text>
+            ))}
+          </g>
+        )}
         {markers.map((m) => {
           const i = points.findIndex((p) => p.month === m.month);
           if (i < 0) return null;
