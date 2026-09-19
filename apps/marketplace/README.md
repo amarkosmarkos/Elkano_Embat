@@ -6,11 +6,11 @@ is driven by the score, its five dimension contributions, its history, alerts, s
 underlying metrics. No banking, payment or external integrations — everything runs locally.
 
 ```bash
-docker compose up --build        # from the repo root → http://localhost:8080
+docker compose --profile marketplace up --build   # from the repo root → http://localhost:8080
 ```
 
-Requires the challenge data unzipped in `output/` (only `companies.csv`, `groups.csv` and the three
-score files are copied into the image; the 650 MB of raw transactions/invoices are excluded by `.dockerignore`).
+The three score files live in the repo (`output/02_score/`, see [`output/README.md`](../../output/README.md));
+`companies.csv` and `groups.csv` come from the challenge zip unzipped in `output/` (only those five files are copied into the image; the 650 MB of raw transactions/invoices are excluded by `.dockerignore`).
 
 ## Embedding — one screen, no scrolling
 

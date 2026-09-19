@@ -21,7 +21,8 @@ obliga a repetir el preprocesamiento.
 | 4 `validate` | scores + events + splits | `03_validation/report_v{1,2,3}.{json,md}`, `comparison.md` | Gini/KS h1/h3/h6, lead time, cura, OOS, OOT, PSI, autocorrelación, univariante, casos |
 
 Los pasos 2–4 viven en [`analytics/`](../analytics/README.md) (métricas, scorers, evaluador). Estado de los checkpoints:
-`output/.pipeline_state.json`. Todo `output/` está en `.gitignore`.
+`output/.pipeline_state.json`. Los CSV crudos y `01_preprocessed/` están en `.gitignore`; las salidas de `02_score/` y
+`03_validation/` sí se commitean (lista exacta en `.gitignore`, descripción en [`output/README.md`](../output/README.md)).
 
 ## Diseño del preprocesamiento (paso 1)
 

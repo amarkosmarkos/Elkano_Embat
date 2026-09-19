@@ -21,10 +21,30 @@ dist/
 next-env.d.ts
 ssh_key.txt
 
-# datos crudos del reto (646 MB, se descomprimen de output_hackspain_data.zip) y salidas del
-# pipeline (output/0{1,2,3}_*, regenerables con ./pipeline/run.sh, ~1 min)
-output
-output/
+# output/: los datos crudos del reto (646 MB, se descomprimen de output_hackspain_data.zip) y
+# 01_preprocessed/ (regenerable con ./pipeline/run.sh, ~1 min) NO van al repo.
+# Los resultados del score y de la validación (02_score/, 03_validation/) SÍ van, fichero a fichero,
+# para que todo el equipo tenga el score real sin ejecutar el pipeline. Ver output/README.md.
+output/*
+!output/README.md
+!output/02_score/
+output/02_score/*
+!output/02_score/scores_v1.csv
+!output/02_score/scores_v2.csv
+!output/02_score/scores_v3.csv
+!output/02_score/metrics_v1.parquet
+!output/03_validation/
+output/03_validation/*
+!output/03_validation/events_v1.csv
+!output/03_validation/splits.csv
+!output/03_validation/labels_summary.json
+!output/03_validation/report_v1.json
+!output/03_validation/report_v1.md
+!output/03_validation/report_v2.json
+!output/03_validation/report_v2.md
+!output/03_validation/report_v3.json
+!output/03_validation/report_v3.md
+!output/03_validation/comparison.md
 
 # data/*.json SÍ va al repo: es el contrato de docs/CONTRATO_DATOS.md que carga
 # apps/web/scripts/seed.ts en Postgres — no es una salida regenerable del pipeline real.
