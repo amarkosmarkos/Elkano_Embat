@@ -24,11 +24,9 @@ export default function Sidebar() {
     <aside className="sticky top-0 hidden h-screen w-[256px] shrink-0 flex-col border-r border-line-soft bg-panel lg:flex">
       <div className="px-3 pb-2 pt-3">
         <Link href="/cartera/mapa" className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-panel-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-[13px] font-bold text-panel">X</span>
-          <span className="leading-tight">
-            <span className="block text-[14px] font-semibold text-ink">Elkano X-Ray</span>
-            <span className="block text-[12px] text-ink-mute">Embat · salud financiera</span>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/elkano-icon.png" alt="" width={32} height={32} className="h-8 w-8 shrink-0 object-contain" />
+          <span className="text-[15px] font-semibold tracking-[-0.2px] text-ink">Elkano</span>
         </Link>
       </div>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-2">
