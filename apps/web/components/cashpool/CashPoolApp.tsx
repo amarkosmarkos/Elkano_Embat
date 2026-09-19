@@ -3,15 +3,17 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { buildSeries, DEFAULT_SETTINGS, summarize, type Decision, type Entity, type EntityBase, type PoolSettings, type Proposal, type SeriesRow, type Snapshot, type Trend } from "@/lib/cashpool";
+import { buildSeries, DEFAULT_SETTINGS, groupHealth, poolEconomics, summarize, type Decision, type Entity, type EntityBase, type PoolSettings, type Proposal, type SeriesRow, type Snapshot, type Trend } from "@/lib/cashpool";
+import { PoolEconomicsHeader } from "./CashPoolGroups";
 import { eur, formatScore, monthLabel } from "@/lib/format";
 import PoolMap from "./PoolMap";
 
 
 type Group = { group_id: string; n: number; n_cur: number; curs: string };
-type Screen = "mapa" | "decisiones" | "filiales" | "historial";
+type Screen = "salud" | "mapa" | "decisiones" | "filiales" | "historial";
 type DecisionEvent = { proposal: Proposal; decision: Decision | "pending"; at: string; settings: PoolSettings };
 const SCREENS: { id: Screen; label: string }[] = [
+  { id: "salud", label: "Salud del grupo" },
   { id: "mapa", label: "Mapa" },
   { id: "decisiones", label: "Decisiones" },
   { id: "filiales", label: "Filiales" },
@@ -29,12 +31,12 @@ const scoreText = (n: number | null) => n === null ? "—" : formatScore(n);
 const signed = (n: number) => `${n > 0 ? "+" : ""}${formatScore(n)}`;
 const buttonClass = "rounded-lg border border-line px-3 py-2 text-xs font-medium transition hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: string; base: EntityBase[]; rows: SeriesRow[]; groups: Group[] }) {
+export default function CashPoolApp({ groupId, base, rows, groups, initialMonth }: { groupId: string; base: EntityBase[]; rows: SeriesRow[]; groups: Group[]; initialMonth?: string }) {
   const router = useRouter();
   const [settings, setSettings] = useState<PoolSettings>(DEFAULT_SETTINGS);
   const snaps = useMemo(() => buildSeries(base, rows, settings), [base, rows, settings]);
-  const [month, setMonth] = useState(() => [...new Set(rows.map((r) => r.month))].sort().at(-1) ?? "");
-  const [screen, setScreen] = useState<Screen>("decisiones");
+  const [month, setMonth] = useState(() => initialMonth ?? [...new Set(rows.map((r) => r.month))].sort().at(-1) ?? "");
+  const [screen, setScreen] = useState<Screen>("salud");
   const [events, setEvents] = useState<DecisionEvent[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const decisions = useMemo(() => {
@@ -51,7 +53,7 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
     <main className="mx-auto max-w-2xl px-6 py-20 text-center">
       <h1 className="text-2xl font-semibold">Todavía no hay datos para este grupo</h1>
       <p className="mt-3 text-sm text-ink-dim">Necesitamos saldos y una serie mensual de scores para construir un plan.</p>
-      <Link href="/productos" className="mt-6 inline-block text-sm text-accent">Volver a productos</Link>
+      <Link href="/productos/cash-pooling" className="mt-6 inline-block text-sm text-accent">Volver a grupos</Link>
     </main>
   );
 
@@ -79,7 +81,7 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
         <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs">
-              <Link href="/productos" className="text-ink-dim hover:text-accent">← Productos</Link>
+              <Link href={`/productos/cash-pooling?month=${encodeURIComponent(cur.month)}`} className="text-ink-dim hover:text-accent">← Todos los grupos</Link>
               <span className="text-line">/</span>
               <span className="font-semibold">Cash pooling</span>
               <span className="rounded-full bg-accent/10 px-2.5 py-1 font-medium text-accent">Simulación</span>
@@ -87,7 +89,7 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2 text-xs text-ink-dim">
                 Grupo
-                <select id="group-select" value={groupId} onChange={(e) => router.push(`/productos/cash-pooling?group=${encodeURIComponent(e.target.value)}`)} className="max-w-64 rounded-lg border border-line bg-panel px-3 py-2 text-ink">
+                <select id="group-select" value={groupId} onChange={(e) => router.push(`/productos/cash-pooling?group=${encodeURIComponent(e.target.value)}&month=${encodeURIComponent(cur.month)}`)} className="max-w-64 rounded-lg border border-line bg-panel px-3 py-2 text-ink">
                   {groups.map((g) => <option key={g.group_id} value={g.group_id}>{g.group_id} · {g.n} filiales</option>)}
                 </select>
               </label>
@@ -101,8 +103,8 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
           </div>
           <div className="pb-6 pt-8">
             <p className="text-xs font-medium uppercase tracking-widest text-accent">Tesorería de grupo</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Tu liquidez, donde hace falta.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim">Cubre necesidades de tus filiales con caja del grupo antes de financiarte fuera. Cada propuesta protege una reserva y explica cómo influye la trayectoria.</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{groupId} · Caja, coste y ahorro.</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim">Cuánto necesita el grupo, cuánto puede cubrir con su propia caja y qué coste podría evitar. La salud de las filiales explica los límites del plan.</p>
           </div>
           <nav aria-label="Vistas de cash pooling" className="flex gap-6 overflow-x-auto">
             {SCREENS.map((s) => (
@@ -121,14 +123,19 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
           <span>{availableCash}/{base.length} filiales con saldo y score evaluables · {monthLabel(cur.month)}</span>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite" aria-atomic="true">
-          <Kpi value={eur(cur.totals.surplusEur)} label="Liquidez movilizable" note="Tras reserva y límite del aportante" />
-          <Kpi value={eur(summary.proposedEur)} label="Cobertura del plan" note={`${eur(summary.approvedEur)} aprobados en simulación`} />
-          <Kpi value={eur(summary.uncoveredEur)} label="Necesidad sin cubrir" note="No desaparece al rechazar propuestas" tone={summary.uncoveredEur > 0 ? "text-warn" : "text-ink"} />
-          <Kpi value={eur(summary.netSavingEur)} label={`Ahorro neto estimado · ${settings.days} días`} note="Plan no rechazado · equivalente en EUR" tone="text-good" />
-        </div>
-
-        <ScenarioSettings settings={settings} onApply={setSettings} />
+        {screen === "salud" ? (
+          <GroupHealthView cur={cur} decisions={decisions} settings={settings} onApply={setSettings} onFiliales={() => setScreen("filiales")} onPlan={() => setScreen("decisiones")} />
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite" aria-atomic="true">
+              <Kpi value={eur(cur.totals.surplusEur)} label="Liquidez movilizable" note="Tras reserva y límite del aportante" />
+              <Kpi value={eur(summary.proposedEur)} label="Cobertura del plan" note={`${eur(summary.approvedEur)} aprobados en simulación`} />
+              <Kpi value={eur(summary.uncoveredEur)} label="Necesidad sin cubrir" note="No desaparece al rechazar propuestas" tone={summary.uncoveredEur > 0 ? "text-warn" : "text-ink"} />
+              <Kpi value={eur(summary.netSavingEur)} label={`Ahorro neto estimado · ${settings.days} días`} note="Plan no rechazado · equivalente en EUR" tone="text-good" />
+            </div>
+            <ScenarioSettings settings={settings} onApply={setSettings} />
+          </>
+        )}
 
         {screen === "mapa" && <PoolMap entities={cur.entities} proposals={active} decisions={decisions} onInspect={inspect} />}
 
@@ -244,6 +251,28 @@ export default function CashPoolApp({ groupId, base, rows, groups }: { groupId: 
   );
 }
 
+function GroupHealthView({ cur, decisions, settings, onApply, onFiliales, onPlan }: {
+  cur: Snapshot; decisions: Record<string, Decision>; settings: PoolSettings;
+  onApply: (settings: PoolSettings) => void; onFiliales: () => void; onPlan: () => void;
+}) {
+  const health = groupHealth(cur);
+  const economics = poolEconomics([cur], decisions);
+  return (
+    <section className="space-y-5" aria-labelledby="group-health-title">
+      <PoolEconomicsHeader economics={economics} settings={settings} />
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-panel p-5">
+        <div><h2 id="group-health-title" className="text-sm font-semibold">Salud del grupo</h2><p className="mt-2"><span data-testid="group-score" className="font-mono text-4xl font-semibold text-accent">{scoreText(health.score)}</span><span className="ml-2 text-xs text-ink-mute">/ 100 · media simple de {health.scored}/{health.total} filiales</span></p><p className="mt-2 text-xs text-ink-mute">Índice descriptivo, no rating consolidado ni probabilidad de impago.</p></div>
+        <div className="max-w-md text-xs leading-relaxed text-ink-dim"><p>{health.scored ? `${health.low} filiales con score <40 · ${health.deteriorating} con caída de al menos 6 puntos en 3 meses.` : "Sin scores válidos para evaluar el grupo."}</p>{health.comparable < health.total && <p className="mt-1 text-warn">{health.total - health.comparable} filiales sin historia comparable a 3 meses.</p>}<button onClick={onFiliales} className="mt-2 font-medium text-accent hover:underline">Revisar filiales →</button></div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-panel-2 p-5">
+        <p className="text-sm leading-relaxed">{economics.cashKnown ? <>El plan cubre <strong>{eur(economics.proposedEur)}</strong> y deja <strong>{eur(economics.uncoveredEur)}</strong> de necesidad pendiente.</> : "Sin saldos válidos para calcular un plan."}</p>
+        <button onClick={onPlan} className="rounded-lg bg-ink px-4 py-2.5 text-xs font-semibold text-panel transition hover:bg-ink-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Revisar plan de liquidez →</button>
+      </div>
+      <ScenarioSettings settings={settings} onApply={onApply} />
+    </section>
+  );
+}
+
 function ProposalCard({ proposal: p, from, to, decision, donorAfter, receiverAfter, onDecide, onInspect }: {
   proposal: Proposal; from: Entity; to: Entity; decision?: Decision; donorAfter: number | null; receiverAfter: number | null;
   onDecide: (decision: Decision | "pending") => void; onInspect: (id: string) => void;
@@ -276,7 +305,7 @@ function ProposalCard({ proposal: p, from, to, decision, donorAfter, receiverAft
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft bg-panel-2/50 px-5 py-3 sm:px-6">
         <span className="text-[11px] text-ink-dim">{decision === "approved" ? "Aprobada en simulación · no ejecutada" : decision === "rejected" ? "Excluida del plan; la necesidad sigue pendiente" : "Revisa los supuestos antes de aprobar"}</span>
-        {decision ? <button onClick={() => onDecide("pending")} className={buttonClass}>Reabrir propuesta</button> : <div className="flex gap-2"><button onClick={() => onDecide("rejected")} className={buttonClass}>Rechazar</button><button onClick={() => onDecide("approved")} className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Aprobar simulación</button></div>}
+        {decision ? <button onClick={() => onDecide("pending")} className={buttonClass}>Reabrir propuesta</button> : <div className="flex gap-2"><button onClick={() => onDecide("rejected")} className={buttonClass}>Rechazar</button><button onClick={() => onDecide("approved")} className="rounded-lg bg-ink px-4 py-2 text-xs font-semibold text-panel transition hover:bg-ink-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Aprobar simulación</button></div>}
       </div>
     </article>
   );

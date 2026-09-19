@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: PoolSettings = {
 export type SeriesRow = {
   companyId: string;
   month: string;
-  score: number;
+  score: number | null;
   cashLocal: number | null;
   explanation: string | null;
 };
@@ -272,3 +272,41 @@ export function summarize(s: Snapshot, decisions: Record<string, Decision>) {
     uncoveredEur: Math.max(0, s.totals.deficitEur - sum(active, "amountEur")),
   };
 }
+
+export function groupHealth(s: Snapshot) {
+  const scored = s.entities.filter((e): e is Entity & { score: number } => validScore(e.score));
+  const comparable = scored.filter((e) => e.delta3m !== null && Number.isFinite(e.delta3m));
+  return {
+    total: s.entities.length,
+    scored: scored.length,
+    score: scored.length ? scored.reduce((sum, e) => sum + e.score, 0) / scored.length : null,
+    low: scored.filter((e) => e.score < 40).length,
+    comparable: comparable.length,
+    deteriorating: comparable.filter((e) => e.trend === "deteriorating").length,
+  };
+}
+
+export function poolEconomics(snaps: Snapshot[], decisions: Record<string, Decision> = {}) {
+  const totals = {
+    totalEntities: 0, cashKnown: 0,
+    needEur: 0, movableEur: 0, proposedEur: 0, uncoveredEur: 0,
+    bankInterestEur: 0, opportunityCostEur: 0, feeEur: 0, netSavingEur: 0,
+  };
+  for (const s of snaps) {
+    const known = s.entities.filter((e) => e.cashEur !== null && Number.isFinite(e.cashEur));
+    const summary = summarize(s, decisions);
+    totals.totalEntities += s.entities.length;
+    totals.cashKnown += known.length;
+    totals.needEur += known.reduce((sum, e) => sum + e.needEur, 0);
+    totals.movableEur += known.reduce((sum, e) => sum + e.spareEur, 0);
+    totals.proposedEur += summary.proposedEur;
+    totals.uncoveredEur += summary.uncoveredEur;
+    totals.bankInterestEur += summary.bankInterestEur;
+    totals.opportunityCostEur += summary.opportunityCostEur;
+    totals.feeEur += summary.feeEur;
+    totals.netSavingEur += summary.netSavingEur;
+  }
+  return totals;
+}
+
+export type PoolEconomics = ReturnType<typeof poolEconomics>;

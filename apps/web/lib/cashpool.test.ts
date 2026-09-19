@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildSeries, DEFAULT_SETTINGS, snapshot, summarize, type EntityBase, type MonthRow, type PoolSettings } from "./cashpool";
+import { buildSeries, DEFAULT_SETTINGS, groupHealth, poolEconomics, snapshot, summarize, type EntityBase, type MonthRow, type PoolSettings } from "./cashpool";
+import { poolingOverview, groupSeries, type PoolingStore } from "./products/pooling";
 
 const base: EntityBase[] = [
   { companyId: "LENDER", currency: "EUR", country: "ES" },
@@ -143,4 +144,116 @@ test("invalid scenario settings are rejected", () => {
     { ...DEFAULT_SETTINGS, reserveEur: -1 },
     { ...DEFAULT_SETTINGS, transferFeeEur: -1 },
   ]) assert.throws(() => plan(row(-20_000), row(300_000), settings));
+});
+
+test("group health weights subsidiaries equally and exposes weak subsidiaries", () => {
+  const health = groupHealth(plan(row(null, 20, -10), row(4_000_000, 90, 8)));
+  assert.equal(health.score, 55);
+  assert.equal(health.scored, 2);
+  assert.equal(health.low, 1);
+  assert.equal(health.deteriorating, 1);
+});
+
+test("group health excludes invalid scores but includes zero and exposes partial coverage", () => {
+  for (const invalid of [NaN, Infinity, -1, 101]) {
+    const health = groupHealth(plan(row(0, invalid), row(100_000, 0)));
+    assert.equal(health.score, 0);
+    assert.equal(health.scored, 1);
+    assert.equal(health.total, 2);
+    assert.equal(health.low, 1);
+  }
+  assert.equal(groupHealth(snapshot("2026-08", base, new Map())).score, null);
+  assert.equal(groupHealth(snapshot("2026-08", [], new Map())).total, 0);
+});
+
+test("group health never counts missing history as a stable observation", () => {
+  const health = groupHealth(plan(row(0, 40, null), row(100_000, 70, 0)));
+  assert.equal(health.low, 0);
+  assert.equal(health.comparable, 1);
+  assert.equal(health.deteriorating, 0);
+});
+
+test("group health is independent of scenario assumptions and cash changes", () => {
+  const initial = groupHealth(plan());
+  assert.deepEqual(groupHealth(plan(row(500_000), row(null), { ...DEFAULT_SETTINGS, days: 90, reserveEur: 200_000 })), initial);
+});
+
+test("economic summary shows actual proposed amounts and net savings, not hypothetical matching", () => {
+  const s = plan();
+  const economics = poolEconomics([s]);
+  const summary = summarize(s, {});
+  assert.equal(economics.needEur, 45_000);
+  assert.equal(economics.movableEur, 137_500);
+  assert.equal(economics.proposedEur, summary.proposedEur);
+  assert.equal(economics.netSavingEur, summary.netSavingEur);
+  assert.equal(economics.netSavingEur, economics.bankInterestEur - economics.opportunityCostEur - economics.feeEur);
+  const rejected = poolEconomics([s], { [s.proposals[0].id]: "rejected" });
+  assert.equal(rejected.netSavingEur, 0);
+  assert.equal(rejected.proposedEur, 0);
+  assert.equal(rejected.uncoveredEur, economics.needEur);
+  assert.equal(rejected.needEur, economics.needEur);
+  assert.deepEqual(poolEconomics([s], { [s.proposals[0].id]: "approved" }), economics);
+});
+
+test("aggregate opportunity never matches supply and demand across business groups", () => {
+  const surplusOnly = snapshot("2026-08", [base[0]], new Map([["LENDER", row(300_000)]]));
+  const needOnly = snapshot("2026-08", [base[1]], new Map([["BORROWER", row(-20_000)]]));
+  const economics = poolEconomics([surplusOnly, needOnly]);
+  assert.ok(economics.movableEur > economics.needEur);
+  assert.equal(economics.proposedEur, 0);
+  assert.equal(economics.netSavingEur, 0);
+  assert.equal(economics.uncoveredEur, economics.needEur);
+});
+
+test("economic aggregates preserve missing-data coverage and add only compatible plans", () => {
+  const s = plan();
+  const missing = snapshot("2026-08", base, new Map());
+  const economics = poolEconomics([s, missing]);
+  assert.equal(economics.totalEntities, 4);
+  assert.equal(economics.cashKnown, 2);
+  assert.equal(economics.proposedEur, summarize(s, {}).proposedEur);
+  assert.equal(poolEconomics([]).cashKnown, 0);
+});
+
+const poolingStore = (count = 2): PoolingStore => {
+  const store: PoolingStore = { groups: new Map(), byId: new Map(), months: ["2026-05", "2026-08"], cash: new Map() };
+  for (let i = 0; i < count; i++) {
+    const ids = [`LENDER_${i}`, `BORROWER_${i}`];
+    store.groups.set(`GROUP_${i}`, ids);
+    for (const id of ids) {
+      store.byId.set(id, { id, currency: "EUR", country: "ES", scores: [75, 75] });
+      for (const month of store.months) store.cash.set(`${id}|${month}`, id.startsWith("LENDER") ? 300_000 : -20_000);
+    }
+  }
+  return store;
+};
+
+test("group overview includes all multi-company groups, not only the old selector's first forty", () => {
+  const store = poolingStore(45);
+  const overview = poolingOverview(store, "2026-08");
+  assert.equal(overview.groups.length, 45);
+  assert.equal(overview.groups.filter((g) => g.economics.proposedEur > 0).length, 45);
+  assert.equal(overview.totals.proposedEur, overview.groups.reduce((sum, group) => sum + group.economics.proposedEur, 0));
+  assert.ok(overview.groups.every((group) => group.month === "2026-08"));
+});
+
+test("group overview uses a common selected month and never substitutes a group's latest data", () => {
+  const store = poolingStore();
+  const older = poolingOverview(store, "2026-05");
+  store.byId.get("LENDER_0")!.scores[1] = 10;
+  store.cash.set("LENDER_0|2026-08", 0);
+  assert.deepEqual(poolingOverview(store, "2026-05"), older);
+  assert.throws(() => poolingOverview(store, "2026-07"));
+});
+
+test("cash without a valid score is visible as need, but cannot generate a loan", () => {
+  const store = poolingStore(1);
+  store.byId.get("BORROWER_0")!.scores = [null, null];
+  const data = groupSeries(store, "GROUP_0");
+  assert.equal(data.rows.find((r) => r.companyId === "BORROWER_0" && r.month === "2026-08")?.score, null);
+  const overview = poolingOverview(store, "2026-08");
+  assert.equal(overview.totals.cashKnown, 2);
+  assert.equal(overview.totals.needEur, 45_000);
+  assert.equal(overview.totals.proposedEur, 0);
+  assert.equal(overview.groups[0].scored, 1);
 });

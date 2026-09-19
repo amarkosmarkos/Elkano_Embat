@@ -1,10 +1,15 @@
 import type { Store } from "@/lib/data/store";
-import { buildSeries, DEFAULT_SETTINGS, type EntityBase, type SeriesRow, type Snapshot } from "@/lib/cashpool";
+import { buildSeries, DEFAULT_SETTINGS, groupHealth, poolEconomics, snapshot, type EntityBase, type SeriesRow, type Snapshot } from "@/lib/cashpool";
+import type { CompanyIndex } from "@/lib/score/types";
+
+export type PoolingStore = Pick<Store, "groups" | "months" | "cash"> & {
+  byId: Map<string, Pick<CompanyIndex, "id" | "currency" | "country" | "scores">>;
+};
 
 export type PoolGroup = { group_id: string; n: number; n_cur: number; curs: string };
 
 /** Grupos con más de una filial, ordenados por nº de divisas y tamaño (selector del producto de cash pooling). */
-export function poolingGroups(store: Store, minSize = 2, limit = 40): PoolGroup[] {
+export function poolingGroups(store: PoolingStore, minSize = 2, limit = 40): PoolGroup[] {
   const out: PoolGroup[] = [];
   for (const [gid, ids] of store.groups) {
     if (ids.length < minSize) continue;
@@ -15,7 +20,7 @@ export function poolingGroups(store: Store, minSize = 2, limit = 40): PoolGroup[
 }
 
 /** Filiales de un grupo + su serie mensual: score v3 real, explicación del pipeline y caja real reconstruida. */
-export function groupSeries(store: Store, groupId: string): { base: EntityBase[]; rows: SeriesRow[] } {
+export function groupSeries(store: PoolingStore, groupId: string): { base: EntityBase[]; rows: SeriesRow[] } {
   const ids = store.groups.get(groupId) ?? [];
   const base: EntityBase[] = ids.map((id) => {
     const c = store.byId.get(id);
@@ -26,8 +31,7 @@ export function groupSeries(store: Store, groupId: string): { base: EntityBase[]
     const c = store.byId.get(id);
     if (!c) continue;
     store.months.forEach((m, i) => {
-      const s = c.scores[i];
-      if (s == null) return;
+      const s = c.scores[i] ?? null;
       rows.push({ companyId: id, month: m, score: s, cashLocal: store.cash.get(`${id}|${m}`) ?? null, explanation: null });
     });
   }
@@ -35,8 +39,24 @@ export function groupSeries(store: Store, groupId: string): { base: EntityBase[]
 }
 
 /** Foto del pooling de un grupo en un mes (motor lib/cashpool.ts, supuestos por defecto). */
-export function groupSnapshot(store: Store, groupId: string, month: string): Snapshot | null {
+export function groupSnapshot(store: PoolingStore, groupId: string, month: string): Snapshot | null {
   const { base, rows } = groupSeries(store, groupId);
   if (rows.length === 0) return null;
   return buildSeries(base, rows, DEFAULT_SETTINGS).find((s) => s.month === month) ?? null;
 }
+
+export function poolingOverview(store: PoolingStore, month: string) {
+  if (!store.months.includes(month)) throw new Error("Mes no disponible para comparar grupos");
+  const snaps: Snapshot[] = [];
+  const groups = poolingGroups(store, 2, Infinity).map((group) => {
+    const { base, rows } = groupSeries(store, group.group_id);
+    const s = buildSeries(base, rows.filter((r) => r.month <= month)).find((s) => s.month === month)
+      ?? snapshot(month, base, new Map());
+    snaps.push(s);
+    const health = groupHealth(s);
+    return { ...group, month, score: health.score, scored: health.scored, economics: poolEconomics([s]) };
+  }).sort((a, b) => b.economics.netSavingEur - a.economics.netSavingEur || a.group_id.localeCompare(b.group_id));
+  return { groups, totals: poolEconomics(snaps) };
+}
+
+export type PoolOpportunity = ReturnType<typeof poolingOverview>["groups"][number];
