@@ -1,6 +1,6 @@
 /** Edit route order and media here without changing playback or navigation. */
 export const presentation = [
-  ["/escena/1", "1. Intro"], ["/escena/2", "Transición, La isla"],
+  ["/escena/1", "1. Intro"],
   ["/escena/3", "2. El problema"], ["/calculo-score", "3. Cálculo del score"],
   ["/escena/4", "4. El cofre"], ["/producto/1", "5. Colocación de excedentes"],
   ["/producto/2", "6. Cash pooling"], ["/producto/3", "7. Monitor"],
