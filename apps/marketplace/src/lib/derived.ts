@@ -268,3 +268,44 @@ export function describeComponent(dim: Dimension, v: number | null): string {
   if (Math.abs(v) < 1) return `${DIM_LABEL[dim]} is neutral`;
   return `${DIM_LABEL[dim]} ${v > 0 ? "adds" : "removes"} ${Math.abs(v).toFixed(1)} pts`;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Radar axes and lender ↔ borrower overlap
+// ---------------------------------------------------------------------------------------------
+
+/** Sorted latest-month contributions per dimension (for percentile ranks). */
+export function componentRanks(companies: CompanyIndex[]): Record<Dimension, number[]> {
+  const out = {} as Record<Dimension, number[]>;
+  for (const d of DIMENSIONS) out[d] = companies.map((c) => c.latest.components[d]).filter((v): v is number => v != null).sort((a, b) => a - b);
+  return out;
+}
+
+/** Percentile rank (0–100) of each dimension contribution across the network — the radar axes. */
+export function componentPercentiles(components: Record<Dimension, number | null>, ranks: Record<Dimension, number[]>): Record<Dimension, number | null> {
+  const out = {} as Record<Dimension, number | null>;
+  for (const d of DIMENSIONS) {
+    const v = components[d];
+    const arr = ranks[d];
+    if (v == null || arr.length === 0) { out[d] = null; continue; }
+    let lo = 0, hi = arr.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; }
+    out[d] = Math.round((100 * lo) / arr.length);
+  }
+  return out;
+}
+
+/**
+ * Risk-profile overlap between two companies: cosine similarity of their dimension-contribution vectors
+ * (nulls count as 0). 1 = the same dimensions drive both scores, 0 = unrelated, < 0 = opposite profiles.
+ * Used as a mild diversification penalty when a lender allocates (the dataset has no sector field;
+ * same business group is excluded outright instead).
+ */
+export function profileOverlap(a: Record<Dimension, number | null>, b: Record<Dimension, number | null>): number {
+  let dot = 0, na = 0, nb = 0;
+  for (const d of DIMENSIONS) {
+    const x = a[d] ?? 0, y = b[d] ?? 0;
+    dot += x * y; na += x * x; nb += y * y;
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / Math.sqrt(na * nb);
+}

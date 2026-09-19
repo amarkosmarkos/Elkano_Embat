@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useLocation } from "react-router";
 import { motion } from "framer-motion";
-import { Anchor, Compass, Map, Moon, Sun, Telescope } from "lucide-react";
+import { Anchor, Coins, HandCoins, Moon, Sun, Telescope } from "lucide-react";
+import { CompanyOverlay } from "@/components/CompanyOverlay";
 import { useApp } from "@/store/app";
 import { cx } from "@/lib/format";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useFitScale } from "@/hooks/useFitScale";
 
 const NAV = [
-  { to: "/", label: "Network", sub: "Charted waters", Icon: Map },
-  { to: "/portfolio", label: "Portfolio", sub: "Treasure chest", Icon: Compass },
+  { to: "/", label: "Lenders", sub: "Who can lend", Icon: Coins },
+  { to: "/borrowers", label: "Borrowers", sub: "Treasure chest", Icon: HandCoins },
   { to: "/monitor", label: "Monitor", sub: "Crow's nest", Icon: Telescope },
 ];
 
@@ -69,6 +70,7 @@ export function AppShell() {
         <main className="min-h-0 flex-1 p-3 md:p-4">
           <Outlet />
         </main>
+        <CompanyOverlay />
       </div>
     </div>
   );

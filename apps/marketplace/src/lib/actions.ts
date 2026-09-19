@@ -9,6 +9,9 @@ import type { NetworkData, StressFlag } from "./types";
 
 export type ActionKind = "pause" | "reduce" | "review" | "monitor" | "increase";
 
+/** An executed action: permanently rescales a position (recorded so it can be undone). */
+export interface ExecutedAction { id: string; kind: ActionKind; multiplier: number; month: string; scoreThen: number }
+
 export interface Recommendation {
   id: string;
   kind: ActionKind;
@@ -20,13 +23,28 @@ export interface Recommendation {
   timeline: PositionTimeline;
 }
 
-export const ACTION_META: Record<ActionKind, { label: string; verb: string; tone: "negative" | "warn" | "neutral" | "positive" }> = {
-  pause: { label: "Pause additional financing", verb: "Pause", tone: "negative" },
-  reduce: { label: "Reduce maximum exposure", verb: "Reduce", tone: "negative" },
-  review: { label: "Review exposure", verb: "Review", tone: "warn" },
-  monitor: { label: "Keep monitoring", verb: "Monitor", tone: "neutral" },
-  increase: { label: "Increase exposure", verb: "Increase", tone: "positive" },
+export const ACTION_META: Record<ActionKind, { label: string; verb: string; tone: "negative" | "warn" | "neutral" | "positive"; effect: string }> = {
+  pause: { label: "Pause additional financing", verb: "Pause", tone: "negative", effect: "Freeze new financing and trim the position by 25%" },
+  reduce: { label: "Reduce exposure", verb: "Reduce", tone: "negative", effect: "Cut the position in half, capital back to reserve" },
+  review: { label: "Review exposure", verb: "Review", tone: "warn", effect: "Trim the position by 15% pending review" },
+  monitor: { label: "Keep monitoring", verb: "Monitor", tone: "neutral", effect: "No change" },
+  increase: { label: "Increase exposure", verb: "Increase", tone: "positive", effect: "Grow the position by 25%, up to the exposure cap" },
 };
+
+/** Apply executed actions to the base portfolio (weights rescaled, freed capital → reserve). */
+export function applyActions(result: PortfolioResult, executed: ExecutedAction[]): PortfolioResult {
+  if (executed.length === 0) return result;
+  const mult = new Map<string, number>();
+  for (const a of executed) mult.set(a.id, (mult.get(a.id) ?? 1) * a.multiplier);
+  const positions: Position[] = result.positions.map((p) => {
+    const m = mult.get(p.id);
+    if (m == null) return p;
+    const w = Math.min(result.config.maxExposure, p.weight * m);
+    return { ...p, weight: w, amount: Math.round(w * result.config.capital) };
+  });
+  const share = positions.reduce((s, p) => s + p.weight, 0);
+  return summarize(result.config, positions, result.universe, result.eligible, Math.min(1, share), result.excludedRelated);
+}
 
 export function recommend(snapshot: MonitorSnapshot, network: NetworkData): Recommendation[] {
   const byId = new Map(network.companies.map((c) => [c.id, c]));

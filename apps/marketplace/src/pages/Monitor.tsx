@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Pause, Play, SkipBack, SkipForward, Telescope, X } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useApp } from "@/store/app";
+import { useEffectiveResult } from "@/hooks/useEffectiveResult";
 import { buildPortfolio, DEFAULT_CONFIG } from "@/lib/portfolio";
 import { monitorSnapshot, portfolioTrajectory, type PositionStatus, type PositionTimeline } from "@/lib/monitor";
 import { ScoreHistory } from "@/components/charts/ScoreHistory";
@@ -27,8 +28,10 @@ const CHANGES_PER_PAGE = 4;
 
 export function Monitor() {
   const { data } = useNetwork();
-  const result = useApp((s) => s.result);
+  const result = useEffectiveResult();
   const setResult = useApp((s) => s.setResult);
+  const lenderId = useApp((s) => s.lenderId);
+  const setOpenCompany = useApp((s) => s.setOpenCompany);
   const monitorMonth = useApp((s) => s.monitorMonth);
   const setMonitorMonth = useApp((s) => s.setMonitorMonth);
   const nav = useNavigate();
@@ -63,8 +66,8 @@ export function Monitor() {
         <h1 className="font-display text-4xl">Nothing in the crow's nest yet.</h1>
         <p className="mx-auto mt-2 max-w-md text-[13px] italic text-muted">Build a portfolio first — then replay the real score history month by month and watch continuous underwriting flag what changes.</p>
         <div className="mt-6 flex gap-3">
-          <Button onClick={() => nav("/portfolio")}>Open builder</Button>
-          <Button variant="outline" onClick={() => setResult(buildPortfolio(data, DEFAULT_CONFIG))}>Load demo portfolio</Button>
+          <Button onClick={() => nav("/borrowers")}>Build a chest</Button>
+          <Button variant="outline" onClick={() => setResult(buildPortfolio(data, { ...DEFAULT_CONFIG, lenderId }))}>Load demo chest</Button>
         </div>
       </div>
     );
@@ -149,7 +152,7 @@ export function Monitor() {
         <PanelHead eyebrow="Meaningful changes" title={meaningful.length === 0 ? "Nothing material yet" : `${meaningful.length} position${meaningful.length > 1 ? "s" : ""} moved materially`}
           right={<>
             {meaningful.length > CHANGES_PER_PAGE && <Pager page={page} pageSize={CHANGES_PER_PAGE} total={meaningful.length} onChange={setPage} />}
-            {nActionable > 0 && <Button size="sm" onClick={() => nav("/monitor/actions")}>Action Center <ArrowRight size={13} /></Button>}
+            {nActionable > 0 && <Button size="sm" onClick={() => nav("/monitor/actions")}>Actions <ArrowRight size={13} /></Button>}
           </>} />
         {meaningful.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-[13px] italic text-muted">Scores are moving within their normal range. Advance time to see the chest evolve.</div>
@@ -165,11 +168,11 @@ export function Monitor() {
             <Eyebrow className="shrink-0">Within range</Eyebrow>
             <div className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
               {stable.map((t) => (
-                <Link key={t.position.id} to={`/company/${t.position.id}`} className="inset flex shrink-0 items-center gap-2 px-2 py-1 text-[11px] hover:border-ink">
+                <button key={t.position.id} onClick={() => setOpenCompany(t.position.id)} className="inset flex shrink-0 items-center gap-2 px-2 py-1 text-[11px] hover:border-ink">
                   <span className="max-w-[110px] truncate">{t.position.name}</span>
                   <span className="tnum font-caps font-bold" style={{ color: scoreColor(t.scoreNow) }}>{t.scoreNow.toFixed(0)}</span>
                   <span className="tnum text-[10px]" style={{ color: t.delta >= 0 ? "#2d6a4f" : "#8b1e2d" }}>{fmtDelta(t.delta)}</span>
-                </Link>
+                </button>
               ))}
             </div>
           </div>
@@ -217,7 +220,7 @@ export function Monitor() {
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-line pt-3 text-[12px] text-muted">
                 <span>{expandedT.persistent ? "Move is persistent, not a single-month anomaly." : expandedT.delta <= -8 ? "Move is recent — could still be a one-month anomaly." : ""}</span>
-                <Link to={`/company/${expandedT.position.id}`} className="font-caps text-[10px] font-semibold uppercase tracking-[0.14em] text-accent hover:underline">Open profile →</Link>
+                <button onClick={() => setOpenCompany(expandedT.position.id)} className="font-caps text-[10px] font-semibold uppercase tracking-[0.14em] text-accent hover:underline">Spider chart & all metrics →</button>
               </div>
             </motion.div>
           </>

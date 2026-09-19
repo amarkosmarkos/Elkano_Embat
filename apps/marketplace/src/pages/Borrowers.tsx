@@ -1,39 +1,67 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Compass, RotateCcw } from "lucide-react";
+import { ArrowRight, Coins, Compass, RotateCcw, Telescope } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
+import { useAssessments } from "@/hooks/useAssessments";
+import { useEffectiveResult } from "@/hooks/useEffectiveResult";
 import { useApp } from "@/store/app";
-import { buildPortfolio, riskLabel, RISK_PRESETS, type PortfolioResult, type RiskTolerance } from "@/lib/portfolio";
+import { buildPortfolio, riskLabel, RISK_PRESETS, OVERLAP_PENALTY, type PortfolioResult, type RiskTolerance } from "@/lib/portfolio";
 import { Treemap } from "@/components/charts/Treemap";
 import { Histogram } from "@/components/charts/Histogram";
 import { Sparkline } from "@/components/charts/Sparkline";
+import { BubbleMap } from "@/components/charts/BubbleMap";
+import { BorrowerCard } from "@/components/BorrowerCard";
 import { AutoSize } from "@/components/ui/AutoSize";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { Button, Eyebrow, PanelHead, Segmented, Skeleton, Slider, Stat } from "@/components/ui/primitives";
+import { Badge, Button, Eyebrow, PanelHead, Segmented, Skeleton, Slider, Stat } from "@/components/ui/primitives";
 import { fmtDelta, fmtMoney, fmtMonth } from "@/lib/format";
 import { scoreColor } from "@/lib/colors";
 import { historyLength, TIER_LABEL, type Tier } from "@/lib/derived";
 
 type Phase = "idle" | "screening" | "ranking" | "allocating" | "done";
+type View = "candidates" | "portfolio";
 type Tab = "map" | "distribution" | "crew";
 
-export function Portfolio() {
+/** Borrowers: the candidate universe for the selected lender, and the chest built for it. */
+export function Borrowers() {
   const { data } = useNetwork();
+  const assessed = useAssessments(data);
   const config = useApp((s) => s.config);
   const setConfig = useApp((s) => s.setConfig);
-  const result = useApp((s) => s.result);
+  const lenderId = useApp((s) => s.lenderId);
+  const setLender = useApp((s) => s.setLender);
+  const baseResult = useApp((s) => s.result);
   const setResult = useApp((s) => s.setResult);
+  const executed = useApp((s) => s.executed);
+  const setOpenCompany = useApp((s) => s.setOpenCompany);
+  const result = useEffectiveResult();
   const nav = useNavigate();
-  const [phase, setPhase] = useState<Phase>(result ? "done" : "idle");
+  const [phase, setPhase] = useState<Phase>(baseResult ? "done" : "idle");
+  const [view, setView] = useState<View>(baseResult ? "portfolio" : "candidates");
+  const [tab, setTab] = useState<Tab>("map");
   const [selected, setSelected] = useState<string | null>(null);
   const [preview, setPreview] = useState<PortfolioResult | null>(null);
-  const [tab, setTab] = useState<Tab>("map");
 
   const months = data?.meta.months ?? [];
   const asOfOptions = useMemo(() => months.filter((_, i) => i >= 6), [months]);
   const asOfIdx = months.indexOf(config.asOf);
+  const lender = useMemo(() => assessed.find((a) => a.c.id === lenderId) ?? null, [assessed, lenderId]);
+  const topLenders = useMemo(() => assessed.filter((a) => a.provider.qualified).sort((x, y) => y.provider.capacity - x.provider.capacity).slice(0, 5), [assessed]);
+
+  // candidates for THIS lender: never itself or its business group
+  const candidates = useMemo(() => {
+    const list = assessed.filter((a) => a.receiver.eligible && a.receiver.need >= 25 && !(lender && (a.c.id === lender.c.id || (lender.c.group != null && a.c.group === lender.c.group))));
+    list.sort((x, y) => y.receiver.fit - x.receiver.fit || y.c.latest.score - x.c.latest.score);
+    return list;
+  }, [assessed, lender]);
+  const excludedRelated = useMemo(() => (lender ? assessed.filter((a) => a.c.id === lender.c.id || (lender.c.group != null && a.c.group === lender.c.group)).length : 0), [assessed, lender]);
+  const inChest = useMemo(() => new Set(result?.positions.map((p) => p.id) ?? []), [result]);
+  const bubbles = useMemo(() => {
+    const cand = new Set(candidates.map((a) => a.c.id));
+    return assessed.map((a) => ({ id: a.c.id, name: a.c.name, score: a.c.latest.score, momentum: a.momentum ?? 0, size: a.receiver.fit, qualified: cand.has(a.c.id), alert: a.c.latest.alert === 1, dimmed: !cand.has(a.c.id) && !inChest.has(a.c.id) }));
+  }, [assessed, candidates, inChest]);
 
   const universe = useMemo(() => {
     if (!data || asOfIdx < 0) return null;
@@ -42,17 +70,19 @@ export function Portfolio() {
       const s = c.scores[asOfIdx];
       if (s == null) continue;
       scored++;
+      if (lender && (c.id === lender.c.id || (lender.c.group != null && c.group === lender.c.group))) continue;
       if (s >= config.minScore) aboveMin++;
       if (s >= config.minScore && c.alerts[asOfIdx] === 0 && (c.stress[asOfIdx] ?? 0) <= RISK_PRESETS[config.risk].maxStress && historyLength(c.scores, asOfIdx) >= 6) clean++;
     }
     return { scored, aboveMin, clean };
-  }, [data, asOfIdx, config.minScore, config.risk]);
+  }, [data, asOfIdx, config.minScore, config.risk, lender]);
 
   function build() {
     if (!data) return;
-    setPreview(buildPortfolio(data, config));
+    setPreview(buildPortfolio(data, { ...config, lenderId }));
     setSelected(null);
     setTab("map");
+    setView("portfolio");
     setPhase("screening");
   }
   useEffect(() => {
@@ -64,20 +94,39 @@ export function Portfolio() {
   const shown = phase === "done" ? result : null;
   const risk = shown ? riskLabel(shown.avgScore) : null;
   const byId = useMemo(() => new Map(data?.companies.map((c) => [c.id, c]) ?? []), [data]);
+  const builtForOtherLender = baseResult != null && baseResult.config.lenderId !== lenderId;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_1fr] gap-4">
-      {/* config */}
+      {/* lender + config */}
       <aside className="card flex min-h-0 min-w-0 flex-col p-4">
-        <Eyebrow>Portfolio builder</Eyebrow>
-        <h1 className="mt-1 font-display text-[24px] leading-[1.05]">Long-term value leads to <span className="text-accent">greater treasures</span>.</h1>
-        <p className="mt-1 hidden text-[11.5px] italic leading-snug text-muted [@media(min-height:800px)]:block">Deterministic construction from the score dataset. Uses only scores known at the allocation month — no look-ahead.</p>
-        <div className="mt-3 space-y-3">
+        <Eyebrow>Borrowers · treasure chest</Eyebrow>
+        <h1 className="mt-1 font-display text-[22px] leading-[1.05]">Long-term value leads to <span className="text-accent">greater treasures</span>.</h1>
+
+        {lender ? (
+          <div className="inset mt-2 border-accent/60 p-2.5">
+            <div className="flex items-center justify-between"><Eyebrow className="text-accent"><Coins size={10} className="mr-1 inline" />Lending as</Eyebrow><button onClick={() => nav("/")} className="font-caps text-[9px] uppercase tracking-[0.12em] text-muted hover:text-fg">change</button></div>
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <button onClick={() => setOpenCompany(lender.c.id)} className="min-w-0 truncate font-display text-[19px] leading-tight hover:text-accent">{lender.c.name}</button>
+              <span className="tnum font-caps text-2xl font-bold" style={{ color: scoreColor(lender.c.latest.score) }}>{lender.c.latest.score.toFixed(0)}</span>
+            </div>
+            <div className="mt-0.5 text-[10.5px] italic leading-snug text-muted">Capacity {lender.provider.capacity} · {excludedRelated - 1 > 0 ? `${excludedRelated - 1} compan${excludedRelated - 1 === 1 ? "y" : "ies"} of its group excluded` : "no group companies to exclude"} · look-alike profiles penalised up to {Math.round(OVERLAP_PENALTY * 100)}%</div>
+          </div>
+        ) : (
+          <div className="inset mt-2 p-2.5">
+            <Eyebrow className="text-accent">Who is lending?</Eyebrow>
+            <div className="mt-1 text-[11.5px] italic leading-snug text-muted">Pick a lender — the chest is built for it: no exposure to its own group, less to look-alike risk profiles.</div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {topLenders.map((a) => <button key={a.c.id} onClick={() => setLender(a.c.id)} className="font-caps rounded-[3px] border border-line-strong px-1.5 py-0.5 text-[10px] font-bold hover:bg-surface-2">{a.c.name} <span className="text-faint">{a.c.latest.score.toFixed(0)}</span></button>)}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 space-y-2.5">
           <Slider label="Capital available" value={config.capital} min={5_000_000} max={100_000_000} step={1_000_000} onChange={(v) => setConfig({ capital: v })} format={(v) => fmtMoney(v)} />
           <div>
             <Eyebrow className="mb-1">Risk tolerance</Eyebrow>
             <Segmented value={config.risk} onChange={(v: RiskTolerance) => setConfig({ risk: v })} size="sm" className="w-full" options={(Object.keys(RISK_PRESETS) as RiskTolerance[]).map((k) => ({ value: k, label: RISK_PRESETS[k].label }))} />
-            <div className="mt-1 hidden text-[10.5px] italic text-muted [@media(min-height:800px)]:block">{RISK_PRESETS[config.risk].blurb}</div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Slider label="Max exposure" value={config.maxExposure} min={0.04} max={0.25} step={0.01} onChange={(v) => setConfig({ maxExposure: v })} format={(v) => `${Math.round(v * 100)}%`} />
@@ -88,69 +137,71 @@ export function Portfolio() {
           <div>
             <Eyebrow className="mb-1">Allocation month</Eyebrow>
             <div className="flex flex-wrap gap-1">
-              {asOfOptions.map((m) => (
-                <button key={m} onClick={() => setConfig({ asOf: m })} className={`font-caps rounded-[3px] border px-1.5 py-0.5 text-[10.5px] font-bold tracking-wide transition ${config.asOf === m ? "border-ink bg-ink text-parch" : "border-line-strong text-fg-2 hover:bg-surface-2"}`}>{fmtMonth(m)}</button>
-              ))}
+              {asOfOptions.map((m) => <button key={m} onClick={() => setConfig({ asOf: m })} className={`font-caps rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold tracking-wide transition ${config.asOf === m ? "border-ink bg-ink text-parch" : "border-line-strong text-fg-2 hover:bg-surface-2"}`}>{fmtMonth(m)}</button>)}
             </div>
-            <div className="mt-1 hidden text-[10px] italic leading-snug text-faint [@media(min-height:800px)]:block">Earlier month = more real history to replay in Monitor ({months.length - 1 - asOfIdx} months after {fmtMonth(config.asOf)}).</div>
           </div>
           {universe && (
-            <div className="inset px-3 py-2 text-[12px] text-fg-2">
+            <div className="inset hidden px-3 py-1.5 text-[11.5px] text-fg-2 [@media(min-height:800px)]:block">
               <div className="flex justify-between"><span>Scored in {fmtMonth(config.asOf)}</span><span className="tnum font-caps font-bold text-fg">{universe.scored}</span></div>
-              <div className="flex justify-between"><span>Score ≥ {config.minScore}</span><span className="tnum font-caps font-bold text-fg">{universe.aboveMin}</span></div>
+              <div className="flex justify-between"><span>Score ≥ {config.minScore}{lender ? ", not related" : ""}</span><span className="tnum font-caps font-bold text-fg">{universe.aboveMin}</span></div>
               <div className="flex justify-between"><span>No alert · stress ok · 6+ months</span><span className="tnum font-caps font-bold text-fg">{universe.clean}</span></div>
             </div>
           )}
         </div>
         <div className="mt-auto flex gap-2 pt-3">
           <Button size="lg" className="min-w-0 flex-1" onClick={build} disabled={!data || (phase !== "idle" && phase !== "done")}>
-            <Compass size={15} />{result ? "Rebuild" : "Build portfolio"}
+            <Compass size={15} />{baseResult ? "Rebuild chest" : "Build chest"}
           </Button>
-          {result && phase === "done" && (
-            <button onClick={() => { setResult(null); setPhase("idle"); }} title="Clear portfolio" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[4px] border border-line-strong text-muted hover:text-fg"><RotateCcw size={14} /></button>
-          )}
+          {baseResult && phase === "done" && <button onClick={() => { setResult(null); setPhase("idle"); setView("candidates"); }} title="Clear portfolio" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[4px] border border-line-strong text-muted hover:text-fg"><RotateCcw size={14} /></button>}
         </div>
       </aside>
 
-      {/* result */}
+      {/* right */}
       <section className="flex min-h-0 min-w-0 flex-col">
         <AnimatePresence mode="wait">
           {!data ? (
             <Skeleton key="sk" className="h-full" />
-          ) : phase === "idle" || !shown ? (
-            phase === "idle" ? <EmptyState key="empty" /> : <Building key="building" phase={phase} universe={universe} preview={preview} />
+          ) : phase === "screening" || phase === "ranking" || phase === "allocating" ? (
+            <Building key="building" phase={phase} universe={universe} preview={preview} />
+          ) : view === "candidates" || !shown ? (
+            <motion.div key="cands" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="card flex min-h-0 flex-1 flex-col p-4">
+              <PanelHead eyebrow={lender ? `Financing candidates for ${lender.c.name}` : "Financing candidates"} title={`${candidates.length} healthy companies with visible capital needs${excludedRelated - 1 > 0 ? ` · ${excludedRelated - 1} of the lender's group excluded` : ""}`}
+                right={<>
+                  {shown && <Segmented value={view} onChange={setView} size="sm" options={[{ value: "candidates", label: "Candidates" }, { value: "portfolio", label: "Chest" }]} />}
+                  {builtForOtherLender && <Badge tone="warn">Chest built for another lender</Badge>}
+                </>} />
+              <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <BubbleMap data={bubbles} width={w} height={h} onSelect={(id) => setOpenCompany(id)} sizeLabel="Fit" xThreshold={60} />}</AutoSize></div>
+              <div className="mt-2 flex shrink-0 items-center justify-between"><Eyebrow>Best fit · healthy and in need of capital</Eyebrow><span className="text-[10px] italic text-muted">click a card for the spider chart and every metric</span></div>
+              <div className="mt-1.5 grid shrink-0 grid-cols-4 gap-3">
+                {candidates.slice(0, 4).map((a, i) => <BorrowerCard key={a.c.id} a={a} index={i} onOpen={() => setOpenCompany(a.c.id)} inPortfolio={inChest.has(a.c.id)} />)}
+              </div>
+            </motion.div>
           ) : (
             <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex min-h-0 flex-1 flex-col gap-3">
-              {/* headline */}
               <div className="card flex shrink-0 items-center gap-5 px-5 py-3">
                 <ScoreRing score={shown.avgScore} size={96} stroke={8} label="Chest" />
                 <div className="grid flex-1 grid-cols-4 gap-4">
                   <Stat label="Allocated" value={fmtMoney(shown.allocated)} hint={shown.reserve > 0 ? `${fmtMoney(shown.reserve)} in reserve` : `${shown.positions.length} positions`} />
                   <Stat label="Expected stress" value={`${(shown.expectedStress * 100).toFixed(1)}%`} hint="weighted 100 − score" tone={risk?.tone} />
                   <Stat label="Effective positions" value={shown.effectiveN.toFixed(1)} hint={`HHI ${shown.hhi.toFixed(3)} · top ${(shown.topWeight * 100).toFixed(0)}%`} />
-                  <Stat label="Risk profile" value={risk?.label ?? "—"} tone={risk?.tone} hint={`${shown.groups} business groups`} />
+                  <Stat label="Overlap with lender" value={shown.avgOverlap == null ? "—" : shown.avgOverlap.toFixed(2)} hint={shown.avgOverlap == null ? "no lender" : shown.avgOverlap < 0.3 ? "well diversified" : shown.avgOverlap < 0.6 ? "moderate" : "look-alike risk"} tone={shown.avgOverlap == null ? undefined : shown.avgOverlap < 0.3 ? "positive" : shown.avgOverlap < 0.6 ? "warn" : "negative"} />
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <Segmented value={tab} onChange={setTab} size="sm" options={[{ value: "map", label: "Treasure map" }, { value: "distribution", label: "Distribution" }, { value: "crew", label: "Crew" }]} />
-                  <Button size="sm" onClick={() => nav("/monitor")}>Monitor <ArrowRight size={13} /></Button>
+                  <div className="flex items-center gap-2">
+                    <Segmented value={view} onChange={setView} size="sm" options={[{ value: "candidates", label: "Candidates" }, { value: "portfolio", label: "Chest" }]} />
+                    <Segmented value={tab} onChange={setTab} size="sm" options={[{ value: "map", label: "Treasure map" }, { value: "distribution", label: "Distribution" }, { value: "crew", label: "Crew" }]} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {executed.length > 0 && <Badge tone="warn">{executed.length} action{executed.length > 1 ? "s" : ""} executed</Badge>}
+                    <Button size="sm" onClick={() => nav("/monitor")}><Telescope size={12} />Monitor <ArrowRight size={13} /></Button>
+                  </div>
                 </div>
               </div>
 
               {tab === "map" && (
                 <div className="card flex min-h-0 flex-1 flex-col p-4">
-                  <PanelHead eyebrow="Allocation" title={`${shown.positions.length} companies · as of ${fmtMonth(shown.config.asOf, "long")}`} right={<div className="text-[10px] italic text-muted">Tile area = capital · ink = score at allocation · click to inspect</div>} />
-                  <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <Treemap width={w} height={h} items={shown.positions.map((p) => ({ id: p.id, name: p.name, value: p.amount, score: p.score, sub: `${(p.weight * 100).toFixed(1)}%`, dimmed: selected != null && selected !== p.id, mark: p.rank === 1 }))} onSelect={(id) => setSelected(selected === id ? null : id)} selected={selected} />}</AutoSize></div>
-                  {selected && (() => { const p = shown.positions.find((x) => x.id === selected)!; return (
-                    <div className="mt-2 flex shrink-0 items-center gap-4 border-t border-line pt-2 text-[12px]">
-                      <span className="font-display text-base">{p.name}</span>
-                      <span className="font-mono text-faint">{p.id}</span>
-                      <span>rank <span className="tnum font-caps font-bold">#{p.rank}</span></span>
-                      <span>score <span className="tnum font-caps font-bold" style={{ color: scoreColor(p.score) }}>{p.score.toFixed(0)}</span></span>
-                      <span>momentum <span className="tnum font-caps font-bold">{fmtDelta(p.momentum)}</span></span>
-                      <span>weight <span className="tnum font-caps font-bold">{(p.weight * 100).toFixed(1)}%</span> · {fmtMoney(p.amount)}</span>
-                      <Link to={`/company/${p.id}`} className="font-caps ml-auto text-[10px] font-semibold uppercase tracking-[0.14em] text-accent hover:underline">Open profile →</Link>
-                    </div>
-                  ); })()}
+                  <PanelHead eyebrow="Allocation" title={`${shown.positions.length} borrowers · as of ${fmtMonth(shown.config.asOf, "long")}${lender ? ` · lent by ${lender.c.name}` : ""}`} right={<div className="text-[10px] italic text-muted">Tile area = capital · ink = score at allocation · click a company for its spider chart and metrics</div>} />
+                  <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <Treemap width={w} height={h} items={shown.positions.map((p) => ({ id: p.id, name: p.name, value: p.amount, score: p.score, sub: `${(p.weight * 100).toFixed(1)}%${p.overlap != null ? ` · overlap ${p.overlap.toFixed(2)}` : ""}`, dimmed: selected != null && selected !== p.id, mark: p.rank === 1 }))} onSelect={(id) => { setSelected(id); setOpenCompany(id); }} selected={selected} />}</AutoSize></div>
                 </div>
               )}
 
@@ -172,30 +223,29 @@ export function Portfolio() {
                       <Stat big label="Largest position" value={`${(shown.topWeight * 100).toFixed(1)}%`} hint={`cap ${Math.round(shown.config.maxExposure * 100)}%`} />
                       <Stat big label="Effective N" value={shown.effectiveN.toFixed(1)} hint={`of ${shown.positions.length} names`} />
                       <Stat big label="Score range" value={`${shown.minScore.toFixed(0)}–${shown.maxScore.toFixed(0)}`} hint={`floor ${shown.config.minScore}`} />
-                      <Stat big label="Universe" value={`${shown.eligible}`} hint={`eligible of ${shown.universe} scored`} />
+                      <Stat big label="Related excluded" value={`${shown.excludedRelated}`} hint={lender ? `${lender.c.name} and its group` : "no lender"} />
                     </div>
-                    <div className="mt-auto border-t border-line pt-3 text-[11px] italic leading-relaxed text-muted">Ranking = {Math.round(RISK_PRESETS[shown.config.risk].wScore * 100)}% score · {Math.round(RISK_PRESETS[shown.config.risk].wMomentum * 100)}% momentum · {Math.round(RISK_PRESETS[shown.config.risk].wStability * 100)}% stability. Weights ∝ rank^{RISK_PRESETS[shown.config.risk].gamma}, capped at {Math.round(shown.config.maxExposure * 100)}% and max {shown.config.maxPerGroup} per group. Expected stress = Σ w·(100 − score): the score is literally 100 − P(stress event in 3–6 months).</div>
+                    <div className="mt-auto border-t border-line pt-3 text-[11px] italic leading-relaxed text-muted">Ranking = {Math.round(RISK_PRESETS[shown.config.risk].wScore * 100)}% score · {Math.round(RISK_PRESETS[shown.config.risk].wMomentum * 100)}% momentum · {Math.round(RISK_PRESETS[shown.config.risk].wStability * 100)}% stability, × (1 − {OVERLAP_PENALTY} × overlap with the lender's risk profile). Weights ∝ rank^{RISK_PRESETS[shown.config.risk].gamma}, capped at {Math.round(shown.config.maxExposure * 100)}% and max {shown.config.maxPerGroup} per group. The dataset has no sector: overlap = cosine similarity of the five dimension contributions; the lender's own business group is excluded outright.</div>
                   </div>
                 </div>
               )}
 
               {tab === "crew" && (
                 <div className="card flex min-h-0 flex-1 flex-col p-4">
-                  <PanelHead eyebrow="Positions" title="Ranked selection" right={<div className="text-[10px] italic text-muted">hover to highlight · click to open</div>} />
+                  <PanelHead eyebrow="Positions" title="Ranked selection" right={<div className="text-[10px] italic text-muted">click a name for its metrics</div>} />
                   <div className="mt-2 grid min-h-0 flex-1 grid-flow-col gap-x-5" style={{ gridTemplateRows: `repeat(${Math.ceil(shown.positions.length / 2)}, minmax(0, 1fr))`, gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
                     {shown.positions.map((p, i) => {
                       const c = byId.get(p.id);
                       return (
-                        <motion.div key={p.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
-                          onMouseEnter={() => setSelected(p.id)} onMouseLeave={() => setSelected(null)}
-                          className={`grid min-h-0 grid-cols-[20px_1fr_58px_60px_64px_72px] items-center gap-2 border-b border-line px-1 text-[12px] ${selected === p.id ? "bg-surface-2" : ""}`}>
+                        <motion.button key={p.id} onClick={() => setOpenCompany(p.id)} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
+                          className="grid min-h-0 grid-cols-[20px_1fr_58px_60px_64px_72px] items-center gap-2 border-b border-line px-1 text-left text-[12px] hover:bg-surface-2">
                           <div className="font-caps text-[10px] text-faint">{String(p.rank).padStart(2, "0")}</div>
-                          <Link to={`/company/${p.id}`} className="min-w-0"><div className="truncate font-display text-[14px] leading-tight hover:text-accent">{p.name}</div><div className="font-mono text-[9px] leading-tight text-faint">{p.id}{p.group ? ` · ${p.group}` : ""}</div></Link>
+                          <div className="min-w-0"><div className="truncate font-display text-[14px] leading-tight">{p.name}</div><div className="font-mono text-[9px] leading-tight text-faint">{p.id}{p.overlap != null ? ` · overlap ${p.overlap.toFixed(2)}` : ""}</div></div>
                           <div>{c && <Sparkline values={c.scores.slice(0, asOfIdx + 1)} width={56} height={18} color={scoreColor(p.score)} animate={false} />}</div>
                           <div className="text-right"><span className="tnum font-caps text-[14px] font-bold" style={{ color: scoreColor(p.score) }}>{p.score.toFixed(0)}</span><span className="tnum ml-1 text-[10px]" style={{ color: (p.momentum ?? 0) >= 0 ? "#2d6a4f" : "#8b1e2d" }}>{fmtDelta(p.momentum)}</span></div>
                           <div><div className="h-1.5 w-full overflow-hidden rounded-full bg-line"><motion.div className="h-full rounded-full bg-[#b8891c]" initial={{ width: 0 }} animate={{ width: `${(p.weight / shown.topWeight) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.02 }} /></div><div className="tnum font-caps text-[9px] text-muted">{(p.weight * 100).toFixed(1)}%</div></div>
                           <div className="tnum font-caps text-right text-[12px] font-bold">{fmtMoney(p.amount)}</div>
-                        </motion.div>
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -209,25 +259,10 @@ export function Portfolio() {
   );
 }
 
-function EmptyState() {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="card flex h-full flex-col items-center justify-center p-10 text-center">
-      <div className="mb-5 grid h-32 w-32 grid-cols-4 gap-1.5">
-        {Array.from({ length: 16 }).map((_, i) => (
-          <motion.div key={i} className="rounded-[2px]" style={{ background: scoreColor(60 + ((i * 7) % 40)), opacity: 0.35 }} animate={{ opacity: [0.2, 0.7, 0.2] }} transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.12 }} />
-        ))}
-      </div>
-      <h2 className="font-display text-3xl">Set your constraints, then build.</h2>
-      <p className="mx-auto mt-2 max-w-md text-[13px] italic text-muted">The allocator screens every scored company at the allocation month, ranks by score, momentum and stability, and spreads capital under your exposure and group limits.</p>
-      <div className="font-caps mt-6 flex gap-6 text-[10px] uppercase tracking-[0.24em] text-faint"><span>Compounding</span><span>·</span><span>Discipline</span><span>·</span><span>Patience</span></div>
-    </motion.div>
-  );
-}
-
 function Building({ phase, universe, preview }: { phase: Phase; universe: { scored: number; aboveMin: number; clean: number } | null; preview: PortfolioResult | null }) {
   const steps: { key: Phase; label: string; value: number | null }[] = [
-    { key: "screening", label: "Screening scored companies", value: universe?.scored ?? null },
-    { key: "ranking", label: "Ranking eligible names", value: preview?.eligible ?? null },
+    { key: "screening", label: "Screening scored companies (lender & its group excluded)", value: universe?.scored ?? null },
+    { key: "ranking", label: "Ranking eligible names, penalising look-alike profiles", value: preview?.eligible ?? null },
     { key: "allocating", label: "Allocating under constraints", value: preview?.positions.length ?? null },
   ];
   const order: Phase[] = ["screening", "ranking", "allocating", "done"];
@@ -239,7 +274,7 @@ function Building({ phase, universe, preview }: { phase: Phase; universe: { scor
         <motion.div className="absolute inset-0 rounded-full border-2 border-[#b8891c]/40" animate={{ scale: [1, 1.6], opacity: [0.6, 0] }} transition={{ duration: 1.4, repeat: Infinity, delay: 0.5 }} />
         <motion.div className="absolute inset-0 flex items-center justify-center" animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: "linear" }}><Compass size={64} className="text-[#8a6512]" strokeWidth={1.2} /></motion.div>
       </div>
-      <div className="w-full max-w-sm space-y-2">
+      <div className="w-full max-w-md space-y-2">
         {steps.map((s, i) => {
           const state = i < cur ? "done" : i === cur ? "active" : "todo";
           return (

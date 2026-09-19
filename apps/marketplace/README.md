@@ -29,18 +29,20 @@ Any box size works — the app measures its container (`#root`) and never overfl
 treasure-map theme (parchment panels with torn edges, brass and rope, ink charts, Pirata One / IM Fell / Cinzel
 type); the header toggle switches between *below deck* (dark wood) and *open sea* (teal) backgrounds.
 
-## Demo story
+## Demo story — Lenders → Borrowers → Monitor
 
 | Screen | Route | What it shows |
 |---|---|---|
-| **Network** | `/` | Charted waters: company universe (score × momentum, bubble = capacity, gold ring = qualified) with the four best picks underneath, or a paged card grid. Toggle *Lenders* ↔ *Borrowers*; search, min score, trend, sort. |
-| **Company profile** | `/company/:id` | Tabs *Overview* (score ring, "why this score", components, lender or borrower assessment, score history), *History* (score route + components over time), *Metrics* (the 24 metrics by dimension + stress flags). |
-| **Portfolio** | `/portfolio` | Config column (capital, risk, exposure cap, min score, positions, group limit, allocation month) → animated build → tabs *Treasure map* (treemap, ✕ marks the top pick), *Distribution*, *Crew* (ranked positions). |
-| **Monitor** | `/monitor` | Timeline scrubber / *Advance time* replays real monthly scores. Chest score, expected stress, trajectory, paged cards of meaningful changes (score from → to, driver dimension, onset, persistence) — click one for the detail drawer. |
-| **Action Center** | `/monitor/actions` | Paged recommendations (pause / reduce / review / increase / monitor) with score-behaviour reasons; accepting them simulates the resulting composition and risk metrics side by side. |
+| **Lenders** | `/` | *Who is in a position to lend*: big cards (score, momentum, capacity, the reasons) of the qualified lenders, or the charted-waters map. **Lend** picks the company that deploys the capital. |
+| **Borrowers** | `/borrowers` | Financing candidates **for that lender** (healthy + visible capital need; the lender and its business group are excluded) and the chest builder: capital, risk, exposure cap, min score, positions, group limit, allocation month → animated build → *Treasure map* (✕ marks the top pick), *Distribution*, *Crew*. |
+| **Company** | overlay / `/company/:id` | Click any company anywhere: spider chart of the five dimensions (axis = percentile of the dimension contribution across the network) with the health score in the centre, derived indicators, **all 24 metrics** with 3-/12-month change and worsening streak, score history, the 8 stress flags, lender capacity and financing need. |
+| **Monitor** | `/monitor` | Timeline / *Advance time* replays real monthly scores. Chest score, expected stress, trajectory, paged cards of meaningful changes (score from → to, driver, onset, persistence) with a detail drawer. |
+| **Actions** | `/monitor/actions` | One recommendation per position that moved (pause / reduce / review / increase) with the score-behaviour reasons and a single **Execute** button that changes the chest for real (freed capital → reserve); *Undo all* restores it. |
 
-Suggested path: Network → open a strong provider → switch to *Financing candidates* → open a receiver →
-Portfolio (allocation month Feb 2026) → Monitor → *Advance time* → Action Center → accept all.
+The chest is always built **for a lender**: it never includes the lender or companies of its business group, and
+candidates whose score is driven by the same dimensions as the lender's rank lower (`profileOverlap`, cosine
+similarity of the five contributions — the dataset has no sector field, so this is the honest proxy for "not the
+same kind of risk"). The resulting weighted overlap is shown next to the chest score.
 
 ## Data contract
 
@@ -65,16 +67,17 @@ Everything not present verbatim in the files above lives in four modules and is 
 
 - `derived.ts` — momentum (`score_t − score_{t−3}`), decline/rise streaks, score volatility, trend label, tiers
   (README semaphore ≥70 / 40–70 / <40, split at 80), percentile, main driver, **provider assessment**
-  (qualification rules + capacity index) and **receiver assessment** (health floor, payment behaviour, need signals, fit).
-- `portfolio.ts` — allocator: screen at the allocation month (scored, no alert, stress within tolerance, ≥6 months
-  history, ≥ min score) → rank = w·score + w·momentum + w·stability (weights per risk preset) → group
-  diversification → weights ∝ rank^γ, capped per company with water-filling. Metrics: weighted score,
+  (qualification rules + capacity index), **receiver assessment** (health floor, payment behaviour, need signals, fit),
+  radar axes (`componentPercentiles`) and lender ↔ borrower `profileOverlap`.
+- `portfolio.ts` — allocator: screen at the allocation month (scored, not the lender or its group, no alert, stress
+  within tolerance, ≥6 months history, ≥ min score) → rank = (w·score + w·momentum + w·stability) × (1 − 0.3·overlap
+  with the lender) → group diversification → weights ∝ rank^γ, capped per company with water-filling. Metrics: weighted score,
   **expected stress = Σ w·(100 − score)/100** (the score is literally 100 − P(stress event in 3–6 months)),
   HHI, effective N, tiers, histogram.
 - `monitor.ts` — replay: per-position delta since allocation, streaks, declines in last 4 months, persistence,
   onset month (drawdown > 5 pts from the running peak), driver dimension (largest `c_<dim>` change), status.
-- `actions.ts` — rules from score behaviour (reduce / pause / review / increase / monitor) with reasons, and a
-  simulation that rescales weights and re-values the portfolio at the monitored month.
+- `actions.ts` — rules from score behaviour (reduce / pause / review / increase / monitor) with reasons;
+  `applyActions` rescales the weights of executed actions (freed capital → reserve) and re-values the chest.
 
 ## Development
 

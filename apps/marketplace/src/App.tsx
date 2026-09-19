@@ -1,10 +1,10 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Network } from "@/pages/Network";
+import { Lenders } from "@/pages/Lenders";
 import { CompanyProfile } from "@/pages/CompanyProfile";
-import { Portfolio } from "@/pages/Portfolio";
+import { Borrowers } from "@/pages/Borrowers";
 import { Monitor } from "@/pages/Monitor";
 import { ActionCenter } from "@/pages/ActionCenter";
 import { useApp } from "@/store/app";
@@ -23,9 +23,10 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={loc} key={loc.pathname}>
         <Route element={<AppShell />}>
-          <Route index element={<Page><Network /></Page>} />
+          <Route index element={<Page><Lenders /></Page>} />
           <Route path="company/:id" element={<Page><CompanyProfile /></Page>} />
-          <Route path="portfolio" element={<Page><Portfolio /></Page>} />
+          <Route path="borrowers" element={<Page><Borrowers /></Page>} />
+          <Route path="portfolio" element={<Navigate to="/borrowers" replace />} />
           <Route path="monitor" element={<Page><Monitor /></Page>} />
           <Route path="monitor/actions" element={<Page><ActionCenter /></Page>} />
         </Route>
