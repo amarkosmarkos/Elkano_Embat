@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOps } from "@/lib/ops";
 
 export function Nav({ companyId, groupId, monthLast }: { companyId: string; groupId: string; monthLast: string }) {
   const path = usePathname() ?? "/";
-  const items = [
+  const { ops } = useOps();
+  const items: { href: string; label: string; n: number; active: boolean; badge?: number }[] = [
     { href: "/intro/", label: "Barco", n: 0, active: path.startsWith("/intro") },
     { href: "/", label: "Datos", n: 1, active: path === "/" },
     { href: "/score/", label: "Score", n: 2, active: path.startsWith("/score") },
     { href: `/empresa/${companyId}/`, label: "Empresa", n: 3, active: path.startsWith("/empresa") },
     { href: `/grupo/${groupId}/`, label: "Grupo", n: 4, active: path.startsWith("/grupo") },
     { href: "/monitor/", label: "Monitor", n: 5, active: path.startsWith("/monitor") },
+    { href: "/operaciones/", label: "Operaciones", n: 6, active: path.startsWith("/operaciones"), badge: ops.length },
   ];
   return (
     <header className="bg-navy text-white">
@@ -33,6 +36,11 @@ export function Nav({ companyId, groupId, monthLast }: { companyId: string; grou
                 {it.n}
               </span>
               {it.label}
+              {(it.badge ?? 0) > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full text-[10px] font-bold num bg-ok text-white`}>
+                  {it.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

@@ -123,7 +123,7 @@ export function PageHeader({ step, title, subtitle, right }: { step: number; tit
   return (
     <div className="flex items-end justify-between gap-4 mb-5">
       <div>
-        <div className="kicker">Paso {step} de 5</div>
+        <div className="kicker">Paso {step} de 6</div>
         <h1 className="text-2xl font-bold text-navy leading-tight">{title}</h1>
         {subtitle && <p className="text-[13px] text-ink-2 mt-1 max-w-3xl">{subtitle}</p>}
       </div>

@@ -9,7 +9,8 @@ import {
 import { LineChart } from "@/components/charts/LineChart";
 import { HBars } from "@/components/charts/HBars";
 import { Card, CompanyLink, Delta, ScorePill, SeverityBadge, TierBadge, TrendTag } from "@/components/ui";
-import { DecisionCard } from "@/components/DecisionCard";
+import { ExcedentesCard } from "@/components/ExcedentesCard";
+import { PoolingCard } from "@/components/PoolingCard";
 
 export const dynamicParams = false;
 
@@ -52,7 +53,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
       {/* Cabecera */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <div className="kicker">Paso 3 de 5 · Ficha de empresa</div>
+          <div className="kicker">Paso 3 de 6 · Ficha de empresa</div>
           <h1 className="text-2xl font-bold text-navy font-mono leading-tight">{s.id}</h1>
           <div className="text-[12px] text-ink-2 mt-1 flex items-center gap-3">
             <span>{s.country} · {s.currency}</span>
@@ -204,47 +205,23 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         <span className="text-[12px] text-ink-2">Tres productos que salen del mismo score: colocar excedentes, netear dentro del grupo y avisar antes de que duela</span>
       </div>
       <div className="grid grid-cols-3 gap-4 items-start">
-        <DecisionCard
-          kicker="Producto 1 · Colocación de excedentes"
-          title={ex ? `Colocar ${fmtEurShort(ex.proposal)} a ${ex.horizon_months} meses` : "Colocación de excedentes"}
-          headline={ex ? `+${fmtEur(ex.yield_yearly)} / año` : undefined}
-          disabled={!ex}
-          emptyText="Sin excedente colocable: el suelo de caja de los últimos meses no deja margen o la tendencia lo desaconseja."
-          footer={ex?.reason}
-        >
-          {ex && (
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[12px]">
-              <dt className="text-ink-2">Suelo 6 meses</dt><dd className="num text-right">{fmtEur(ex.floor6)}</dd>
-              <dt className="text-ink-2">Suelo 12 meses</dt><dd className="num text-right">{fmtEur(ex.floor12)}</dd>
-              <dt className="text-ink-2">Propuesta</dt><dd className="num text-right font-semibold">{fmtEur(ex.proposal)}</dd>
-              <dt className="text-ink-2">Tipo</dt><dd className="num text-right">{fmtPct(ex.rate)} · {ex.horizon_months} m</dd>
-            </dl>
-          )}
-        </DecisionCard>
+        <ExcedentesCard
+          companyId={s.id}
+          currency={s.currency}
+          cash={last.balance_eom}
+          data={ex}
+          banks={d.products.banks}
+          hasInvestment={d.products.has_investment}
+        />
 
-        <DecisionCard
-          kicker="Producto 2 · Cash pooling"
-          title={po ? `Netear dentro de ${po.group_id}` : "Cash pooling"}
-          headline={po ? `Ahorro ${fmtEur(po.saving_yearly)} / año` : undefined}
-          disabled={!po}
+        <PoolingCard
+          groupId={po?.group_id ?? null}
+          members={po?.members ?? []}
+          proposals={po?.proposals ?? []}
+          savingYearly={po?.saving_yearly ?? 0}
+          highlightId={s.id}
           emptyText={s.group_size > 1 ? "El grupo no tiene saldo neteable suficiente." : "Empresa sin grupo: no hay con quién netear."}
-          footer={po ? <Link href={`/grupo/${po.group_id}/`} className="text-navy font-medium hover:underline">Ver el grupo completo →</Link> : undefined}
-        >
-          {po && (
-            <ul className="text-[12px] space-y-1.5">
-              {po.proposals.slice(0, 4).map((p, i) => (
-                <li key={i} className={`rounded border px-2 py-1.5 ${p.from === s.id || p.to === s.id ? "border-navy/40 bg-navy-100/40" : "border-line"}`}>
-                  <div className="flex items-center justify-between">
-                    <span><CompanyLink id={p.from} /> → <CompanyLink id={p.to} /></span>
-                    <span className="num font-semibold">{fmtEurShort(p.amount)}</span>
-                  </div>
-                  <div className="text-ink-2 mt-0.5">{p.reason} · límite {fmtEurShort(p.limit)} · {fmtPct(p.rate_internal)}</div>
-                </li>
-              ))}
-              {po.proposals.length === 0 && <li className="text-ink-2">Grupo con pooling activo, sin propuestas este mes.</li>}
-            </ul>
-          )}
-        </DecisionCard>
+        />
 
         <section className="card p-4">
           <div className="kicker">Producto 3 · Monitor</div>
