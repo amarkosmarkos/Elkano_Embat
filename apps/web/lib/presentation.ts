@@ -15,6 +15,6 @@ export const sceneMedia: Record<number, { title: string; video: string; poster: 
   3: { title: "Las estrellas", video: "/video/estrellas-ref13.mp4", poster: "/video/estrellas-ref13.jpg", height: 560 },
   4: { title: "El cofre", video: "/video/cofre-ref13.mp4", poster: "/video/cofre-ref13.jpg", height: 400 },
   5: { title: "El puerto", video: "/video/puerto-seedance.mp4", poster: "/video/puerto-seedance.jpg", height: 300 },
-  6: { title: "Cierre", video: "/video/cierre-ref13.mp4", poster: "/video/cierre-ref13.jpg", height: 100 },
+  6: { title: "Cierre", video: "/video/cierre-hq.mp4", poster: "/video/cierre-hq.jpg", height: 100 },
   8: { title: "Dos empresas", video: "/video/isla-ciudad-ref13.mp4", poster: "/video/isla-ciudad-ref13.jpg", height: 350 },
 };

@@ -1,0 +1,12 @@
+{
+  "model": "topaz/upscale/image/precision",
+  "input": {
+    "image_url": "https://raw.githubusercontent.com/amarkosmarkos/Elkano_Embat/xubranch/posters/assets/ship-slide1-5p75s.png",
+    "model": "High Fidelity V3",
+    "upscale_factor": 4,
+    "output_format": "png",
+    "face_enhancement": false,
+    "subject_detection": "All",
+    "crop_to_fill": false
+  }
+}

@@ -25,7 +25,8 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
   },[]);
   useEffect(()=>{
     const el=track.current;const v=video.current;if(!el||!v)return;
-    let raf=0;let playbackRaf=0;let nextTimer=0;let disposed=false;
+    v.playbackRate=number===3?.25:1;
+    let raf=0;let playbackRaf=0;let disposed=false;let reversing=false;
     const query=new URLSearchParams(location.search).get("p");
     const initial=query!==null&&Number.isFinite(Number(query))?clamp(Number(query)):null;
     const seek=()=>{if(disposed||advancing.current||v.seeking||!Number.isFinite(v.duration)||v.readyState<1)return;const target=Math.min(Math.max(0,v.duration-.05),desired.current*v.duration);if(Math.abs(v.currentTime-target)>.03)v.currentTime=target;};
@@ -34,30 +35,47 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
       if(autoplay){if(initial!==null){desired.current=initial;setP(initial);seek();setPaused(true);}else if(reduced){setP(1);desired.current=1;seek();setPaused(true);}else{v.play().then(()=>setPaused(false)).catch(()=>{setPaused(true);setP(1);});}}
       else{if(initial!==null)window.scrollTo(0,el.offsetTop+initial*(el.offsetHeight-innerHeight));scroll();}
     };
-    const stop=()=>{if(!advancing.current)return;advancing.current=false;cancelAnimationFrame(playbackRaf);clearTimeout(nextTimer);v.pause();setPlaying(false);};
+    const stop=()=>{if(!advancing.current)return;advancing.current=false;reversing=false;cancelAnimationFrame(playbackRaf);v.pause();setPlaying(false);window.dispatchEvent(new CustomEvent("elkano:play-state",{detail:false}));};
     const syncPlayback=()=>{
       if(disposed||!advancing.current)return;
       if(Number.isFinite(v.duration)&&v.duration>0){const progress=clamp(v.currentTime/v.duration);desired.current=progress;setP(progress);window.scrollTo({top:el.offsetTop+progress*(el.offsetHeight-innerHeight),behavior:"instant"});}
       playbackRaf=requestAnimationFrame(syncPlayback);
     };
     const advance=()=>{
-      if(advancing.current||!nextHref||v.readyState<1)return;
+      if(!nextHref)return;if(advancing.current){if(!reversing)return;stop();}
+      if(reduced||v.error||v.ended){router.push(nextHref);return;}
       advancing.current=true;setPlaying(true);cancelAnimationFrame(raf);
-      if(reduced){desired.current=1;setP(1);window.scrollTo({top:el.offsetTop+el.offsetHeight-innerHeight,behavior:"instant"});nextTimer=window.setTimeout(()=>router.push(nextHref),250);return;}
       v.play().then(()=>{if(!disposed&&advancing.current)syncPlayback();}).catch(()=>{stop();setError(true);});
     };
+    const rewind=()=>{
+      stop();if(!Number.isFinite(v.duration))return;
+      v.pause();advancing.current=true;reversing=true;setPlaying(true);
+      window.dispatchEvent(new CustomEvent("elkano:play-state",{detail:true}));
+      const start=performance.now(),from=v.currentTime;
+      const top=el.offsetTop,distance=Math.max(0,el.offsetHeight-innerHeight);
+      const frame=(now:number)=>{
+        if(disposed||!advancing.current)return;
+        const target=reduced?0:Math.max(0,from-(now-start)*v.playbackRate/1000);
+        const progress=clamp(target/v.duration);desired.current=progress;setP(progress);
+        if(!v.seeking)v.currentTime=target;
+        window.scrollTo({top:top+progress*distance,behavior:"instant"});
+        if(target<=0){stop();v.currentTime=0;window.dispatchEvent(new CustomEvent("elkano:play-state",{detail:false}));return;}
+        playbackRaf=requestAnimationFrame(frame);
+      };
+      playbackRaf=requestAnimationFrame(frame);
+    };
     const escape=(e:KeyboardEvent)=>{if(e.key==="Escape")stop();};
-    const notify=()=>window.dispatchEvent(new CustomEvent("elkano:play-state",{detail:!v.paused&&!v.ended}));
+    const notify=()=>window.dispatchEvent(new CustomEvent("elkano:play-state",{detail:reversing||(!v.paused&&!v.ended)}));
     const toggle=()=>{if(advancing.current){stop();return;}if(!autoplay){advance();return;}if(!v.paused){v.pause();return;}if(v.ended){v.currentTime=0;setP(0);}v.play().catch(()=>setError(true));};
-    const ended=()=>{setP(1);setPaused(true);if(advancing.current&&nextHref){cancelAnimationFrame(playbackRaf);nextTimer=window.setTimeout(()=>{if(!disposed)router.push(nextHref);},450);}};
+    const ended=()=>{setP(1);setPaused(true);if(advancing.current&&nextHref){cancelAnimationFrame(playbackRaf);if(!disposed)router.push(nextHref);}};
     const time=()=>{if(autoplay&&Number.isFinite(v.duration)&&!v.paused)setP(clamp(v.currentTime/v.duration));};
     // Only scroll-driven scenes coalesce seeks. Autoplay must never seek back to zero.
     v.addEventListener("loadedmetadata",ready);if(!autoplay)v.addEventListener("seeked",seek);v.addEventListener("timeupdate",time);v.addEventListener("ended",ended);
     window.addEventListener("scroll",scroll,{passive:true});window.addEventListener("resize",scroll);
-    window.addEventListener("elkano:advance",advance);window.addEventListener("wheel",stop,{passive:true});window.addEventListener("touchstart",stop,{passive:true});window.addEventListener("keydown",escape);
+    window.addEventListener("elkano:advance",advance);window.addEventListener("elkano:rewind",rewind);window.addEventListener("wheel",stop,{passive:true});window.addEventListener("touchstart",stop,{passive:true});window.addEventListener("keydown",escape);
     window.addEventListener("elkano:toggle-play",toggle);v.addEventListener("play",notify);v.addEventListener("pause",notify);v.addEventListener("ended",notify);
     if(v.readyState>=1)ready();else scroll();
-    return()=>{disposed=true;advancing.current=false;cancelAnimationFrame(raf);cancelAnimationFrame(playbackRaf);clearTimeout(nextTimer);v.pause();v.removeEventListener("loadedmetadata",ready);v.removeEventListener("seeked",seek);v.removeEventListener("timeupdate",time);v.removeEventListener("ended",ended);window.removeEventListener("scroll",scroll);window.removeEventListener("resize",scroll);window.removeEventListener("elkano:advance",advance);window.removeEventListener("wheel",stop);window.removeEventListener("touchstart",stop);window.removeEventListener("keydown",escape);window.removeEventListener("elkano:toggle-play",toggle);v.removeEventListener("play",notify);v.removeEventListener("pause",notify);v.removeEventListener("ended",notify);};
+    return()=>{disposed=true;advancing.current=false;cancelAnimationFrame(raf);cancelAnimationFrame(playbackRaf);v.pause();v.removeEventListener("loadedmetadata",ready);v.removeEventListener("seeked",seek);v.removeEventListener("timeupdate",time);v.removeEventListener("ended",ended);window.removeEventListener("scroll",scroll);window.removeEventListener("resize",scroll);window.removeEventListener("elkano:advance",advance);window.removeEventListener("elkano:rewind",rewind);window.removeEventListener("wheel",stop);window.removeEventListener("touchstart",stop);window.removeEventListener("keydown",escape);window.removeEventListener("elkano:toggle-play",toggle);v.removeEventListener("play",notify);v.removeEventListener("pause",notify);v.removeEventListener("ended",notify);};
   },[autoplay,reduced,nextHref,router]);
   return <div ref={track} className={`scene-track scene-number-${number}`} style={{height:`${autoplay?100:media.height}svh`}}>
     <section className="scene-stage" aria-label={media.title}>
@@ -65,7 +83,7 @@ export function Escena({number}:{number:number;windows?:WindowData[]}) {
         :<video ref={video} className="scene-video" src={media.video} poster={media.poster} preload="auto" muted playsInline onError={()=>setError(true)} aria-label={`Plano de ${media.title}`}/>}
       <div className="scene-shade"/>
       {number===1&&<>
-        <Layer p={Math.max(.05,p)} to={.46} position="right"><div className="story-intro-card"><p className="scene-eyebrow">QUIÉNES SOMOS</p><div className="intro-identity"><img src="/images/elkano-head.png" alt="Rostro de Juan Sebastián Elcano" width="1254" height="1254"/><h1>Somos<br/>Elkano.</h1></div><p>Somos Luken, Nagore, Markos, David y Xuban. Nos subimos al barco de Embat con los datos de 1.286 empresas en 250 grupos: 24 meses, 2.556.437 movimientos y 897.894 facturas.</p></div></Layer>
+        <Layer p={Math.max(.05,p)} to={.46} position="right"><div className="story-intro-card"><div className="intro-identity"><img src="/images/elkano-head.png" alt="Rostro de Juan Sebastián Elcano" width="1254" height="1254"/><h1>Elkano</h1></div><p>Luken, Nagore, Markos, David y Xuban y formamos el equipo Elkano. Nos subimos al barco de Embat.</p></div></Layer>
         <Layer p={p} from={.48} position="right"><div className="story-intro-card"><p className="scene-eyebrow">POR QUÉ ESTE TRACK</p><h1>El dinero<br/><em>deja rastro.</em></h1><p>Elegimos este track porque el dinero deja rastro y casi nadie lo lee. Embat ve el de 400 empresas cada día. Nos ha dado los datos de 1.286 para probar que podemos detectar lo que ocurre antes de que sea evidente.</p></div></Layer>
       </>}
       {number===3&&<SkyStory p={p} reduced={reduced}/>}
