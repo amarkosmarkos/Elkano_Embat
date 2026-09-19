@@ -67,15 +67,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-      <div className="border-t border-line-soft px-3 py-3">
-        <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-panel-2 text-[12px] font-semibold text-ink">v3</span>
-          <span className="leading-tight">
-            <span className="block text-[13px] font-medium text-ink">Score v3 · GBM</span>
-            <span className="block text-[12px] text-ink-mute">105 métricas · HackSpain 2026</span>
-          </span>
-        </div>
-      </div>
     </aside>
   );
 }
