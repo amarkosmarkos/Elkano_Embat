@@ -1,26 +1,17 @@
-import { getGroupSeries, listPoolingGroups } from "@/lib/queries";
+import { getStore } from "@/lib/data/store";
+import { groupSeries, poolingGroups } from "@/lib/products/pooling";
 import CashPoolApp from "@/components/cashpool/CashPoolApp";
 
-export const dynamic = "force-dynamic"; // depende de ?group=
+export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Cash pooling automático · Elkano X-Ray" };
-
-// Página de producto de Luken. Se comporta como una app aparte a pantalla completa (ver
-// components/Footer.tsx): toda la lógica de negocio vive en lib/cashpool.ts (motor) y lib/fx.ts
-// (divisas); las cinco pantallas (mapa, cronología, bandeja, impacto, método) en CashPoolApp.tsx.
+/** Producto 02 (Luken): la misma app de cinco pantallas, ahora alimentada por el score v3 real y las señales de caja del contrato, sin Postgres. */
 export default async function CashPoolingPage({ searchParams }: { searchParams: Promise<{ group?: string }> }) {
   const { group } = await searchParams;
-  const groups = await listPoolingGroups();
-  const groupId = group && groups.some((g) => g.group_id === group) ? group : groups[0]?.group_id;
-  const { base, rows } = groupId ? await getGroupSeries(groupId) : { base: [], rows: [] };
-
-  if (!groupId) {
-    return (
-      <main className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <p className="text-sm text-ink-mute">Sin conexión a Postgres — arranca `docker compose up -d`.</p>
-      </main>
-    );
-  }
-
-  return <CashPoolApp groupId={groupId} base={base} rows={rows} groups={groups} />;
+  const store = await getStore();
+  const groups = poolingGroups(store);
+  const groupId = group && store.groups.has(group) ? group : groups[0]?.group_id;
+  if (!groupId) return <p className="text-[13px] text-ink-mute">Sin grupos.</p>;
+  const { base, rows } = groupSeries(store, groupId);
+  const list = groups.some((g) => g.group_id === groupId) ? groups : [{ group_id: groupId, n: base.length, n_cur: new Set(base.map((b) => b.currency)).size, curs: "" }, ...groups];
+  return <div className="-mx-7 -mt-6"><CashPoolApp groupId={groupId} base={base} rows={rows} groups={list} /></div>;
 }

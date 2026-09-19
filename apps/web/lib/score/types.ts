@@ -1,0 +1,100 @@
+/** Esquema del dataset real (ETL del marketplace, apps/marketplace/etl/build_dataset.py): solo campos del pipeline. */
+
+export type Dimension = "pago" | "liquidez" | "caja" | "deuda" | "concentracion";
+export const DIMENSIONS: Dimension[] = ["pago", "liquidez", "caja", "deuda", "concentracion"];
+
+export type StressFlag =
+  | "S1_descubierto" | "S2_coste_disparado" | "S3_falta_regular" | "S4_lineas_limite"
+  | "S5_cobros_vencidos" | "S6_paga_tarde_peor" | "S7_devoluciones" | "S8_caja_negativa";
+export const STRESS_FLAGS: StressFlag[] = [
+  "S1_descubierto", "S2_coste_disparado", "S3_falta_regular", "S4_lineas_limite",
+  "S5_cobros_vencidos", "S6_paga_tarde_peor", "S7_devoluciones", "S8_caja_negativa",
+];
+
+export type MetricId =
+  | "retraso_pago" | "pct_pago_tarde" | "falta_regular" | "dso" | "pct_cobro_vencido" | "devoluciones"
+  | "colchon" | "runway" | "dias_negativo" | "credito_disponible"
+  | "neto_operativo" | "tendencia_3m" | "tendencia_6m" | "volatilidad" | "ratio_cobros_pagos" | "crecimiento_cobros"
+  | "pct_dispuesto" | "servicio_deuda" | "coste_financiero" | "deuda_cobros"
+  | "top5_clientes" | "hhi" | "rating_cartera" | "clientes_activos";
+
+export type CardMetricId =
+  | "colchon" | "runway" | "dias_negativo" | "neto_operativo" | "tendencia_6m" | "retraso_pago"
+  | "pct_pago_tarde" | "dso" | "pct_cobro_vencido" | "pct_dispuesto" | "credito_disponible"
+  | "crecimiento_cobros" | "hhi" | "clientes_activos" | "volatilidad" | "deuda_cobros";
+
+export type Components = Record<Dimension, number | null>;
+
+export interface LatestSnapshot {
+  month: string;
+  score: number;
+  scoreRaw: number;
+  alert: 0 | 1;
+  explanation: string | null;
+  explanationV2: string | null;
+  components: Components;
+  metrics: Record<CardMetricId, number | null>;
+  stress: Record<StressFlag, 0 | 1 | null>;
+  nStress: number | null;
+}
+
+export interface CompanyIndex {
+  id: string;
+  name: string;
+  group: string | null;
+  groupSize: number | null;
+  country: string | null;
+  currency: string | null;
+  erp: string | null;
+  firstMonth: string;
+  lastMonth: string;
+  nScored: number;
+  scores: (number | null)[];
+  alerts: (0 | 1 | null)[];
+  stress: (number | null)[];
+  components: Record<Dimension, (number | null)[]>;
+  latest: LatestSnapshot;
+}
+
+export interface NetworkMeta {
+  asOf: string;
+  months: string[];
+  scoreVersion: string;
+  generatedAt: string;
+  nCompanies: number;
+  nRows: number;
+}
+
+export interface CompanyDetail {
+  id: string;
+  months: string[];
+  score: number[];
+  scoreRaw: number[];
+  scoreV2: (number | null)[];
+  alert: (0 | 1)[];
+  explanation: (string | null)[];
+  explanationV2: (string | null)[];
+  components: Record<Dimension, (number | null)[]>;
+  metricMonths: string[];
+  metrics: Record<MetricId, (number | null)[]>;
+  trajectory: Record<MetricId, { delta3: number | null; delta12: number | null; streak: number | null }>;
+  stress: Record<StressFlag, (0 | 1 | null)[]>;
+  nStress: (number | null)[];
+}
+
+/** Señales de tesorería del contrato de datos (data/scores.json): valores crudos, no el score. */
+export interface Signals {
+  cash_position: number | null;
+  net_cash_flow: number | null;
+  runway_months: number | null;
+  dso_days: number | null;
+  dpo_days: number | null;
+  overdue_ar_ratio: number | null;
+  overdue_ap_ratio: number | null;
+  debt_utilization: number | null;
+  debt_service_ratio: number | null;
+  inflow_volatility: number | null;
+  top_customer_share: number | null;
+}
+
+export interface EventRow { month: string; D1: number; D2: number; D3: number; D4: number; event: number; cure: number }

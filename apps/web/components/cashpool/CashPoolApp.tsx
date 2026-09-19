@@ -10,7 +10,7 @@ import world from "world-atlas/countries-110m.json";
 import { counterfactual, snapshot, type Entity, type EntityBase, type MonthRow, type Proposal, type Snapshot } from "@/lib/cashpool";
 import { FX } from "@/lib/fx";
 import { eur, monthLabel } from "@/lib/format";
-import { band } from "@/components/ScoreBadge";
+import { band } from "@/lib/score/colors";
 
 type Decision = "ok" | "no";
 type Group = { group_id: string; n: number; n_cur: number; curs: string };

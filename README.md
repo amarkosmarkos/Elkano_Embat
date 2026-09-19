@@ -14,25 +14,16 @@
 
 ## Arrancar la plataforma
 
-Requisitos: Node ≥ 22.12, pnpm 11.x, Docker.
+Requisitos: Node ≥ 22.12, pnpm 11.x.
 
 ```bash
-git clone <repo> && cd Elkano_Embat
-docker compose up -d   # Postgres en :5433, con las tablas y los datos de demo ya cargados
 pnpm install
 pnpm dev                # http://localhost:4321
 ```
 
-Eso es todo — `docker compose up -d` deja Postgres listo con datos desde la primera vez (carga
-`db/init/01_seed.sql.gz` solo). Si algo se lía, `docker compose down -v && docker compose up -d`
-lo recrea desde cero.
-
-Los datos son un score heurístico ("de reglas"), no el modelo real validado del pipeline
-(`analytics/`, Gini 0,55/0,44/0,38 — ver [analytics/README.md](analytics/README.md)). Están también
-en crudo en `data/*.json` (el contrato de [`docs/CONTRATO_DATOS.md`](docs/CONTRATO_DATOS.md)); si
-cambian, `pnpm --filter web db:push && pnpm --filter web db:seed` los recarga y
-`docker exec xray-db pg_dump -U xray -d xray --no-owner --no-privileges | gzip -9 > db/init/01_seed.sql.gz`
-regenera el dump.
+La plataforma (`apps/web`) lee el score real y las métricas directamente de los ficheros del repo — no necesita
+Postgres. Qué lee cada pestaña y cómo regenerar el dataset: [`apps/web/README.md`](apps/web/README.md).
+(`docker compose up -d` sigue levantando el Postgres del contrato heurístico para quien lo use.)
 
 ## Marketplace demo (frontend)
 

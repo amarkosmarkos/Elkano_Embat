@@ -1,59 +1,140 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------------------------------------
+   Elkano X-Ray · tema shadcn "neutral dark": Inter en todo, grises sin croma, bordes blanco/10 %.
+   Semáforo y paleta de gráficos: emerald / amber / red / blue / violet (chart-1…5 de shadcn).
+   ------------------------------------------------------------------------------------------------ */
 @theme {
-  --color-ground: #fbfbfd;
-  --color-panel: #ffffff;
-  --color-panel-2: #f5f5f7;
-  --color-panel-hi: #ffffff;
-  --color-line: #d2d2d7;
-  --color-line-soft: #e8e8ed;
+  --color-ground: #0a0a0a;
+  --color-panel: #171717;
+  --color-panel-2: #262626;
+  --color-panel-hi: #2e2e2e;
+  --color-line: rgba(255, 255, 255, 0.15);
+  --color-line-soft: rgba(255, 255, 255, 0.1);
 
-  --color-ink: #1d1d1f;
-  --color-ink-dim: #6e6e73;
-  --color-ink-mute: #86868b;
+  --color-ink: #fafafa;
+  --color-ink-dim: #d4d4d4;
+  --color-ink-mute: #a1a1a1;
 
-  --color-accent: #8041d1;
-  --color-accent-2: #415de6;
-  --color-good: #1d8a44;
-  --color-good-dim: #e7f6ec;
-  --color-warn: #b56a00;
-  --color-warn-dim: #fdf1e0;
-  --color-bad: #d3273e;
-  --color-bad-dim: #fcecee;
-  --color-pos: #0071e3;
-  --color-neg: #c2410c;
+  --color-accent: #e5e5e5;
+  --color-accent-2: #3b82f6;
+  --color-good: #10b981;
+  --color-good-dim: rgba(16, 185, 129, 0.15);
+  --color-warn: #f59e0b;
+  --color-warn-dim: rgba(245, 158, 11, 0.15);
+  --color-bad: #ef4444;
+  --color-bad-dim: rgba(239, 68, 68, 0.15);
+  --color-pos: #3b82f6;
+  --color-neg: #f97316;
 
-  /* -apple-system resuelve a San Francisco de verdad en Mac/iOS; Inter (cargada en app/layout.tsx)
-     es el equivalente web más cercano para el resto. Un único stack para todo salvo el mono. */
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "IBM Plex Mono", "Cascadia Code", Menlo, monospace;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
-  --brand-gradient: linear-gradient(275deg, #c357ec 4%, #9d4bdd 50%, #415de6 96%);
+  /* "primary" de shadcn: botón claro con texto oscuro */
+  --brand-gradient: linear-gradient(180deg, #fafafa 0%, #e5e5e5 100%);
+  --wood-gradient: none;
+
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--color-ground);
   color: var(--color-ink);
+  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--color-accent);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* arcos de flujo del mapa de cash-pooling: guiones que "circulan" en el sentido del dinero */
+/* restos del tema anterior: sin efecto */
+.wood {
+  display: none;
+}
+.wood-edge {
+  position: relative;
+}
+
+/* tarjeta shadcn: fondo neutral-900, borde 10 %, radio 14px, sombra mínima */
+.card,
+.card-hi {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-soft);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-mute);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+input[type="range"].scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-ink) var(--p, 0%), rgba(255, 255, 255, 0.15) var(--p, 0%));
+  outline: none;
+}
+input[type="range"].scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  border: 2px solid var(--color-panel);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+select option {
+  background: var(--color-panel);
+  color: var(--color-ink);
+}
+
 .flow {
-  animation: flow 1.1s linear infinite; /* el patrón de guiones lo pone cada arco en style (misma divisa vs cruce) */
+  animation: flow 1.1s linear infinite;
 }
 @keyframes flow {
   to {
     stroke-dashoffset: -20;
   }
 }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
 @media (prefers-reduced-motion: reduce) {
-  .flow {
+  .flow,
+  .rise {
     animation: none;
   }
 }

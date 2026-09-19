@@ -1,27 +1,35 @@
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
 import "./globals.css";
+import Sidebar from "@/components/shell/Sidebar";
+import Topbar from "@/components/shell/Topbar";
+import { getStore } from "@/lib/data/store";
+import { currentMonth } from "@/lib/data/month";
 
 export const metadata = {
-  title: "Elkano X-Ray · Embat · HackSpain 2026",
-  description: "Score de salud financiera y productos encima — reto X-Ray de Embat, HackSpain 2026.",
+  title: "Elkano X-Ray · Embat",
+  description: "Plataforma de salud financiera: score, cartera, empresas y productos sobre 1.282 empresas.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const store = await getStore();
+  const { month } = await currentMonth(store.months);
   return (
     <html lang="es">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased font-body min-h-screen flex flex-col">
-        <Nav />
-        <div className="flex flex-1 flex-col">{children}</div>
-        <Footer />
+      <body className="font-body min-h-screen">
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Topbar months={store.months} month={month} asOf={store.meta.asOf} />
+            <main className="mx-auto w-full max-w-[1480px] flex-1 px-6 pb-16 pt-6">{children}</main>
+          </div>
+        </div>
       </body>
     </html>
   );
