@@ -36,7 +36,7 @@ lo mueve también.
 ## Directorio
 
 ```
-/cartera        mapa · movimientos · calor · bandeja (monitor)
+/cartera        mapa · movimientos · bandeja (monitor)
 /empresas       explorador → /empresas/[id]: resumen · métricas · alarmas · caja · decisiones
 /grupos         lista → /grupos/[id]
 /analisis       universo · ventanas · señal · dimensiones · flujos · facturas · deuda · bancos · calidad
