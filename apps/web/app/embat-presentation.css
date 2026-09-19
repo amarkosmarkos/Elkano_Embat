@@ -115,5 +115,11 @@ body{overscroll-behavior:none}
 .presentation-footer.on-film .scene-wordmark{color:#fff;text-shadow:0 2px 10px #050b2c99}
 .presentation-footer.on-paper .scene-wordmark{color:var(--embat-navy)}
 .presentation-skip{border-left:1px solid #696d8033}
+.sky-serif{font-family:var(--font-sans);font-weight:500;letter-spacing:-.025em}
+.sky-italic{font-style:normal}
+.sky-track{letter-spacing:.08em}
+.company-case-placeholder{border-top:1px dashed #696d80;margin-top:22px;padding-top:18px}
+.company-case-placeholder h3{font-size:18px;font-weight:500;margin-bottom:8px;color:#fff}
+.company-case-placeholder p{font-size:14px}
 .story-content{margin-top:40px}
 @media(max-width:640px){.presentation-footer{bottom:76px;left:5vw}.presentation-footer .brand-portrait{width:36px;height:40px}.presentation-footer .scene-wordmark{font-size:19px}.presentation-nav{right:5vw;left:5vw}.presentation-controls{justify-content:space-between}.presentation-current{gap:7px;padding:0 5px;font-size:11px}.presentation-arrow{width:32px;flex-shrink:0}.presentation-play{width:30px;flex-shrink:0}.story-content{margin-top:22px}}

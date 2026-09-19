@@ -11,12 +11,12 @@ for (const route of routes) {
   if (!html.includes('Elkano')) throw new Error(`${route}: missing page content`);
   console.log('OK', route);
 }
-for (const name of ['zarpar', 'isla', 'estrellas', 'cofre', 'puerto', 'cierre']) {
-  const response = await fetch(`${base}/video/${name}-seedance.mp4`, { headers: { Range: 'bytes=0-99' } });
+for (const name of ['zarpar-seedance', 'isla-ref13', 'estrellas-ref13', 'cofre-ref13', 'puerto-seedance', 'isla-ciudad-ref13', 'cierre-ref13']) {
+  const response = await fetch(`${base}/video/${name}.mp4`, { headers: { Range: 'bytes=0-99' } });
   if (response.status !== 206) throw new Error(`${name}: byte-range support missing (${response.status})`);
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength !== 100) throw new Error(`${name}: wrong byte range`);
-  const poster = await fetch(`${base}/video/${name}-seedance.jpg`);
+  const poster = await fetch(`${base}/video/${name}.jpg`);
   if (!poster.ok) throw new Error(`${name}: poster missing`);
   await poster.arrayBuffer();
   console.log('OK video, poster and seek support', name);

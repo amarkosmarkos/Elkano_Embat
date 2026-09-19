@@ -27,11 +27,11 @@ const inSky=(x:number,y:number)=>y<170||x>640||(x>560&&y<330);
 type Star={x:number;y:number;m?:string;side?:"l"|"r"};
 type Constellation={name:string;label:[number,number];stars:Star[];edges:[number,number][]};
 const CONSTELLATIONS:Constellation[]=[
-  {name:"LIQUIDITY",label:[755,388],stars:[{x:680,y:290,m:"Min balance",side:"l"},{x:760,y:240,m:"Negative days"},{x:830,y:300,m:"Runway"},{x:770,y:345}],edges:[[0,1],[1,2],[2,3],[3,0]]},
-  {name:"PAYMENTS",label:[985,240],stars:[{x:910,y:170,m:"DSO",side:"l"},{x:985,y:120,m:"Overdue receivables"},{x:1060,y:165,m:"Supplier delay"},{x:1000,y:205}],edges:[[0,1],[1,2],[2,3],[3,0]]},
-  {name:"CASH GENERATION",label:[1275,228],stars:[{x:1200,y:150,m:"Net cash flow",side:"l"},{x:1275,y:110,m:"3M trend"},{x:1345,y:140,m:"Volatility"},{x:1300,y:192}],edges:[[0,1],[1,2],[2,3],[3,0]]},
-  {name:"DEBT",label:[1490,358],stars:[{x:1440,y:270,m:"Credit usage",side:"l"},{x:1510,y:235},{x:1535,y:320,m:"Financial cost",side:"l"}],edges:[[0,1],[1,2]]},
-  {name:"CONCENTRATION",label:[765,708],stars:[{x:700,y:600,m:"Top clients",side:"l"},{x:770,y:560},{x:820,y:630,m:"Shared counterparties"},{x:730,y:670}],edges:[[0,1],[1,2],[2,3],[3,0]]},
+  {name:"LIQUIDEZ",label:[755,388],stars:[{x:680,y:290,m:"Saldo mínimo",side:"l"},{x:760,y:240,m:"Días en negativo"},{x:830,y:300,m:"Meses de caja"},{x:770,y:345}],edges:[[0,1],[1,2],[2,3],[3,0]]},
+  {name:"PAGOS",label:[985,240],stars:[{x:910,y:170,m:"DSO",side:"l"},{x:985,y:120,m:"Cobros vencidos"},{x:1060,y:165,m:"Retraso de pagos"},{x:1000,y:205}],edges:[[0,1],[1,2],[2,3],[3,0]]},
+  {name:"GENERACIÓN DE CAJA",label:[1275,228],stars:[{x:1200,y:150,m:"Flujo neto",side:"l"},{x:1275,y:110,m:"Tendencia 3 meses"},{x:1345,y:140,m:"Volatilidad"},{x:1300,y:192}],edges:[[0,1],[1,2],[2,3],[3,0]]},
+  {name:"DEUDA",label:[1490,358],stars:[{x:1440,y:270,m:"Uso de crédito",side:"l"},{x:1510,y:235},{x:1535,y:320,m:"Coste financiero",side:"l"}],edges:[[0,1],[1,2]]},
+  {name:"CONCENTRACIÓN",label:[765,708],stars:[{x:700,y:600,m:"Principales clientes",side:"l"},{x:770,y:560},{x:820,y:630,m:"Contrapartes comunes"},{x:730,y:670}],edges:[[0,1],[1,2],[2,3],[3,0]]},
 ];
 const centroid=(c:Constellation)=>({x:c.stars.reduce((s,q)=>s+q.x,0)/c.stars.length,y:c.stars.reduce((s,q)=>s+q.y,0)/c.stars.length});
 
@@ -80,7 +80,8 @@ function Particles({pRef,reduced}:{pRef:{current:number};reduced:boolean}){
       raf=requestAnimationFrame(draw);
       const p=pRef.current;const t=reduced?0:now/1000;
       if(reduced&&p===last)return;last=p;
-      const s=Math.max(w/W,h/H),offx=(w-W*s)/2,offy=(h-H*s)/2;
+      const narrow=w/h<1.4,viewW=narrow?1040:W,viewX=narrow?560:0;
+      const s=narrow?Math.min(w/viewW,h/H):Math.max(w/W,h/H),offx=(w-viewW*s)/2-viewX*s,offy=(h-H*s)/2;
       ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.setTransform(s*dpr,0,0,s*dpr,offx*dpr,offy*dpr);
       const t1=seg(p,1),order=ease(seg(p,2)),gather=ease(seg(p,3)),t4=seg(p,4),back=ease(clamp(t4*2));
       // Trayectorias: solo mientras reina el caos.
@@ -120,6 +121,8 @@ const Label=({x,y,size=12,children,anchor="middle",cls="sky-sans",fill="#dff4fa"
 
 export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
   const pRef=useRef(p);pRef.current=p;
+  const [narrow,setNarrow]=useState(false);
+  useEffect(()=>{const query=matchMedia('(max-aspect-ratio: 7/5)');const update=()=>setNarrow(query.matches);update();query.addEventListener('change',update);return()=>query.removeEventListener('change',update);},[]);
   const [hover,setHover]=useState<number|null>(null);
   const t1=seg(p,1),t2=seg(p,2),t3=seg(p,3),t4=seg(p,4);
   const advance=(e:React.MouseEvent)=>{
@@ -139,7 +142,7 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
   const logoEdges=clamp(t4*4-1.4);
   return <div className="sky-story" onClick={advance}>
     <Particles pRef={pRef} reduced={reduced}/>
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" className="sky-svg" role="img" aria-label="Del ruido financiero a una señal predictiva">
+    <svg viewBox={narrow?`560 0 1040 ${H}`:`0 0 ${W} ${H}`} preserveAspectRatio={narrow?"xMidYMid meet":"xMidYMid slice"} className="sky-svg" role="img" aria-label="Del ruido financiero a una señal predictiva">
       <defs>
         <filter id="sky-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
         <radialGradient id="sky-core"><stop offset="0" stopColor="#ffffff" stopOpacity=".95"/><stop offset=".35" stopColor="#c7ecf6" stopOpacity=".5"/><stop offset="1" stopColor="#c7ecf6" stopOpacity="0"/></radialGradient>
@@ -147,9 +150,9 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
 
       {/* ESTADO 1, el caos */}
       <G o={clamp((st(2)-p)/.03)}>
-        <Label x={CORE.x} y={405} size={62} cls="sky-serif" fill="#f5fbfd" o={clamp(t1*3)}>Millions of financial signals.</Label>
-        <Label x={CORE.x} y={452} size={15} cls="sky-sans sky-track" fill="#b8d9e3" o={clamp(t1*3-.6)}>Payments · Invoices · Cash movements · Credit lines · Delays</Label>
-        <Label x={CORE.x} y={535} size={30} cls="sky-serif sky-italic" fill="#c7ecf6" o={clamp(t1*2.4-1.3)}>How do we find order in all this noise?</Label>
+        <Label x={CORE.x} y={405} size={62} cls="sky-serif" fill="#f5fbfd" o={clamp(t1*3)}>Millones de señales financieras.</Label>
+        <Label x={CORE.x} y={452} size={15} cls="sky-sans sky-track" fill="#b8d9e3" o={clamp(t1*3-.6)}>Pagos, facturas, caja, crédito y retrasos</Label>
+        <Label x={CORE.x} y={535} size={30} cls="sky-serif sky-italic" fill="#c7ecf6" o={clamp(t1*2.4-1.3)}>¿Cómo encontramos patrones entre tantos datos?</Label>
       </G>
 
       {/* ESTADO 2, cinco dimensiones */}
@@ -160,7 +163,7 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
             {s.m&&<Label x={s.side==="l"?s.x-9:s.x+9} y={s.y+4} size={10.5} anchor={s.side==="l"?"end":"start"} fill="#a9cfdb" o={hv?1:.6}>{s.m}</Label>}</g>)}
           <Label x={c.label[0]} y={c.label[1]} size={11.5} cls="sky-sans sky-track">{c.name}</Label>
         </g>;})}
-        <Label x={CORE.x} y={760} size={19} cls="sky-serif sky-italic" fill="#dff4fa" o={on(p,2)*clamp(t2*2-.5)}>We organize complexity into interpretable financial dimensions.</Label>
+        <Label x={CORE.x} y={760} size={19} cls="sky-serif sky-italic" fill="#dff4fa" o={on(p,2)*clamp(t2*2-.5)}>Agrupamos las señales en dimensiones que podemos interpretar.</Label>
       </G>
 
       {/* ESTADO 3, las dimensiones convergen en un núcleo: el score */}
@@ -173,16 +176,16 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
             <circle r={170} fill="url(#sky-core)" opacity={.55*clamp(t3*2)*(1-lift*.6)} style={{transition:"opacity .8s"}}/>
             <circle r={9} fill="#ffffff" opacity={clamp(t3*3)*(1-clamp(t3*3-1))} filter="url(#sky-glow)"/>
             <Label x={0} y={48} size={150} cls="sky-serif sky-num" fill="#ffffff" o={clamp(t3*4-.8)}>{score}</Label>
-            <Label x={0} y={92} size={12.5} cls="sky-sans sky-track" fill="#c7ecf6" o={clamp(t3*4-1.4)}>FINANCIAL HEALTH SCORE</Label>
-            <Label x={0} y={118} size={11} cls="sky-sans" fill="#9fc7d4" o={clamp(t3*4-1.8)}>0 = high risk · 100 = healthy</Label>
+            <Label x={0} y={92} size={12.5} cls="sky-sans sky-track" fill="#c7ecf6" o={clamp(t3*4-1.4)}>SCORE DE SALUD FINANCIERA</Label>
+            <Label x={0} y={118} size={11} cls="sky-sans" fill="#9fc7d4" o={clamp(t3*4-1.8)}>Ejemplo: 0 = alto riesgo, 100 = buena salud</Label>
           </g>
         </g>
       </G>
       <G o={on(p,3)*clamp(t3*4-1.8)}>
-        <Label x={1330} y={410} size={10.5} cls="sky-sans sky-track" fill="#9fc7d4" anchor="start">FROM</Label>
-        {["millions of transactions","dozens of financial metrics","temporal evolution"].map((s,i)=><Label key={s} x={1330} y={434+i*22} size={14} fill="#dff4fa" anchor="start">{s}</Label>)}
-        <Label x={1330} y={512} size={10.5} cls="sky-sans sky-track" fill="#9fc7d4" anchor="start">TO</Label>
-        <Label x={1330} y={536} size={15} cls="sky-serif sky-italic" fill="#ffffff" anchor="start">one actionable signal</Label>
+        <Label x={1330} y={410} size={10.5} cls="sky-sans sky-track" fill="#9fc7d4" anchor="start">DE</Label>
+        {["millones de movimientos","decenas de métricas","evolución en el tiempo"].map((s,i)=><Label key={s} x={1330} y={434+i*22} size={14} fill="#dff4fa" anchor="start">{s}</Label>)}
+        <Label x={1330} y={512} size={10.5} cls="sky-sans sky-track" fill="#9fc7d4" anchor="start">A</Label>
+        <Label x={1330} y={536} size={15} cls="sky-serif sky-italic" fill="#ffffff" anchor="start">una señal para decidir</Label>
       </G>
 
       {/* ESTADO 4, el logo de Embat en estrellas: las aristas se insinúan tras el estallido */}

@@ -21,7 +21,7 @@ export function Shell({
 }) {
   const path = usePathname() ?? "/";
   if (/^\/(intro|escena|cierre|calculo-score|producto)(\/|$)/.test(path)) {
-    const paper=path.startsWith("/producto")||path.startsWith("/calculo-score")||path.replace(/\/$/,"")==="/escena/8";
+    const paper=path.startsWith("/producto")||path.startsWith("/calculo-score");
     return <>{children}<footer className={`presentation-footer ${paper?"on-paper":"on-film"}`}><PresentationBrand/></footer><PresentationNav /></>;
   }
   return (

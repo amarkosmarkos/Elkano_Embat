@@ -5,7 +5,8 @@ import { Shell } from "@/components/Shell";
 import { getFeaturedCompanyId, getFeaturedGroupId, getOverview } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Elkano, Un score que lee el rastro del dinero",
+  title: "Elkano",
+  icons: { icon: [{ url: "/images/elkano-head.png", type: "image/png" }], apple: "/images/elkano-head.png" },
   description: "HackSpain 2026, Embat X Ray, Score de salud de tesorería para 1.286 empresas",
 };
 

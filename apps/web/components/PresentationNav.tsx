@@ -11,7 +11,7 @@ export function PresentationNav() {
   const path=(pathname??"").replace(/\/$/,"");
   const scene=path.startsWith("/escena")||path.startsWith("/producto")||path==="/calculo-score"||path==="/intro"||path==="/cierre";
   const canonical=path==="/intro"?"/escena/1":path==="/cierre"?"/escena/6":path;
-  const paper=path.startsWith("/producto")||path==="/calculo-score"||path==="/escena/8";
+  const paper=path.startsWith("/producto")||path==="/calculo-score";
   const index=presentation.findIndex(([route])=>route===canonical);
   useEffect(()=>{setEnabled(scene||new URLSearchParams(location.search).get("present")==="1");setOpen(false);},[pathname,scene]);
   useEffect(()=>{setPlaying(false);const update=(e:Event)=>setPlaying((e as CustomEvent<boolean>).detail);window.addEventListener("elkano:play-state",update);return()=>window.removeEventListener("elkano:play-state",update);},[pathname]);
