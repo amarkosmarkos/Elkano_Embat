@@ -11,6 +11,44 @@ python -m analytics.run eval --scores output/02_score/scores_v3.csv   # → outp
 python -m analytics.run all
 ```
 
+## Qué hay ya calculado y cómo se usa desde producto
+
+Los datos son fijos (el zip del reto, 2024-09 → 2026-09): **no llegan datos nuevos**, así que las métricas y el score
+están calculados de una vez para todas las empresas y todos los meses. La app no calcula nada: lee ficheros.
+
+| fichero (en `output/`) | qué es | para qué |
+|---|---|---|
+| `02_score/scores_v3.csv` | **el score**: una fila por empresa y mes (15.803 filas, 1.282 empresas, hasta 2026-08) | ranking, semáforo, evolución, ficha de empresa |
+| `02_score/scores_v2.csv` | mismo formato, versión fórmula transparente | explicaciones con la métrica concreta ("colchón 2,18 → −0,12") |
+| `02_score/metrics_v1.parquet` | las 105 métricas por empresa y mes | pintar métricas concretas, gráficas de detalle |
+| `03_validation/events_v1.csv` | el evento de impago por empresa y mes (D1–D4, cura) | "qué pasó después", para demos y para el jurado |
+| `03_validation/report_v3.md`, `comparison.md` | la validación | argumentario: Gini, lead time, calibración |
+| `01_preprocessed/gold/*.parquet` | datos limpios (movimientos, facturas, saldo diario, panel mensual) | todo lo que no sea score |
+
+Columnas de `scores_v3.csv`:
+
+| columna | significado |
+|---|---|
+| `company_id`, `month` | empresa y mes de observación (`YYYY-MM`). El score usa solo datos ≤ fin de ese mes |
+| `score` | 0–100, mayor = más sana. Literal: 100 − probabilidad (%) de evento de impago en los próximos 3–6 meses |
+| `c_pago`, `c_liquidez`, `c_caja`, `c_deuda`, `c_concentracion` | puntos que suma (+) o resta (−) cada dimensión. La mayor en valor absoluto es "el porqué" |
+| `alert` | 1 si está en el 20 % peor del mes |
+| `explanation` | frase corta del cambio respecto al mes anterior ("bajó 31,1 pts: liquidez") |
+| `score_raw` | score sin suavizar (el publicado es 0,7·hoy + 0,3·mes anterior) |
+| `trained_without_fold`, `score_oot` | auditoría de la validación; no mostrar |
+
+Reglas de uso:
+
+- **Foto actual** de una empresa = su fila de `2026-08` (último mes completo). `2026-09` no existe: tiene un solo día.
+- **Evolución** = sus filas ordenadas por `month`. Empiezan en su 6º mes con movimientos; las empresas con menos de 6 meses de historia no tienen score (4 de 1.286).
+- Semáforo sugerido: ≥ 70 verde · 40–70 ámbar · < 40 rojo (cuartiles del último mes: 53 / 67 / 77).
+- Para explicar un cambio: usar `explanation` de v3 para la dimensión y la de v2 para la métrica concreta.
+- Si hiciera falta recalcular (cambiar un umbral, una versión): `./pipeline/run.sh` y ~1 minuto. Nada de esto corre en la app.
+
+Lo que **no** está hecho y hace falta según qué producto: el importador a Convex (el contrato del doc es cargar
+`scores_vN.csv` tal cual) y, si algún día entrara una empresa nueva, persistir el modelo v3 (hoy se reentrena en cada
+ejecución del pipeline).
+
 ## Una función por métrica
 
 `metrics/__init__.py` es el registro: id del doc, nombre de columna, dimensión, orientación y función.
