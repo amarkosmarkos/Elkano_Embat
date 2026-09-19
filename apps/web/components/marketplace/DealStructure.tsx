@@ -24,7 +24,7 @@ export default function DealStructure() {
   const eco = result.economics;
   const preset = RISK_PRESETS[config.risk];
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className={`grid grid-cols-1 gap-5 ${openCompany ? "xl:grid-cols-[minmax(0,1fr)_380px]" : ""}`}>
       <div className="flex flex-col gap-4">
         <div className="card px-6 py-4">
           <div className="flex flex-wrap items-start justify-between gap-4">

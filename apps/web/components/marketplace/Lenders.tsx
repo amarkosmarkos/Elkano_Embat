@@ -28,8 +28,6 @@ export default function Lenders({ initialLender }: { initialLender: string | nul
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   useEffect(() => { if (initialLender) setLender(initialLender); }, [initialLender, setLender]);
-  // el visor arranca con el prestamista elegido, si lo hay
-  useEffect(() => { if (!openCompany && lenderId) setOpenCompany(lenderId); }, [openCompany, lenderId, setOpenCompany]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -52,7 +50,7 @@ export default function Lenders({ initialLender }: { initialLender: string | nul
   if (error) return <Card><p className="text-bad">No se pudo cargar el dataset del score: {error}</p></Card>;
   const pageItems = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_400px]">
+    <div className={`grid grid-cols-1 gap-5 ${openCompany ? "xl:grid-cols-[280px_minmax(0,1fr)_400px]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
       <aside className="flex flex-col gap-4">
         <Card title="Prestamistas cualificados" sub={network ? monthLabelLong(network.asOf) : "cargando…"}>
           {!network ? <Skeleton className="h-24" /> : (

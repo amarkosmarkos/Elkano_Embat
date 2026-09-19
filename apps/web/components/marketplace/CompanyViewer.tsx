@@ -24,11 +24,10 @@ const pct = (v: number) => `${(v * 100).toFixed(1).replace(".", ",")} %`;
  * `mode` decide qué se destaca: como prestamista (tesorería, botón Prestar) o como receptora (necesidad, precio).
  */
 export default function CompanyViewer({ mode, term = 6 }: { mode: "lender" | "borrower"; term?: Term }) {
-  const { network, assessed, openCompany, lenderId, setLender, byId, config } = useMarketplace();
+  const { network, assessed, openCompany, setOpenCompany, lenderId, setLender, byId, config } = useMarketplace();
   const a = useMemo(() => assessed.find((x) => x.c.id === openCompany) ?? null, [assessed, openCompany]);
   const ranks = useMemo(() => (network ? componentRanks(network.companies, network.months.length - 1) : null), [network]);
-  if (!network || !ranks) return <div className="card p-5 text-[13px] text-ink-mute">Cargando…</div>;
-  if (!a) return <div className="card flex min-h-[320px] items-center justify-center p-6 text-center text-[13px] text-ink-mute">{mode === "lender" ? "Selecciona una empresa en el mapa o en las tarjetas: aquí verás su detalle y podrás elegirla como prestamista." : "Selecciona una receptora: aquí verás su detalle, su necesidad de capital y el precio que pagaría."}</div>;
+  if (!openCompany || !network || !ranks || !a) return null;
   const { c } = a;
   const idx = network.months.length - 1;
   const comps = componentsAt(c, idx);
@@ -46,7 +45,7 @@ export default function CompanyViewer({ mode, term = 6 }: { mode: "lender" | "bo
           <div className="truncate text-[18px] font-semibold text-ink">{c.name}</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5"><TrendPill trend={trend(c.scores, idx)} delta={momentum(c.scores, idx)} />{c.latest.alert === 1 && <Pill tone="bad">20 % peor</Pill>}{(c.latest.nStress ?? 0) > 0 && <Pill tone="warn">{c.latest.nStress} alarma{(c.latest.nStress ?? 0) > 1 ? "s" : ""}</Pill>}{isLender && <Pill tone="accent">Prestamista</Pill>}{related && <Pill tone="warn">Grupo del prestamista</Pill>}</div>
         </div>
-        <div className="text-right"><div className="num text-[34px] font-semibold leading-none" style={{ color: scoreColor(c.latest.score) }}>{c.latest.score.toFixed(0)}</div><div className="text-[11px] text-ink-mute">{monthLabelLong(c.latest.month)}</div></div>
+        <div className="flex items-start gap-2"><div className="text-right"><div className="num text-[34px] font-semibold leading-none" style={{ color: scoreColor(c.latest.score) }}>{c.latest.score.toFixed(0)}</div><div className="text-[11px] text-ink-mute">{monthLabelLong(c.latest.month)}</div></div><button type="button" onClick={() => setOpenCompany(null)} aria-label="Cerrar" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line text-ink-mute hover:text-ink">✕</button></div>
       </div>
 
       {mode === "lender" ? (

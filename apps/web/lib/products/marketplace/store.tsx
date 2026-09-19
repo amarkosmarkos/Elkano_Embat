@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { CompanyIndex } from "@/lib/score/types";
 import { applyRisk, DEFAULT_CONFIG, type Network, type PortfolioConfig, type PortfolioResult, type RiskTolerance } from "./portfolio";
 import { applyActions, type ExecutedAction } from "./actions";
@@ -75,6 +76,8 @@ export function MarketplaceProvider({ children, initialLender }: { children: Rea
   const [state, setState] = useState<Persisted>(EMPTY);
   const [hydrated, setHydrated] = useState(false);
   const [openCompany, setOpenCompany] = useState<string | null>(null);
+  const pathname = usePathname();
+  useEffect(() => { setOpenCompany(null); }, [pathname]);
 
   useEffect(() => {
     const p = read();

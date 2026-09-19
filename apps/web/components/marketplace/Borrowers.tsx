@@ -47,14 +47,12 @@ export default function Borrowers() {
   const candidates = useMemo(() => assessed.filter((a) => a.receiver.eligible && a.receiver.need >= 25 && !isRelated(lender?.c ?? null, a.c)).sort((x, y) => y.receiver.fit - x.receiver.fit), [assessed, lender]);
   const inChest = useMemo(() => new Set(shown?.positions.map((p) => p.id) ?? []), [shown]);
   const bubbles = useMemo(() => { const cand = new Set(candidates.map((a) => a.c.id)); return assessed.map((a) => ({ id: a.c.id, name: a.c.name, score: a.c.latest.score, momentum: a.momentum ?? 0, size: inChest.has(a.c.id) ? 100 : a.receiver.fit, qualified: inChest.has(a.c.id), alert: a.c.latest.alert === 1, dimmed: !cand.has(a.c.id) && !inChest.has(a.c.id) })); }, [assessed, candidates, inChest]);
-  // el visor arranca con la mayor posición de la cartera
-  useEffect(() => { if (!openCompany && shown?.positions[0]) setOpenCompany(shown.positions[0].id); }, [openCompany, shown, setOpenCompany]);
 
   const eco = shown?.economics ?? null;
   const preset = RISK_PRESETS[config.risk];
 
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_minmax(0,1fr)_380px]">
+    <div className={`grid grid-cols-1 gap-5 ${openCompany ? "xl:grid-cols-[340px_minmax(0,1fr)_380px]" : "xl:grid-cols-[340px_minmax(0,1fr)]"}`}>
       <aside className="flex flex-col gap-4">
         {lender ? (
           <div className="card p-4 ring-1 ring-ink/40">
