@@ -6,9 +6,9 @@ import { ScatterMap, type Axis } from "@/components/charts/ScatterMap";
 import { Card } from "@/components/ui/Card";
 import type { Kpis } from "@/lib/data/portfolio";
 import type { MapPoint } from "@/lib/data/mapa";
-import { monthLabel, monthLabelLong, formatCount, formatScore } from "@/lib/format";
+import { monthLabelLong, formatCount, formatScore } from "@/lib/format";
 import { MONTH_COOKIE } from "@/lib/data/monthCookie";
-import { Sparkline } from "@/components/ui/Sparkline";
+import { ScoreTrend } from "@/components/charts/ScoreTrend";
 
 const PLAY_MS = 900;
 
@@ -85,14 +85,10 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
         <ScatterMap points={points} idx={idx} axis={axis} layer={layer} />
       </Card>
 
-      <Card title="Score medio de la cartera" sub="toda la serie · el mes elegido marcado">
+      <Card title="Score medio de la cartera" sub="toda la serie · pasa el ratón para ver un mes, pincha para ir a él">
         <div className="flex items-stretch gap-6">
           <div className="min-w-0 flex-1">
-            <Sparkline values={meanSeries} responsive width={960} height={110} color="#e5e5e5" marker={idx} min={Math.min(...meanSeries) - 2} max={Math.max(...meanSeries) + 2} />
-            <div className="num mt-2 flex justify-between text-[12px] text-ink-mute">
-              <span>{monthLabel(months[0])}</span>
-              <span>{monthLabel(months[months.length - 1])}</span>
-            </div>
+            <ScoreTrend months={months} values={meanSeries} idx={idx} onSelect={(i) => { setPlaying(false); setIdx(i); }} />
           </div>
           <div className="flex w-[220px] shrink-0 flex-col justify-center gap-3 border-l border-line-soft pl-6">
             <Stat l="Verde ≥ 70" v={k.nGreen} c="text-good" />
