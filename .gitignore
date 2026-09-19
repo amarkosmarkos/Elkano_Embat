@@ -25,7 +25,7 @@ ssh_key.txt
 output/
 
 # salidas del pipeline (regenerables con ./pipeline/run.sh)
-data/
+/data/
 
 # derivados del EDA (se regeneran con ./eda/run.sh)
 eda/panel.csv

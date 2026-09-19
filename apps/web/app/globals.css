@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+@theme {
+  --color-navy: #0b1f3a;
+  --color-navy-700: #14305a;
+  --color-navy-100: #e6ebf3;
+  --color-ok: #15803d;
+  --color-ok-bg: #dcfce7;
+  --color-warn: #b45309;
+  --color-warn-bg: #fef3c7;
+  --color-bad: #b91c1c;
+  --color-bad-bg: #fee2e2;
+  --color-ink: #0f172a;
+  --color-ink-2: #475569;
+  --color-ink-3: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-surface: #f8fafc;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html { background: #ffffff; }
+body { color: var(--color-ink); font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+
+.card { @apply bg-white border border-line rounded-lg; }
+.kicker { @apply text-[11px] font-semibold uppercase tracking-wider text-ink-3; }
+.num { font-variant-numeric: tabular-nums; }
+.tbl th { @apply text-left text-[11px] font-semibold uppercase tracking-wider text-ink-2 py-2 px-3 border-b border-line bg-surface select-none; }
+.tbl td { @apply py-2 px-3 border-b border-line text-[13px] whitespace-nowrap; }
+.tbl td.wrap { white-space: normal; }
+.tbl tr:hover td { background: #f1f5f9; }
+.tbl-compact th, .tbl-compact td { @apply px-2 text-[12px]; }
