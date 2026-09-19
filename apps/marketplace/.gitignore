@@ -1,3 +1,7 @@
 node_modules
 dist
-public/data
+public/data/*
+!public/data/network.json
+!public/data/companies/
+public/data/companies/*
+!public/data/companies/*.json
