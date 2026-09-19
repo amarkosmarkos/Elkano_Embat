@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getStore } from "@/lib/data/store";
-import { currentMonth } from "@/lib/data/month";
 import { groupSeries, poolingGroups, poolingOverview } from "@/lib/products/pooling";
 import CashPoolApp from "@/components/cashpool/CashPoolApp";
 import CashPoolGroups from "@/components/cashpool/CashPoolGroups";
@@ -18,7 +17,8 @@ export default async function CashPoolingPage({ searchParams }: { searchParams: 
   const { group, month: requestedMonth } = await searchParams;
   const store = await getStore();
   if (!store.months.length) return <p className="py-12 text-sm text-ink-mute">Sin meses disponibles para comparar grupos.</p>;
-  const month = requestedMonth && store.months.includes(requestedMonth) ? requestedMonth : (await currentMonth(store.months)).month;
+  const defaultMonth = store.months.includes("2026-08") ? "2026-08" : store.months[store.months.length - 1];
+  const month = requestedMonth && store.months.includes(requestedMonth) ? requestedMonth : defaultMonth;
   if (!group) {
     const { groups, totals } = poolingOverview(store, month);
     return <CashPoolGroups key={month} groups={groups} totals={totals} month={month} months={store.months} />;
