@@ -36,6 +36,11 @@ body{overscroll-behavior:none}
 .story-intro-card{background:transparent;border:0;border-radius:0;backdrop-filter:none;padding:0}
 .story-intro-card h1{font-size:clamp(34px,4vw,54px);line-height:1.16;margin-bottom:28px}
 .story-intro-card>p:last-child{font-size:18px;line-height:1.5;color:white;max-width:460px}
+.intro-identity{display:flex;align-items:center;gap:24px;margin-bottom:28px}
+.intro-identity img{width:132px;height:152px;object-fit:cover;border-radius:6px;border:1px solid #ffffff33;flex-shrink:0}
+.intro-identity h1{margin-bottom:0}
+@media(max-width:1000px){.intro-identity{gap:18px}.intro-identity img{width:100px;height:120px}}
+@media(max-height:620px){.intro-identity{gap:14px;margin-bottom:14px}.intro-identity img{width:76px;height:90px}}
 .scene-shade{background:linear-gradient(180deg,#050b2c36,transparent 40%,#050b2c94),linear-gradient(90deg,#050b2c15,transparent 50%,#050b2c4d)}
 .scene-number-1 .scene-shade{background:linear-gradient(90deg,rgba(5,11,44,.08) 25%,rgba(5,11,44,.4) 53%,rgba(5,11,44,.92) 100%),linear-gradient(0deg,#050b2c80,transparent 38%)}
 .scene-number-3 .scene-shade{background:linear-gradient(90deg,transparent 20%,#050b2c66 70%),linear-gradient(0deg,#050b2c66,transparent 55%)}
@@ -63,6 +68,7 @@ body{overscroll-behavior:none}
 .presentation-current{font-weight:500}
 .presentation-current span{color:#afafbb;letter-spacing:0}
 .presentation-arrow{font-family:var(--font-sans);font-weight:400}
+.presentation-play{height:42px;width:38px;display:flex;align-items:center;justify-content:center;color:inherit;cursor:pointer;border-right:1px solid #696d8040}
 .presentation-index{background:#050b2cf7;border-color:#696d80;border-radius:8px;box-shadow:0 8px 24px #050b2c26}
 .presentation-index a{font-size:13px}
 .presentation-index a:hover,.presentation-index a[aria-current]{background:#3878f633;color:white}
@@ -101,3 +107,13 @@ body{overscroll-behavior:none}
 @media(max-width:800px){.scene-masthead,.story-header{min-height:64px;padding:14px 5vw}.scene-wordmark{font-size:23px}.scene-masthead>span:not(.scene-chapter),.story-header>span{display:none}.scene-right{top:20%;width:85%;right:7.5%;max-width:none}.story-intro-card{background:#050b2cde;padding:22px;border-radius:8px}.story-intro-card h1{font-size:36px;margin-bottom:18px}.story-intro-card>p:last-child{font-size:16px}.story-content{margin-top:48px}.story-content>h1{font-size:36px}.story-slots{grid-template-columns:1fr;gap:16px;margin-top:32px}.story-slot{min-height:180px}.story-slot h2{font-size:24px}.story-continue{max-width:100%;font-size:13px}.scene-stage h1.story-thanks{font-size:43px}.scene-credits{font-size:14px}.story-header>a:last-child{font-size:12px;padding:8px 10px}}
 @media(max-height:620px){.scene-right{top:100px;max-height:calc(100svh - 195px);overflow:auto;scrollbar-width:thin}.story-intro-card h1{font-size:30px;margin-bottom:16px}.story-intro-card>p:last-child{font-size:14px;line-height:1.5}.scene-number-6 .scene-center{top:25%}.scene-stage h1.story-thanks{font-size:42px}}
 @media(prefers-reduced-motion:reduce){.scene-next,.story-continue,.scene-next span,.story-continue span,.story-slot{transition:none}.scene-next:hover span,.story-continue:hover span{transform:none}}
+
+/* Presentation chrome stays at the bottom, leaving the entire film unobstructed. */
+.presentation-footer{position:fixed;left:4vw;bottom:20px;z-index:45}
+.presentation-footer .scene-wordmark{gap:10px;font-size:23px;letter-spacing:-.045em}
+.presentation-footer .brand-portrait{display:block;width:48px;height:54px;object-fit:contain;filter:drop-shadow(0 2px 3px #0003)}
+.presentation-footer.on-film .scene-wordmark{color:#fff;text-shadow:0 2px 10px #050b2c99}
+.presentation-footer.on-paper .scene-wordmark{color:var(--embat-navy)}
+.presentation-skip{border-left:1px solid #696d8033}
+.story-content{margin-top:40px}
+@media(max-width:640px){.presentation-footer{bottom:76px;left:5vw}.presentation-footer .brand-portrait{width:36px;height:40px}.presentation-footer .scene-wordmark{font-size:19px}.presentation-nav{right:5vw;left:5vw}.presentation-controls{justify-content:space-between}.presentation-current{gap:7px;padding:0 5px;font-size:11px}.presentation-arrow{width:32px;flex-shrink:0}.presentation-play{width:30px;flex-shrink:0}.story-content{margin-top:22px}}

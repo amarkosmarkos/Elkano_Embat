@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { PresentationNav } from "@/components/PresentationNav";
+import { PresentationBrand } from "@/components/PresentationBrand";
 
 /** Envuelve las páginas con la barra y el ancho de lectura, salvo la intro del barco, que va a pantalla completa. */
 export function Shell({
@@ -19,7 +20,10 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const path = usePathname() ?? "/";
-  if (/^\/(intro|escena|cierre|calculo-score|producto)(\/|$)/.test(path)) return <>{children}<PresentationNav /></>;
+  if (/^\/(intro|escena|cierre|calculo-score|producto)(\/|$)/.test(path)) {
+    const paper=path.startsWith("/producto")||path.startsWith("/calculo-score")||path.replace(/\/$/,"")==="/escena/8";
+    return <>{children}<footer className={`presentation-footer ${paper?"on-paper":"on-film"}`}><PresentationBrand/></footer><PresentationNav /></>;
+  }
   return (
     <>
       <Nav companyId={companyId} groupId={groupId} monthLast={monthLast} />
