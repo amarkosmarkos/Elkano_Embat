@@ -52,7 +52,7 @@ Mantener una composición clara y con intención, sin proliferar tarjetas, panel
 ## Desarrollo y verificación
 
 - Localhost actual: `http://localhost:4321/calculo-score/?present=1`.
-- Next dev ya está ejecutándose. No reiniciarlo salvo necesidad. `.next-dev` está separado de `.next` para que `next build` no rompa el servidor.
+- Tras preparar el handoff, Xuban pidió parar todos los servidores de la presentación. Los puertos 4321 y 4330 están parados. Mantener ese estado hasta que se retome la revisión en localhost. `.next-dev` está separado de `.next` para que `next build` no rompa el servidor.
 - Comprobar 1280 × 720 y 1440 × 900 sin scroll de escritorio, y 390 px sin desbordamiento horizontal. La marca y el widget fijos no deben tapar contenido.
 - Un Playwright funcional está en `/tmp/embat-style-study/node_modules/playwright`, con `chromium.launch({headless:true,channel:'chrome'})`. Se han tomado capturas así desde Node. No hace falta instalar otro navegador.
 - Últimas capturas de la composición actual: `/tmp/score-composition-1280.png` y `/tmp/score-composition-1440.png`.
