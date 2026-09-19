@@ -115,3 +115,62 @@ export async function regimeBreakdown(month: string) {
   `);
   return rows;
 }
+
+export type MonthPortfolioKpis = {
+  month: string;
+  portfolioScore: number;
+  /** score medio de este mes menos el de hace 6 meses (media de delta_6m, ya calculado por empresa). null si no hay datos suficientes. */
+  portfolioScoreDelta6m: number | null;
+  improvingCompanies: number;
+  deterioratingCompanies: number;
+  newAlerts: number;
+};
+
+/**
+ * KPIs de cartera por mes, para el widget "Embat · Salud financiera de la cartera" de /datos
+ * (móvil por meses, animado en el cliente). Trae todos los meses de una vez — son ~9 filas, no
+ * hace falta ir a la base en cada cambio de mes. `regime` ya viene calculado por el pipeline
+ * (docs/CONTRATO_DATOS.md); "deteriorando" cuenta solo `deteriorating`, no `dip` (bache puntual,
+ * no deterioro, según el propio contrato). "Alertas nuevas" excluye las de tipo `improvement`
+ * (son informativas, no alertas).
+ */
+export async function portfolioKpisByMonth(): Promise<{ months: MonthPortfolioKpis[]; defaultMonth: string | null }> {
+  const scoreRows = await db.execute<{
+    month: string;
+    avg: number;
+    delta6m: number | null;
+    improving: number;
+    deteriorating: number;
+  }>(sql`
+    select month,
+           avg(score)::float as avg,
+           avg(delta_6m)::float as delta6m,
+           count(*) filter (where regime = 'improving')::int as improving,
+           count(*) filter (where regime = 'deteriorating')::int as deteriorating
+    from scores
+    group by month
+    order by month
+  `);
+
+  const alertRows = await db.execute<{ month: string; n: number }>(sql`
+    select month, count(*)::int as n
+    from alerts
+    where type != 'improvement'
+    group by month
+  `);
+  const alertsByMonth = new Map(alertRows.map((r) => [r.month, r.n]));
+
+  const [maxAlertRow] = await db.execute<{ month: string | null }>(sql`select max(month) as month from alerts`);
+
+  return {
+    months: scoreRows.map((r) => ({
+      month: r.month,
+      portfolioScore: r.avg,
+      portfolioScoreDelta6m: r.delta6m,
+      improvingCompanies: r.improving,
+      deterioratingCompanies: r.deteriorating,
+      newAlerts: alertsByMonth.get(r.month) ?? 0,
+    })),
+    defaultMonth: maxAlertRow?.month ?? null,
+  };
+}

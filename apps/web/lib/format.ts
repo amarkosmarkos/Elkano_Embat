@@ -13,3 +13,17 @@ export const monthLabel = (m: string) => {
   const names = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   return `${names[Number(mo) - 1]} ${y.slice(2)}`;
 };
+export const monthLabelLong = (m: string) => {
+  const [y, mo] = m.split("-");
+  const names = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+  ];
+  const name = names[Number(mo) - 1];
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} de ${y}`;
+};
+
+const scoreFmt = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+export const formatScore = (n: number) => scoreFmt.format(n);
+export const formatSignedScore = (n: number) => `${n >= 0 ? "+" : "-"}${scoreFmt.format(Math.abs(n))}`;
+export const formatCount = (n: number) => new Intl.NumberFormat("es-ES").format(n);

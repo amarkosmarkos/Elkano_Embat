@@ -1,4 +1,5 @@
-import { regimeBreakdown, scoreStats } from "@/lib/queries";
+import { PortfolioScrubber } from "@/components/datos/PortfolioScrubber";
+import { portfolioKpisByMonth, regimeBreakdown, scoreStats } from "@/lib/queries";
 
 /**
  * Página de "visión de datos" — de momento lo mínimo para que se vea algo real (Postgres, no inventado).
@@ -14,6 +15,7 @@ export default async function DatosPage() {
   const regimes = lastMonth ? await regimeBreakdown(lastMonth) : [];
   const maxAvg = Math.max(...stats.map((s) => s.avg));
   const minAvg = Math.min(...stats.map((s) => s.avg));
+  const { months: portfolioMonths, defaultMonth } = await portfolioKpisByMonth();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
@@ -24,7 +26,11 @@ export default async function DatosPage() {
         movimiento.
       </p>
 
-      <div className="mt-10 rounded-sm border border-line bg-panel p-6">
+      <div className="mt-10">
+        <PortfolioScrubber monthsData={portfolioMonths} defaultMonth={defaultMonth} />
+      </div>
+
+      <div className="mt-6 rounded-sm border border-line bg-panel p-6">
         <div className="mb-4 font-mono text-[11px] uppercase tracking-widest text-ink-mute">Score medio por mes (p20–p80)</div>
         <div className="flex h-40 items-end gap-1">
           {stats.map((s) => {
