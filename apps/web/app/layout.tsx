@@ -1,15 +1,12 @@
 import "./globals.css";
 import Sidebar from "@/components/shell/Sidebar";
-import Topbar from "@/components/shell/Topbar";
-import { getStore } from "@/lib/data/store";
 
 export const metadata = {
   title: "Elkano X-Ray · Embat",
   description: "Plataforma de salud financiera: score, cartera, empresas y productos sobre 1.282 empresas.",
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const store = await getStore();
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
       <head>
@@ -24,7 +21,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar asOf={store.meta.asOf} />
             <main className="mx-auto w-full max-w-[1480px] flex-1 px-6 pb-16 pt-6">{children}</main>
           </div>
         </div>
