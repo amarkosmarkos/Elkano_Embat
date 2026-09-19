@@ -34,6 +34,15 @@ cambian, `pnpm --filter web db:push && pnpm --filter web db:seed` los recarga y
 `docker exec xray-db pg_dump -U xray -d xray --no-owner --no-privileges | gzip -9 > db/init/01_seed.sql.gz`
 regenera el dump.
 
+## Marketplace demo (frontend)
+
+```bash
+docker compose up --build   # → http://localhost:8080
+```
+
+Credit marketplace built on the v3 score: network of qualified companies → lender / receiver profiles → portfolio
+builder → monitoring over real score history → action center. Ver [`apps/marketplace/README.md`](apps/marketplace/README.md).
+
 ## Knowledge base
 
 Documentación del reto y de los datos en [`docs/`](docs/README.md):

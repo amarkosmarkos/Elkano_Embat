@@ -1,3 +1,8 @@
+# Dos servicios independientes:
+#   docker compose up -d                                  → Postgres (:5433) para apps/web, con datos de demo cargados
+#   docker compose --profile marketplace up --build       → demo del marketplace (apps/marketplace) en http://localhost:8080
+# El marketplace va bajo un profile para que `docker compose up -d` no intente construirlo:
+# su build necesita output/companies.csv y output/groups.csv (del zip del reto) además de los scores del repo.
 services:
   db:
     image: postgres:16-alpine
@@ -20,6 +25,16 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  marketplace:
+    profiles: ["marketplace"]
+    build:
+      context: .
+      dockerfile: apps/marketplace/Dockerfile
+    image: elkano-marketplace:local
+    ports:
+      - "8080:80"
+    restart: unless-stopped
 
 volumes:
   xray_pgdata:
