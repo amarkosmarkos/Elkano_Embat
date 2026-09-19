@@ -107,7 +107,7 @@ export default function Borrowers() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-4">
                 <div className="flex flex-wrap items-center gap-2"><Seg value={view} onChange={setView} options={[{ value: "portfolio", label: "Cartera" }, { value: "candidates", label: "Candidatas" }]} />{view === "portfolio" && <Seg value={tab} onChange={setTab} options={[{ value: "map", label: "Mapa" }, { value: "distribution", label: "Distribución" }, { value: "crew", label: "Posiciones" }]} />}</div>
-                <Btn size="sm" onClick={() => router.push("/productos/marketplace/estructurar")} disabled={shown.positions.length === 0}>Paso 3 · Estructurar →</Btn>
+                <Btn size="sm" onClick={() => router.push("/productos/marketplace/cierre")} disabled={shown.positions.length === 0}>Paso 3 · Cierre →</Btn>
               </div>
             </div>
 

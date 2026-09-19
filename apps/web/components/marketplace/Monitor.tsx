@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMarketplace, type Deal } from "@/lib/products/marketplace/store";
 import { componentsAt } from "@/lib/products/marketplace/portfolio";
 import { monitorSnapshot, portfolioTrajectory, type PositionStatus, type PositionTimeline } from "@/lib/products/marketplace/monitor";
-import { ACTION_META, applyActions, recommend, revalue, type ActionKind, type Recommendation } from "@/lib/products/marketplace/actions";
+import { ACTION_META, ACTION_RULES, applyActions, recommend, revalue, type ActionKind, type Recommendation } from "@/lib/products/marketplace/actions";
 import { price } from "@/lib/products/marketplace/pricing";
 import { Card, Empty } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
@@ -64,7 +64,7 @@ export default function Monitor({ dealId, initialTab }: { dealId: string | null;
 
   if (!network) return <Skeleton className="h-[520px]" />;
   if (!deal || !base || !effective || !snapshot || !curMonth || !now || !nowBefore) {
-    return <Card><div className="flex flex-col items-center py-14 text-center"><div className="text-[18px] font-semibold text-ink">No hay operaciones cerradas que monitorizar.</div><p className="mt-2 max-w-md text-[14px] text-ink-mute">Cierra una operación en el paso 4 y aquí verás cómo evolucionan su riesgo y su beneficio mes a mes, con acciones cuando algo se mueve.</p><Btn className="mt-5" onClick={() => router.push("/productos/marketplace")}>Ir al paso 1</Btn></div></Card>;
+    return <Card><div className="flex flex-col items-center py-14 text-center"><div className="text-[18px] font-semibold text-ink">No hay operaciones cerradas que monitorizar.</div><p className="mt-2 max-w-md text-[14px] text-ink-mute">Cierra una operación en el paso 3 y aquí verás cómo evolucionan su riesgo y su beneficio mes a mes, con acciones cuando algo se mueve.</p><Btn className="mt-5" onClick={() => router.push("/productos/marketplace")}>Ir al paso 1</Btn></div></Card>;
   }
 
   const elapsed = curIdx - startIdx;
@@ -86,7 +86,6 @@ export default function Monitor({ dealId, initialTab }: { dealId: string | null;
           <div className="flex items-center gap-2 text-[12px] text-ink-mute">
             <span>Operación</span>
             {deals.length > 1 && <select value={deal.id} onChange={(e) => router.push(`/productos/marketplace/monitor?deal=${e.target.value}`)} className="rounded-lg border border-line bg-panel px-2 py-0.5 text-[12px] text-ink">{deals.map((d) => <option key={d.id} value={d.id}>{d.lenderName} → {d.result.positions.length} · {monthLabel(d.result.config.asOf)}</option>)}</select>}
-            <Link href="/productos/marketplace/operaciones" className="hover:text-ink">todas →</Link>
           </div>
           <div className="text-[18px] font-semibold text-ink">{deal.lenderName} → {base.positions.length} receptoras · {fmtMoney(e0.amount)} · {base.config.term} m</div>
           <div className="text-[13px] text-ink-mute">{elapsed === 0 ? `Día uno: cerrada en ${monthLabelLong(base.config.asOf).toLowerCase()}.` : `${monthLabelLong(curMonth)} · ${elapsed} mes${elapsed > 1 ? "es" : ""} después del cierre.`}</div>
@@ -144,6 +143,7 @@ export default function Monitor({ dealId, initialTab }: { dealId: string | null;
           </Card>
           <Card title="Efecto sobre la operación" sub="ahora → con lo ejecutado · y si se ejecutara todo">
             <p className="text-[12px] text-ink-mute">Reducir, pausar y revisar devuelven capital a la tesorería del prestamista; aumentar crece la posición hasta el tope. Riesgo y beneficio se recalculan con los scores de este mes.</p>
+            <details className="mt-2 text-[12px]"><summary className="cursor-pointer text-ink-dim hover:text-ink">De dónde salen los porcentajes: las reglas, en orden</summary><div className="mt-2 space-y-1 text-ink-mute">{ACTION_RULES.map((x, i) => <div key={i} className="flex gap-2"><span className={`w-16 shrink-0 font-medium ${ACTION_META[x.kind].tone === "good" ? "text-good" : ACTION_META[x.kind].tone === "warn" ? "text-warn" : ACTION_META[x.kind].tone === "bad" ? "text-bad" : "text-ink-dim"}`}>{ACTION_META[x.kind].verb}</span><span>si {x.when} → <span className="num text-ink">{x.then}</span></span></div>)}<div className="pt-1">Δscore = score de hoy − score al cierre. «Persistente» = la caída se mantiene más de un mes; «alerta» = la empresa está ese mes en el 20 % peor de la red.</div></div></details>
             <div className="mt-3 divide-y divide-line-soft border-y border-line-soft">
               <Row label="Score de la cartera" before={nowBefore.avgScore} after={now.avgScore} all={allAfter?.avgScore} fmt={(v) => v.toFixed(1)} good="up" />
               <Row label="PD media" before={nowBefore.economics.avgPd} after={now.economics.avgPd} all={allAfter?.economics.avgPd} fmt={(v) => pct(v, 1)} good="down" />
@@ -235,6 +235,7 @@ function RecRow({ r, done, onRun, cal, term }: { r: Recommendation; done: boolea
         <div className="flex flex-wrap items-center gap-2"><span className="text-[14px] font-semibold text-ink">{meta.label}</span><Pill>{meta.effect}</Pill>{collect && <Pill tone="warn">adelantar cobro de {fmtMoney(t.position.amount * (1 - r.multiplier))}</Pill>}</div>
         <Link href={`/empresas/${r.id}`} className="mt-0.5 block text-[13px] text-ink-dim hover:text-ink">{t.position.name} <span className="num text-ink-mute">{r.id} · {fmtMoney(t.position.amount)}</span></Link>
         <ul className="mt-1.5 space-y-0.5 text-[12px] text-ink-mute">{r.reasons.slice(0, 3).map((x) => <li key={x}>· {x}</li>)}<li>· PD {pct(p0.pd, 0)} → <span className={p1.pd > p0.pd ? "text-bad" : "text-good"}>{pct(p1.pd, 0)}</span> · pérdida esperada {fmtMoney(p0.expectedLoss)} → <span className={p1.expectedLoss > p0.expectedLoss ? "text-bad" : "text-good"}>{fmtMoney(p1.expectedLoss)}</span></li></ul>
+        <div className="mt-2 rounded-lg bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink-mute"><span className="font-medium text-ink-dim">Cómo se calcula · </span><span className="num">{r.rule}</span>{r.multiplier !== 1 && <> · <span className="num">{fmtMoney(t.position.amount)} × {r.multiplier.toFixed(2).replace(".", ",")} = <span className="text-ink">{fmtMoney(t.position.amount * r.multiplier)}</span> ({r.multiplier < 1 ? "−" : "+"}{fmtMoney(Math.abs(t.position.amount * (1 - r.multiplier)))})</span></>}</div>
       </div>
       <div className="flex shrink-0 items-center gap-4 md:flex-col md:items-end">
         <div className="text-right"><div className="flex items-baseline gap-1.5"><span className="num text-[12px] text-ink-mute line-through">{t.scoreAtAllocation.toFixed(0)}</span><span className="num text-[22px] font-semibold" style={{ color: scoreColor(t.scoreNow) }}>{t.scoreNow.toFixed(0)}</span></div><div className={`num text-[11px] ${t.delta >= 0 ? "text-good" : "text-bad"}`}>{fmtDelta(t.delta)}</div></div>
