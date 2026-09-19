@@ -4,6 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { presentation, presentationHref, sceneMedia } from "@/lib/presentation";
 
+let developmentWarmup: Promise<void> | undefined;
+
 export function PresentationNav() {
   const pathname=usePathname(); const router=useRouter();
   const [enabled,setEnabled]=useState(false); const [open,setOpen]=useState(false);
@@ -15,6 +17,17 @@ export function PresentationNav() {
   const index=presentation.findIndex(([route])=>route===canonical);
   useEffect(()=>{setEnabled(scene||new URLSearchParams(location.search).get("present")==="1");setOpen(false);},[pathname,scene]);
   useEffect(()=>{setPlaying(false);const update=(e:Event)=>setPlaying((e as CustomEvent<boolean>).detail);window.addEventListener("elkano:play-state",update);return()=>window.removeEventListener("elkano:play-state",update);},[pathname]);
+  useEffect(()=>{
+    if(!enabled||process.env.NODE_ENV!=="development"||developmentWarmup)return;
+    // Next disables route prefetch in development. Compile the small slide deck
+    // sequentially in the background instead of waiting for the first arrow press.
+    developmentWarmup=(async()=>{
+      for(const [route] of presentation){
+        try{const response=await fetch(presentationHref(route),{priority:"low"});await response.text();}
+        catch{/* Navigation remains usable if the dev server is restarting. */}
+      }
+    })();
+  },[enabled]);
   useEffect(()=>{
     if(!enabled||index<0)return;
     // Prepare adjacent routes while the current slide is on screen.

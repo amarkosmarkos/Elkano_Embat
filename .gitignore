@@ -30,3 +30,6 @@ output/
 # derivados del EDA (se regeneran con ./eda/run.sh)
 eda/panel.csv
 eda/company_trend_features.csv
+
+# Isolated development build cache
+.next-dev/

@@ -144,3 +144,8 @@ body{overscroll-behavior:none}
 .presentation-current .presentation-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:inherit;color:inherit}
 .presentation-play-placeholder{visibility:hidden}
 @media(max-width:640px){.presentation-nav{width:90vw}.presentation-controls{grid-template-columns:28px 28px 30px minmax(0,1fr) 28px 28px}.presentation-current{gap:6px}}
+
+/* Closing copy appears independently of video loading and timeupdate events. */
+@keyframes closing-copy-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.scene-number-6 .scene-layer{animation:closing-copy-in .22s ease-out both}
+@media(prefers-reduced-motion:reduce){.scene-number-6 .scene-layer{animation:none}}
