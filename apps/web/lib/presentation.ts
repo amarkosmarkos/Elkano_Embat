@@ -2,11 +2,13 @@
 export const presentation = [
   ["/escena/1", "1. Intro"],
   ["/escena/3", "2. El problema"], ["/calculo-score", "3. Cálculo del score"],
-  ["/escena/4", "4. El cofre"], ["/producto/1", "5. Colocación de excedentes"],
-  ["/producto/2", "6. Cash pooling"], ["/producto/3", "7. Monitor"],
-  ["/escena/8", "8. Dos empresas"], ["/escena/6", "9. Gracias"],
+  ["/escena/4", "4. El cofre"], ["/producto/1", "5. Marketplace de crédito"],
+  ["/producto/2", "6. Cash pooling"], ["/producto/3", "7. Seguros de David"],
+  ["/escena/8", "8. Dos empresas"],
+  ["/caso/a", "9. Empresa A"], ["/caso/b", "10. Empresa B"],
+  ["/escena/6", "11. Gracias"],
 ] as const;
-export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"09 / FIN",8:"08 / DOS EMPRESAS"};
+export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"11 / FIN",8:"08 / DOS EMPRESAS"};
 export const presentationHref = (path: string) => `${path}/?present=1`;
 export const sceneMedia: Record<number, { title: string; video: string; poster: string; height: number; still?: string }> = {
   1: { title: "Zarpar", video: "/video/zarpar-seedance.mp4", poster: "/video/zarpar-seedance.jpg", height: 650 },

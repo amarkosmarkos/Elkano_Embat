@@ -108,6 +108,7 @@ export function SkyStory({p,reduced}:{p:number;reduced:boolean}){
     if((e.target as HTMLElement).closest("a,button"))return;
     const track=(e.currentTarget as HTMLElement).closest(".scene-track") as HTMLElement|null;if(!track)return;
     const next=LANDINGS.find(s=>s>p+.01);if(next===undefined)return;
+    window.dispatchEvent(new Event("elkano:pause"));
     window.scrollTo({top:track.offsetTop+next*(track.offsetHeight-innerHeight),behavior:reduced?"auto":"smooth"});
   };
   // Primero se apagan el score y las dimensiones; después se dibuja el logo.

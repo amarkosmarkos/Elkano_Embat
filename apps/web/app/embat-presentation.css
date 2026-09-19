@@ -114,6 +114,13 @@ body{overscroll-behavior:none}
 .presentation-footer .brand-portrait{display:block;width:48px;height:54px;object-fit:contain;filter:drop-shadow(0 2px 3px #0003)}
 .presentation-footer.on-film .scene-wordmark{color:#fff;text-shadow:0 2px 10px #050b2c99}
 .presentation-footer.on-paper .scene-wordmark{color:var(--embat-navy)}
+.presentation-brand-links{display:flex;align-items:center;gap:24px}
+.presentation-platform-link{font-family:var(--font-sans);font-size:14px;font-weight:500;color:var(--embat-navy);padding:10px 0;text-decoration:none}
+.presentation-footer.on-film .presentation-platform-link{color:white;text-shadow:0 2px 10px #050b2c99}
+.presentation-platform-link:hover{text-decoration:underline;text-underline-offset:5px}
+.presentation-platform-link:focus-visible{outline:2px solid currentColor;outline-offset:5px;border-radius:2px}
+.intro-interest{container-type:inline-size}
+.story-intro-card h1.intro-interest-title{white-space:nowrap;font-size:clamp(18px,8cqw,40px);letter-spacing:-.035em}
 .presentation-skip{border-left:1px solid #696d8033}
 .sky-serif{font-family:var(--font-sans);font-weight:500;letter-spacing:-.025em}
 .sky-italic{font-style:normal}
@@ -128,11 +135,15 @@ body{overscroll-behavior:none}
 .closing-platform{margin-top:32px}
 .closing-platform-button{display:inline-flex;align-items:center;justify-content:center;gap:24px;min-height:68px;padding:12px 14px 12px 28px;border:1px solid #ffffff;border-radius:8px;background:#ffffff;color:var(--embat-navy);font-family:var(--font-sans);font-size:19px;font-weight:600;box-shadow:0 6px 24px #050b2c40;text-decoration:none}
 .closing-platform-button:hover{background:var(--embat-blue-light);border-color:var(--embat-blue-inverse)}
-.closing-platform-button span{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;border-radius:5px;background:var(--embat-blue);color:#fff;font-size:27px;line-height:1}
+.closing-platform-arrow{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;border-radius:5px;background:var(--embat-blue);color:#fff;font-size:27px;line-height:1}
 .closing-platform-button:focus-visible{outline:3px solid var(--embat-blue-inverse);outline-offset:5px}
+.closing-platform-invite{animation:closing-invite 2.4s ease-out 2;box-shadow:0 0 0 6px #ffffff18,0 12px 40px #050b2c70;transition:box-shadow .2s ease,transform .2s ease}
+.closing-platform-invite:hover{transform:translateY(-3px);box-shadow:0 0 0 8px #ffffff26,0 16px 48px #050b2c90}
+@keyframes closing-invite{0%,100%{box-shadow:0 0 0 6px #ffffff18,0 12px 40px #050b2c70}50%{box-shadow:0 0 0 14px #ffffff08,0 12px 48px #3878f655}}
+@media(prefers-reduced-motion:reduce){.closing-platform-invite{animation:none;transition:none}.closing-platform-invite:hover{transform:none}}
 @media(max-width:600px){.scene-number-6 .scene-center{top:16%}.closing-platform{margin-top:24px}.closing-platform-button{max-width:100%;font-size:16px}}
 @media(max-height:600px){.scene-number-6 .scene-center{top:6%;max-height:calc(100svh - 120px);overflow:auto}.scene-number-6 h1.story-thanks{font-size:36px;margin:12px 0}.scene-number-6 .scene-credits{margin:12px 0}.closing-platform{margin-top:16px}}
-@media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-button span{transition:none}.closing-platform-button:hover span{transform:none}}
+@media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-arrow{transition:none}.closing-platform-button:hover .closing-platform-arrow{transform:none}}
 
 /* Fixed player geometry: route titles and video availability never move controls. */
 .presentation-nav{width:400px;max-width:90vw}
@@ -151,3 +162,18 @@ body{overscroll-behavior:none}
 @keyframes closing-title-reveal{from{opacity:.15}to{opacity:1}}
 .closing-copy .story-thanks{animation:closing-title-reveal .9s cubic-bezier(.22,1,.36,1) both;will-change:opacity}
 @media(prefers-reduced-motion:reduce){.closing-copy .story-thanks{animation:none;will-change:auto}}
+
+/* A one-shot water-to-interface reveal. The real link remains the hit target. */
+.water-portal{position:relative;display:inline-block;max-width:100%;isolation:isolate}
+.water-portal-canvas{position:absolute;left:-170px;top:-150px;width:calc(100% + 340px);height:calc(100% + 300px);pointer-events:none;z-index:2}
+.water-portal-button{position:relative;z-index:1;overflow:hidden;animation:portal-materialize 3.8s linear both;transform-origin:center;will-change:opacity,transform}
+.water-portal-label,.closing-platform-arrow{position:relative;z-index:1}
+.water-portal-button::after{content:"";position:absolute;inset:-50% -70%;background:linear-gradient(105deg,transparent 42%,#dbe8ee66 49%,#ffffff99 50%,#dbe8ee44 52%,transparent 59%);transform:translateX(-65%);pointer-events:none;animation:portal-caustic 4.1s ease-out both}
+@keyframes portal-materialize{0%,72%{opacity:0;transform:none}84%{opacity:.35;transform:none}100%{opacity:1;transform:none}}
+@keyframes portal-caustic{0%,64%{transform:translateX(-65%);opacity:0}68%{opacity:1}100%{transform:translateX(65%);opacity:0}}
+.water-portal-button:focus-visible{animation:none;opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.water-portal-canvas{display:none}.water-portal-button,.water-portal-button::after{animation:none;transform:none;will-change:auto}.water-portal-button::after{display:none}}
+
+.company-case-with-boat{display:flex;align-items:center;gap:20px;padding-top:18px}
+.company-case-with-boat>div{min-width:0}
+@media(max-width:640px){.company-case-with-boat{gap:14px}}
