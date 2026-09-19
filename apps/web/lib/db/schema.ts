@@ -9,6 +9,7 @@ export const companies = pgTable("companies", {
   displayName: text("display_name").notNull(),
   sectorHint: text("sector_hint"),
   currency: text("currency").default("EUR"),
+  country: text("country"), // ISO-2 real del CSV crudo (solo 230/1286 lo traen); null = desconocido, NO se inventa
   hasErp: boolean("has_erp").default(false),
   hasDebt: boolean("has_debt").default(false),
   firstMonth: text("first_month"),

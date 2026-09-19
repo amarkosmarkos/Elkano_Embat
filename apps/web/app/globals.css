@@ -41,3 +41,18 @@ body {
   background: var(--color-accent);
   color: #03181f;
 }
+
+/* arcos de flujo del mapa de cash-pooling: guiones que "circulan" en el sentido del dinero */
+.flow {
+  animation: flow 1.1s linear infinite; /* el patrón de guiones lo pone cada arco en style (misma divisa vs cruce) */
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    animation: none;
+  }
+}

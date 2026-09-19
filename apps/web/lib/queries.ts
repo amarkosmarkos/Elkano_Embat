@@ -95,6 +95,40 @@ export async function findCashPoolingCandidateGroup() {
   return rows[0] ?? null;
 }
 
+/** Grupos con varias filiales, ordenados por nº de divisas y tamaño — el selector de la demo de cash-pooling. */
+export async function listPoolingGroups(limit = 40) {
+  return db.execute<{ group_id: string; n: number; n_cur: number; curs: string }>(sql`
+    select group_id, count(*)::int as n, count(distinct currency)::int as n_cur,
+           string_agg(distinct currency, ' · ' order by currency) as curs
+    from companies
+    where group_id is not null
+    group by group_id
+    having count(*) > 2
+    order by n_cur desc, n desc
+    limit ${limit}
+  `);
+}
+
+/** Todo lo que necesita la pantalla de cash-pooling de un grupo: filiales + su serie mensual completa. */
+export async function getGroupSeries(groupId: string) {
+  const base = await db
+    .select({ companyId: companies.companyId, displayName: companies.displayName, currency: companies.currency, country: companies.country })
+    .from(companies)
+    .where(eq(companies.groupId, groupId))
+    .orderBy(asc(companies.companyId));
+  const ids = base.map((b) => b.companyId);
+  if (ids.length === 0) return { base: [], rows: [] };
+  const rows = await db
+    .select({ companyId: scores.companyId, month: scores.month, score: scores.score, regime: scores.regime, signals: scores.signals })
+    .from(scores)
+    .where(inArray(scores.companyId, ids))
+    .orderBy(asc(scores.month));
+  return {
+    base: base.map((b) => ({ ...b, currency: b.currency ?? "EUR" })),
+    rows: rows.map((r) => ({ companyId: r.companyId, month: r.month, score: r.score, regime: r.regime, cashLocal: r.signals?.cash_position ?? null })),
+  };
+}
+
 export async function scoreStats() {
   const rows = await db.execute<{ month: string; avg: number; p20: number; p80: number; n: number }>(sql`
     select month,

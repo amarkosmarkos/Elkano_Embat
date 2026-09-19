@@ -17,6 +17,14 @@ import * as schema from "../lib/db/schema";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(here, "..", "..", "..", "data"); // repo-root/data
 
+// tsx no carga .env.local (Next sí): se lee a mano para que `pnpm --filter web db:seed` funcione solo
+try {
+  for (const line of readFileSync(path.join(here, "..", ".env.local"), "utf8").split("\n")) {
+    const m = line.match(/^([A-Z_]+)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+} catch {}
+
 function loadJson<T>(file: string): T {
   return JSON.parse(readFileSync(path.join(DATA_DIR, file), "utf8"));
 }
@@ -43,11 +51,11 @@ async function main() {
   // orden: companies antes que scores (FK) · trunca todo primero para que sea repetible
   await client`truncate table scores, predictions, anticipation, explanations, alerts, companies, demo_state cascade`;
 
-  await insertChunked(companies as unknown as (typeof schema.companies.$inferInsert)[], (chunk) =>
+  await insertChunked(companies as never[], (chunk) =>
     db.insert(schema.companies).values(
-      chunk.map((c) => ({
+      (chunk as Record<string, never>[]).map((c) => ({
         companyId: c.company_id, groupId: c.group_id, displayName: c.display_name, sectorHint: c.sector_hint,
-        currency: c.currency, hasErp: c.has_erp, hasDebt: c.has_debt, firstMonth: c.first_month,
+        currency: c.currency, country: c.country ?? null, hasErp: c.has_erp, hasDebt: c.has_debt, firstMonth: c.first_month,
         lastMonth: c.last_month, nMonths: c.n_months,
       })) as never,
     ),

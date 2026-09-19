@@ -32,17 +32,24 @@ export default function Home() {
       <section className="border-t border-line-soft py-14">
         <div className="mb-2 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Quiénes somos</div>
         <h2 className="font-display text-3xl font-extrabold">Equipo Elkano</h2>
-        <p className="mt-4 max-w-2xl text-ink-dim">
-          {/* TODO(equipo): sustituir por la bio real de cada uno — quién sois, qué rol jugáis, y una línea de
-              por qué os pega el track (dato/riesgo, producto, o lo que sea real). No inventar aquí. */}
-          [Completar: quiénes formáis el equipo — nombre, rol, una línea de por qué encajáis con este reto.]
-        </p>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {["[Nombre 1 — rol]", "[Nombre 2 — rol]", "[Nombre 3 — rol]"].map((placeholder) => (
-            <div key={placeholder} className="rounded-sm border border-dashed border-line p-5 text-sm text-ink-mute">
-              {placeholder}
-              <div className="mt-2 text-xs">Foto / bio corta / por qué este track</div>
-            </div>
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
+          {["EHxuban11", "amarkosmarkos", "davidprz00", "iamLudok", "nagorelarranaga"].map((user) => (
+            <a
+              key={user}
+              href={`https://github.com/${user}`}
+              target="_blank"
+              rel="noreferrer"
+              className="group flex flex-col items-center gap-3 rounded-sm border border-line p-5 text-center transition-colors hover:border-accent"
+            >
+              <img
+                src={`https://github.com/${user}.png`}
+                alt={user}
+                width={72}
+                height={72}
+                className="h-[72px] w-[72px] rounded-full border border-line"
+              />
+              <span className="font-mono text-xs text-ink-dim group-hover:text-accent">@{user}</span>
+            </a>
           ))}
         </div>
       </section>
