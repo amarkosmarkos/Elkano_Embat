@@ -38,7 +38,7 @@ npx --yes pnpm@11.25.0 --filter web build      # export estático a apps/web/out
 
 El build tiene que pasar siempre. `next.config.mjs` lleva `output: "export"` y `trailingSlash: true`; las rutas dinámicas usan `generateStaticParams` leyendo `companies.json` y `groups.json`. Sin dependencias nuevas salvo necesidad clara. Sin Convex, aunque siga en package.json.
 
-Puede haber trabajo sin commitear en `apps/web` de una pasada anterior que hacía que las tarjetas de producto operen de verdad (fichero `lib/ops.ts`, componentes `ExcedentesCard.tsx` y `PoolingCard.tsx`, página `app/operaciones/page.tsx`). Mira `git status` al empezar. Si está, revísalo, haz que el build pase y commitea. Si no está, lo haces tú según el punto 5.
+Los productos ya operan de verdad y está commiteado: `lib/ops.ts` (almacén en localStorage con `useOps`), `components/ExcedentesCard.tsx`, `components/PoolingCard.tsx`, `components/MonitorList.tsx`, `components/OpsTable.tsx` y la página `app/operaciones/page.tsx` (paso 6 de la barra). Está verificado con build y curl, pero nadie ha hecho clic todavía en un navegador real: haz una pasada manual por /empresa/COMP_0054/, /grupo/GROUP_0067/, /monitor/ y /operaciones/ antes de nada y arregla lo que falle. La intro con `?p=0.5` no se puede capturar con Chrome headless (captura el documento desde arriba y el contenedor es sticky): compruébala a mano con scroll.
 
 ## 3. Datos que lee la web
 
@@ -82,7 +82,7 @@ Los blend y scripts están en la carpeta `blender/` del proyecto hackspain, junt
 
 ### C. Web: productos que funcionan de verdad
 
-Si no está hecho, implementa esto con estado local en el navegador, persistido en localStorage, sin backend:
+Ya está implementado como se describe aquí. Úsalo como especificación para revisar y pulir, no para rehacerlo:
 
 - `lib/ops.ts`: almacén de operaciones ejecutadas con un hook `useOps()` que expone la lista, añadir, quitar y vaciar. Tipos: colocación (empresa, importe, plazo, tipo, banco, mes de inicio, vencimiento, rendimiento anual), préstamo interno (grupo, de, a, importe, tipo interno) y aviso resuelto (empresa, título). Todo acceso a localStorage en try/catch y seguro en SSR.
 - `ExcedentesCard.tsx` en la ficha: importe editable hasta el suelo de doce meses, plazo 3, 6 o 12 meses, botón "Aprobar colocación". Al aprobar, la tarjeta pasa a ejecutada: "Depósito de X a N meses en <banco>, vence <mes>, rendimiento estimado Y al año", con "Deshacer". Encima, "Caja disponible" que baja con lo colocado.
