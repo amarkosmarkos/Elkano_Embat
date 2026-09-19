@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { presentation, presentationHref, sceneMedia, sectionLabel } from "@/lib/presentation";
 import { SkyStory } from "@/components/SkyStory";
 import { CompanyBoat } from "@/components/CompanyBoat";
+import { PresentationIcon } from "@/components/PresentationIcons";
 
 type WindowData={key:string;title:string;value:string;detail:string};
 const clamp=(x:number)=>Math.max(0,Math.min(1,x));
@@ -18,7 +19,7 @@ const ClosingCopy=memo(function ClosingCopy(){
     <h1 className="story-thanks">Gracias por escuchar.</h1>
     <p className="scene-credits">Luken, Nagore, Markos, David y Xuban</p>
     <p className="scene-eyebrow">HackSpain 2026, Embat</p>
-    <div className="closing-platform"><Link href="/plataforma/" className="closing-platform-button closing-platform-invite">Entrar en la plataforma <span className="closing-platform-arrow" aria-hidden="true">→</span></Link></div>
+    <div className="closing-platform"><Link href="/plataforma/" className="closing-platform-button closing-platform-invite">Entrar en la plataforma <span className="closing-platform-arrow" aria-hidden="true"><PresentationIcon name="arrowRight"/></span></Link></div>
   </div>;
 });
 

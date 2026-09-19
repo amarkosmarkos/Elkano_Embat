@@ -1,41 +1,34 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import styles from "./CelestialScore.module.css";
-
-function Ink({text,delay=0}:{text:string;delay?:number}){
-  let index=0;
-  return <span className={styles.ink} aria-label={text}>{text.split(" ").map((word,i)=><span key={i} className={styles.word} aria-hidden="true">{[...word].map((letter,j)=><span key={j} className={styles.letter} style={{"--delay":`${delay+(index++)*.018}s`} as CSSProperties}>{letter}</span>)}{i<text.split(" ").length-1?"\u00a0":""}</span>)}</span>;
-}
 
 export function CelestialScore(){
   const [notes,setNotes]=useState(false);
   return <main className={styles.slide} data-celestial-score>
     <header className={styles.header}>
-      <p className={styles.eyebrow}>03 / CÓMO CALCULAMOS EL SCORE</p>
-      <h1><Ink text="SCORE VALIDADO"/></h1>
+      <h1>SCORE VALIDADO</h1>
       <p className={styles.subtitle}>Estimamos cómo está una empresa y hacia dónde va.</p>
     </header>
     <div className={styles.process}>
       <section className={styles.input} aria-label="105 variables estadísticas">
-        <p className={styles.number}>01 / LOS DATOS</p>
         <h2><strong>105</strong><span>variables estadísticas</span></h2>
         <p className={styles.dimensions}>Pagos, liquidez y caja<br/>Deuda y concentración</p>
       </section>
-      <svg className={styles.arrow} viewBox="0 0 70 20" aria-hidden="true"><path d="M1 10 H64 M54 3 L65 10 L54 17" pathLength="1"/></svg>
+      <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
       <section className={styles.model} aria-label="Modelo predictivo">
-        <p className={styles.number}>02 / EL MODELO</p>
-        <h2>Modelo predictivo</h2>
-        <p className={styles.detail}>Gradient boosting a 3 y 6 meses</p>
+        <p className={styles.number}>Gradient boosting</p>
+        <h2>Aprende qué señales<br/>preceden al estrés.</h2>
+        <p className={styles.detail}>Facturas vencidas, pagos ausentes, descubierto y coste financiero.</p>
+        <p className={styles.horizon}>Estimación a 3 y 6 meses</p>
       </section>
-      <svg className={styles.arrow} viewBox="0 0 70 20" aria-hidden="true"><path d="M1 10 H64 M54 3 L65 10 L54 17" pathLength="1"/></svg>
+      <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
       <section className={styles.output} aria-label="Score de salud financiera de cero a cien">
-        <p className={styles.number}>03 / EL RESULTADO</p>
-        <h2><strong>0-100</strong><span>score de salud financiera</span></h2>
+        <p className={styles.number}>Score de salud financiera</p>
+        <h2><strong>0-100</strong></h2>
         <p className={styles.readings}>Cuanto más alto,<br/>menor estrés estimado.</p>
       </section>
     </div>
-    <p className={styles.learning}>Comprobamos si después hubo señales de estrés.</p>
     <section className={styles.validation} aria-label="Resultados de la validación con el índice de Gini">
       <div className={styles.proof}><h2>Comprobado con Gini</h2><p>Con grupos que el modelo no había visto.</p></div>
       <div className={styles.results}>{[["0,54","1 mes"],["0,44","3 meses"],["0,38","6 meses"]].map(([value,horizon])=><div key={horizon}><strong>{value}</strong><span>{horizon}</span></div>)}</div>

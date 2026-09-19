@@ -6,7 +6,7 @@ La textura actual se generó con la herramienta integrada `image_gen` y se conse
 
 Fuente de cifras: `output/03_validation/report_v3.md` (copia revisada en `../team-review-main`). Gini: 0,540 / 0,439 / 0,379. 1.282 empresas, 15.803 filas. El panel contiene 105 variables antes de añadir percentiles.
 
-Tipografía de acento: Cormorant Garamond Italic (Google Fonts, licencia OFL incluida en public/fonts). El cuerpo y las cifras conservan Manrope. La animación es un revelado breve de letras y líneas; no cambia de pantalla ni tiene etapas ocultas. Respeta movimiento reducido.
+Tipografía actual: Manrope en toda la slide, siguiendo la sección «Diseño elegido para las slides de contenido» de `apps/web/DESIGN-EMBAT.md`. Escala de 52, 24 y 18 px; pesos 400 y 500. Sin cursivas, caligrafía, efectos de plata ni entrada por letras. La fuente experimental anterior permanece como recurso sin uso.
 
 ## Prompt final de la textura v2
 

@@ -126,11 +126,13 @@ Mantener titulares comerciales de 32–52 px en portada; proponer 24–32 px en 
 - `app/globals.css`: tokens Tailwind, tipografía, tablas y tarjetas comunes.
 - `app/embat-presentation.css`: adaptación visual de la presentación.
 - `components/PresentationBrand.tsx`: identidad Elkano.
-- `components/Escena.tsx`: escenas y CTA de cierre en el worktree.
+- `components/Escena.tsx`: escenas y CTA de cierre.
 - `components/Nav.tsx`, `Shell.tsx`, `ui.tsx`: navegación y componentes de la aplicación.
-- `app/plataforma/page.tsx`: entrada propuesta en el worktree; reutiliza el dashboard existente.
+- `app/plataforma/page.tsx`: entrada a la plataforma; reutiliza el dashboard existente.
+- `components/CelestialScore.tsx` y `CelestialScore.module.css`: referencia implementada para las slides de contenido.
+- `components/PresentationIcons.tsx`: iconos SVG compartidos del recorrido.
 
-Este commit documenta el diseño. Los cambios de botón y ruta pueden permanecer sin commit en el worktree; no asumir que esta documentación los publica.
+La sección 9 recoge las decisiones del proyecto para las slides de contenido. Son una adaptación de la referencia de Embat, no una especificación de su aplicación autenticada.
 
 ## 8. Criterios de revisión
 
@@ -141,3 +143,73 @@ Este commit documenta el diseño. Los cambios de botón y ruta pueden permanecer
 5. Capturas de desktop y móvil revisadas después de cargar fuentes y animaciones.
 6. Presentación y plataforma comparten marca, con densidad apropiada a cada uso.
 7. Distinguir siempre valores medidos de decisiones adaptadas para Elkano.
+
+## 9. Diseño elegido para las slides de contenido
+
+Decisiones acordadas durante la revisión de la presentación, 19 de septiembre de 2026. Aplicar esta sección al score, las explicaciones de producto y los casos de las empresas A y B. Las escenas de vídeo mantienen su composición cinematográfica.
+
+La referencia implementada es la slide 3: `components/CelestialScore.tsx` y `components/CelestialScore.module.css`. Reutilizar su lenguaje visual; no diseñar cada slide con una tipografía, una escala o unos iconos distintos. Estas decisiones sustituyen los experimentos anteriores de caligrafía, brillo y mezclas de fuentes.
+
+### Tipografía: una familia y tres tamaños
+
+Usar **Manrope**, ya alojada en el proyecto, en toda la slide. La fuente original de Embat es HafferSQXH; Manrope es la sustituta elegida para esta presentación. No descargar ni introducir otra fuente para una slide concreta.
+
+| Uso | Escritorio | Peso | Regla |
+| --- | --- | --- | --- |
+| Titular y cifras protagonistas | 52 px, interlineado 1,2 | 500 | Un mensaje principal. Las cifras protagonistas pueden compartir este tamaño. |
+| Títulos de bloque y cifras secundarias | 24 px, interlineado 1,5 | 500 | La misma jerarquía en todos los bloques. |
+| Subtítulos, explicaciones, etiquetas y evidencia | 18 px, interlineado 1,5 | 400 | Texto legible durante una presentación, sin letra pequeña para hacer sitio. |
+
+En móvil, el titular pasa a 38 px; bloques y texto mantienen 24 y 18 px. Se apila el contenido y se permite scroll vertical.
+
+No usar cursivas, familias caligráficas, serif alternativas, texto metalizado ni gradientes dentro de las letras. No mezclar negritas de 700/900 con texto ligero. Reservar 500 para titulares y 400 para la lectura normal. Si falta sitio, acortar el texto o llevar el detalle a una explicación desplegable; no añadir tamaños intermedios ni reducir el cuerpo a 10–13 px.
+
+### Fondo y color
+
+Mantener los colores de Embat: navy `#050B2C`, blanco `#FFFFFF`, azul de acción `#3878F6` y texto secundario sobre oscuro `#D2D2DB`.
+
+La slide del score conserva la cartulina azul rugosa aprobada: `public/images/score-navy-cardstock-v2.png`, con un velo navy ligero. La textura debe verse, pero el texto tiene prioridad. Puede reutilizarse en otras slides oscuras de contenido. Las slides claras pueden mantener el fondo blanco ya usado en la presentación, con texto navy. No añadir dorado, resplandores, nuevas paletas ni efectos decorativos al texto.
+
+### Composición y espacio
+
+- Una slide contiene la idea completa. No esconder partes del argumento en pasos automáticos o pestañas internas.
+- Empezar directamente por el titular. No añadir un rótulo redundante como «03 / CÓMO CALCULAMOS EL SCORE»; la navegación ya indica la posición.
+- Usar un área de contenido de hasta 1200 px y márgenes laterales generosos: `max(28px, 6vw)` en escritorio y 24 px en móvil.
+- Separar bloques con espacio, no con líneas horizontales, bordes punteados o una tarjeta alrededor de cada párrafo.
+- Para un flujo, alinear de izquierda a derecha los datos, el proceso y el resultado. Mantener la misma jerarquía en las tres columnas.
+- Reservar espacio inferior para la marca y el widget. A 1280 × 720 y 1440 × 900, la slide debe caber sin scroll ni contenido tapado por los controles.
+
+En la slide del score, «SCORE VALIDADO» es el mensaje principal. El flujo es 105 variables, modelo predictivo y score de 0 a 100. Los resultados de Gini son evidencia secundaria y se muestran con menor tamaño. No reintroducir el dibujo de red neuronal: se retiró a petición del usuario.
+
+La composición actual destaca únicamente el resultado con una superficie azul Embat. Los datos y la explicación permanecen sobre el fondo, sin tarjetas. Así se distingue el destino del flujo sin añadir más estilos tipográficos. La evidencia queda debajo; no compite con el resultado.
+
+### Flechas e iconos
+
+Usar iconos SVG sencillos, de trazo uniforme y extremos redondeados. Para enlaces y controles, usar 18–24 px; las flechas entre bloques pueden medir 28 px. Referencia de trazo: 1,5–1,6 unidades en un `viewBox` de 24.
+
+No usar caracteres Unicode como sustituto visual de flechas. La forma de un carácter depende de la fuente y no coincide con los demás controles. Reutilizar `PresentationIcons.tsx`; mantener las etiquetas accesibles y el foco visible.
+
+### Texto
+
+Aplicar la skill `humanizer` al redactar o revisar el contenido. Mantener las cifras y el alcance de las afirmaciones. Escribir frases que el presentador pueda decir en voz alta, como «Comprobado con Gini» o «Con grupos que el modelo no había visto».
+
+No usar puntos centrados para separar conceptos. Utilizar comas, «y», frases completas o saltos de línea. Evitar lemas abstractos, frases de relleno y repetir lo mismo en el titular y en cada bloque.
+
+Cuando una precisión técnica no quepa con letra legible, conservarla en «Método y alcance». En el score, ese apartado explica los eventos de estrés, los datos sintéticos, la validación por grupos y las limitaciones. El diagrama o la frase comercial no deben inventar una arquitectura, una cifra o una capacidad validada.
+
+### Movimiento y navegación
+
+El contenido esencial debe estar disponible al entrar. No ligarlo al progreso de un vídeo ni darle una larga animación de escritura. Si se usa una entrada, que sea breve y no cambie la geometría de la slide. Respetar movimiento reducido. Evitar brillo en nodos, partículas decorativas y animaciones que sigan consumiendo recursos cuando ya no aportan nada.
+
+En el footer, centrar «Elkano» y «Plataforma» por su texto. Usar `line-height: 1` y alineación flex. Dibujar el subrayado de hover fuera del flujo, con un pseudo-elemento absoluto, para que no altere la altura ni la alineación.
+
+El widget conserva el mismo ancho entre slides: 400 px en escritorio, limitado a 90 vw en móvil. Mantener fijas las posiciones de los controles. Mostrar el contador y el nombre una sola vez: «02 / 11 El problema», sin otro «2.» delante del título. Las flechas izquierda/derecha del teclado cambian de slide directamente. Los controles de reproducción tienen una función separada.
+
+### Comprobación antes de dar una slide por terminada
+
+1. Una sola familia tipográfica, tres niveles y solo pesos 400/500.
+2. Ninguna cursiva, rótulo redundante, línea separadora o punto centrado en el contenido visible.
+3. Flechas SVG coherentes, sin caracteres usados como iconos.
+4. Sin scroll en escritorio a 1280 × 720 y 1440 × 900; sin desbordamiento horizontal a 390 px.
+5. Contenido y controles separados, foco visible y navegación por teclado funcionando.
+6. Cifras trazables y las precisiones técnicas conservadas donde corresponda.

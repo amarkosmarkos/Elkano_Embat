@@ -1,12 +1,12 @@
 /** Edit route order and media here without changing playback or navigation. */
 export const presentation = [
-  ["/escena/1", "1. Intro"],
-  ["/escena/3", "2. El problema"], ["/calculo-score", "3. Cálculo del score"],
-  ["/escena/4", "4. El cofre"], ["/producto/1", "5. Marketplace de crédito"],
-  ["/producto/2", "6. Cash pooling"], ["/producto/3", "7. Seguros de David"],
-  ["/escena/8", "8. Dos empresas"],
-  ["/caso/a", "9. Empresa A"], ["/caso/b", "10. Empresa B"],
-  ["/escena/6", "11. Gracias"],
+  ["/escena/1", "Intro"],
+  ["/escena/3", "El problema"], ["/calculo-score", "Cálculo del score"],
+  ["/escena/4", "El cofre"], ["/producto/1", "Marketplace de crédito"],
+  ["/producto/2", "Cash pooling"], ["/producto/3", "Seguros de David"],
+  ["/escena/8", "Dos empresas"],
+  ["/caso/a", "Empresa A"], ["/caso/b", "Empresa B"],
+  ["/escena/6", "Gracias"],
 ] as const;
 export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"11 / FIN",8:"08 / DOS EMPRESAS"};
 export const presentationHref = (path: string) => `${path}/?present=1`;
