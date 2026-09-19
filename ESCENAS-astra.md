@@ -15,16 +15,26 @@ Tu trabajo es producir en Blender los seis planos que enlazan la presentación w
 
 | # | Nombre | Plano | Duración | Uso en la web | Fichero | Prioridad |
 |---|---|---|---|---|---|---|
-| 1 | Zarpar | Barco navegando de izquierda a derecha, visto de lado, cámara casi fija con un travelling suave que lo acompaña. Mar tranquilo, día claro. Empieza con el barco entrando por la izquierda y termina con el barco centrado. Debe poder pausarse en cualquier fotograma y quedar bonito, porque el scroll lo detiene donde quiere | 40 s | Vídeo controlado por scroll. Encima aparecen siete tarjetas de texto a la derecha | `barco-largo.mp4` | 1 |
+| 1 | Zarpar | Barco navegando de izquierda a derecha, visto de lado, cámara casi fija con un travelling suave que lo acompaña. Mar tranquilo, día claro. Empieza con el barco entrando por la izquierda y termina con el barco centrado. Debe poder pausarse en cualquier fotograma y quedar bonito, porque el scroll lo detiene donde quiere | 12 s | Vídeo controlado por scroll (el scroll lo recorre despacio, no hacen falta 40 s de metraje). Encima aparecen siete tarjetas de texto a la derecha | `barco-largo.mp4` | 1 |
 | 2 | La isla | El barco llega frente a una isla o costa y se detiene. Cae la tarde: la luz pasa de día a atardecer en el propio plano. Termina en un fotograma estable con el barco fondeado | 6 s | Vídeo controlado por scroll y luego fotograma fijo con una capa oscura y texto | `isla.mp4` y `isla.jpg` (último fotograma) | 3 |
 | 3 | Las estrellas | Noche. Cámara en cubierta mirando hacia arriba, el mástil y las velas en un lateral, cielo estrellado limpio ocupando dos tercios de la imagen. Sin nubes ni luna grande. Puede ser un fotograma o un plano de 4 segundos con las estrellas titilando muy sutil | 4 s o fijo | Fotograma. La web dibuja encima una constelación de cinco estrellas y el número del score | `estrellas.jpg` y opcional `estrellas.mp4` | 2 |
 | 4 | El cofre | Interior de la bodega o la cubierta con un cofre de madera cerrado en primer plano, iluminado por un farol. Dos fotogramas: cofre cerrado y cofre abierto con luz saliendo del interior. Si un cofre modelado no llega, vale un plano corto del interior del barco con un espacio vacío a la derecha | fijo, dos imágenes | La web pone las tres tarjetas de producto saliendo del cofre al hacer scroll | `cofre-cerrado.jpg` y `cofre-abierto.jpg` | 5 |
 | 5 | El puerto | El barco llegando a un muelle o a una costa con edificios lejanos, visto de frente o tres cuartos. Amanecer. Espacio libre a la derecha | fijo | Fotograma con dos carteles de texto encima | `puerto.jpg` | 6 |
 | 6 | Cierre | El barco alejándose hacia el horizonte, visto desde atrás, atardecer. Termina en un fotograma con el barco pequeño y el cielo grande | 8 s | Vídeo controlado por scroll y luego fotograma con logo y nombres | `cierre.mp4` y `cierre.jpg` | 4 |
 
+## Pipeline en dos pasos: Blender maqueta, Seedance acabado
+
+El acabado de película no sale de Blender, sale de pasar el render por Seedance (vídeo a vídeo). Blender aporta lo que la IA no controla: geometría, cámara, timing y espacio para el texto. Seedance aporta luz, agua y acabado.
+
+1. **Maqueta en Blender.** Las seis escenas a 800x450, pocas muestras, cámara lenta y sin cortes. Barco idéntico en todas. Isla, muelle y cofre como bloques simples: solo tienen que leerse como lo que son. Duraciones cortas: de 8 a 15 segundos por plano. El scroll de la web recorre el clip tan despacio como haga falta, así que Zarpar no necesita 40 segundos de metraje, con 12 basta. Solo el cierre se reproduce a tiempo real.
+2. **Acabado en Seedance.** Mismo prompt de estilo en las seis y la misma imagen de referencia del barco adjunta siempre, para que el barco y el símbolo de Embat no cambien entre escenas. Salida a 1080p, reencodada a 1280x720 h264 con los nombres de la tabla.
+3. **Control.** Cada clip se para en tres fotogramas al azar. Si hay flicker, morphing o el barco cambia de forma, se repite con más peso de la referencia o se entrega la maqueta de Blender tal cual. La maqueta se guarda siempre como fallback con sufijo `-blender`.
+
+Lanza las seis maquetas a Seedance en lote, no de una en una, porque cada generación tarda minutos.
+
 ## Prioridad y plan de trabajo
 
-1. **Zarpar** (40 s). Es el que sostiene el primer minuto del vídeo y sustituye al render de 13 s que hay ahora. Empieza por este.
+1. **Zarpar** (12 s). Es el que sostiene el primer minuto del vídeo y sustituye al render de 13 s que hay ahora. Empieza por este.
 2. **Estrellas** (fotograma). Es la escena del score y solo necesita una imagen. Sácala en cuanto Zarpar esté renderizando.
 3. **Isla** (6 s). Si el cambio de luz no llega, un plano de día y la web oscurece.
 4. **Cierre** (8 s). Si no hay tiempo, se usa Zarpar invertido y un fotograma.
