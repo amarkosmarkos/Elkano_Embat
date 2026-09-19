@@ -2,7 +2,7 @@ import Link from "next/link";
 import PageHeader from "@/components/shell/PageHeader";
 
 const PRODUCTS = [
-  { n: "03", href: "/productos/seguro", title: "Seguro de crédito dinámico", desc: "Revisa el riesgo de los clientes asegurados y explica cómo evoluciona su prima. Las trayectorias de score son reales; exposición, precio y cobertura son supuestos de demostración.", stat: "48", statLabel: "empresas en la cartera de demostración", sub: ["Cartera", "Pólizas simuladas", "Informe de prima"] },
+  { n: "03", href: "/productos/seguro", title: "Seguro de crédito dinámico", desc: "Revisa el riesgo de los clientes asegurados, configura las condiciones de cobertura y explica cómo evoluciona su prima.", stat: "48", statLabel: "empresas en cartera", sub: ["Cartera", "Pólizas", "Informe de prima"] },
   { n: "01", href: "/productos/marketplace", title: "Marketplace de crédito", desc: "Empresas con excedente de tesorería financian a empresas sanas con necesidad visible de capital. El score elige a quién, cuánto y con qué diversificación; el monitor vigila la cartera mes a mes y el centro de acciones propone pausar, reducir o aumentar.", stat: "0,54", statLabel: "Gini a 1 mes del score que lo mueve", sub: ["Prestamistas", "Receptores y cartera", "Monitor", "Acciones"] },
   { n: "02", href: "/productos/cash-pooling", title: "Salud de grupo y cash pooling", desc: "Compara grupos por necesidad de caja, capital movilizable y ahorro neto estimado. Elige uno, revisa su salud y decide cómo redistribuir liquidez entre sus filiales.", stat: "Caja → ahorro", statLabel: "elige un grupo · revisa su salud · decide el plan", sub: ["Grupos", "Salud y caja", "Decisiones", "Historial e impacto"] },
 ];

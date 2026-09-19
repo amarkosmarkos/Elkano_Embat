@@ -18,7 +18,8 @@ type HistoryRow = {
   applied_annual_rate: number;
   monthly_premium: number;
 };
-type Company = { id: string; name: string; exposure: number; history: HistoryRow[] };
+type Company = { id: string; name: string; exposure: number; coverage?: number; history: HistoryRow[] };
+type Assumptions = InsuranceData["assumptions"];
 type InsuranceData = {
   meta: { observed_period: [string, string]; population: string };
   validation: {
@@ -71,6 +72,31 @@ const DIM_LABEL: Record<keyof Components, string> = {
   concentracion: "Concentración",
 };
 
+const CALIBRATION: [number, number][] = [
+  [29.79, 0.9147], [48.23, 0.6139], [57.23, 0.5091], [63.15, 0.4602], [67.61, 0.4109],
+  [71.48, 0.4299], [74.86, 0.3880], [77.87, 0.3282], [81.16, 0.2993], [100, 0.2524],
+];
+
+function stressRate(score: number) {
+  return CALIBRATION.find(([high]) => score <= high)?.[1] ?? CALIBRATION.at(-1)![1];
+}
+
+function repriceCompany(company: Company, exposure: number, coverage: number, assumptions: Assumptions): Company {
+  let previousRate: number | null = null;
+  const history = company.history.map((row) => {
+    const stress = stressRate(row.score);
+    const pd6m = Math.min(0.999, stress * assumptions.stress_to_default);
+    const pd12m = 1 - (1 - pd6m) ** 2;
+    const indicated = pd12m * assumptions.loss_given_default * coverage + assumptions.expenses_rate + assumptions.capital_margin_rate;
+    const applied = previousRate == null
+      ? indicated
+      : Math.max(previousRate * (1 - assumptions.monthly_rate_cap), Math.min(previousRate * (1 + assumptions.monthly_rate_cap), previousRate * (1 - assumptions.smoothing) + indicated * assumptions.smoothing));
+    previousRate = applied;
+    return { ...row, stress_rate_6m: stress, indicated_annual_rate: indicated, applied_annual_rate: applied, monthly_premium: exposure * applied / 12 };
+  });
+  return { ...company, exposure, coverage, history };
+}
+
 function status(row: HistoryRow): Status {
   const delta = row.delta_3m ?? 0;
   if (row.events.event || row.score < 40 || delta <= -15) return "review";
@@ -113,10 +139,10 @@ function PortfolioChart({ points }: { points: { month: string; premium: number; 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-mute">Evolución de cartera</div>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-ink">Primas simuladas y riesgo de la cartera</h2>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-ink">Primas estimadas y riesgo de la cartera</h2>
         </div>
         <div className="flex gap-4 text-xs text-ink-dim">
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-5 bg-accent" /> Primas simuladas</span>
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-5 bg-accent" /> Primas estimadas</span>
           <span className="flex items-center gap-1.5"><i className="h-0.5 w-5 bg-pos" /> Score</span>
         </div>
       </div>
@@ -158,8 +184,11 @@ function Kpi({ label, value, note, tone = "text-ink" }: { label: string; value: 
   );
 }
 
-export default function InsuranceDashboard() {
-  const [data, setData] = useState<InsuranceData | null>(null);
+export default function InsuranceDashboard({ companyNames }: { companyNames: Record<string, string> }) {
+  const [baseData, setBaseData] = useState<InsuranceData | null>(null);
+  const [assumptions, setAssumptions] = useState<Assumptions | null>(null);
+  const [exposures, setExposures] = useState<Record<string, number>>({});
+  const [coverages, setCoverages] = useState<Record<string, number>>({});
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [contractFilter, setContractFilter] = useState<"all" | "insured" | "available">("all");
@@ -172,24 +201,64 @@ export default function InsuranceDashboard() {
     fetch("/data/insurance-portfolio.json")
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((payload: InsuranceData) => {
-        setData(payload);
-        setSelectedId([...payload.companies].sort((a, b) => a.name.localeCompare(b.name))[0]?.id ?? null);
+        const namedPayload = {
+          ...payload,
+          companies: payload.companies.map((company) => ({
+            ...company,
+            name: companyNames[company.id] ?? company.name,
+          })),
+        };
+        setBaseData(namedPayload);
+        const storedAssumptions = window.localStorage.getItem("embat-insurance-assumptions-v1");
+        const storedExposures = window.localStorage.getItem("embat-insurance-exposures-v1");
+        const storedCoverages = window.localStorage.getItem("embat-insurance-coverages-v1");
+        let nextAssumptions = namedPayload.assumptions;
+        let nextExposures = Object.fromEntries(namedPayload.companies.map((company) => [company.id, company.exposure]));
+        let nextCoverages = Object.fromEntries(namedPayload.companies.map((company) => [company.id, namedPayload.assumptions.coverage]));
+        try { if (storedAssumptions) nextAssumptions = { ...nextAssumptions, ...JSON.parse(storedAssumptions) }; } catch { /* valores iniciales */ }
+        try { if (storedExposures) nextExposures = { ...nextExposures, ...JSON.parse(storedExposures) }; } catch { /* valores iniciales */ }
+        try { if (storedCoverages) nextCoverages = { ...nextCoverages, ...JSON.parse(storedCoverages) }; } catch { /* valores iniciales */ }
+        setAssumptions(nextAssumptions);
+        setExposures(nextExposures);
+        setCoverages(nextCoverages);
+        setSelectedId([...namedPayload.companies].sort((a, b) => a.name.localeCompare(b.name))[0]?.id ?? null);
         const stored = window.localStorage.getItem("embat-insurance-accepted-v2");
         let initial: string[] | null = null;
         if (stored) {
           try { initial = JSON.parse(stored); } catch { initial = null; }
         }
         if (!Array.isArray(initial)) {
-          initial = [...payload.companies]
+          initial = [...namedPayload.companies]
             .sort((a, b) => a.name.localeCompare(b.name))
             .filter((_, index) => index % 3 !== 0)
             .map((company) => company.id);
         }
-        setAcceptedIds(new Set(initial.filter((id) => payload.companies.some((company) => company.id === id))));
+        setAcceptedIds(new Set(initial.filter((id) => namedPayload.companies.some((company) => company.id === id))));
         setAcceptanceReady(true);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los datos"));
-  }, []);
+  }, [companyNames]);
+
+  const data = useMemo<InsuranceData | null>(() => {
+    if (!baseData || !assumptions) return null;
+    return {
+      ...baseData,
+      assumptions,
+      companies: baseData.companies.map((company) => repriceCompany(company, exposures[company.id] ?? company.exposure, coverages[company.id] ?? assumptions.coverage, assumptions)),
+    };
+  }, [baseData, assumptions, exposures, coverages]);
+
+  useEffect(() => {
+    if (assumptions) window.localStorage.setItem("embat-insurance-assumptions-v1", JSON.stringify(assumptions));
+  }, [assumptions]);
+
+  useEffect(() => {
+    if (Object.keys(exposures).length) window.localStorage.setItem("embat-insurance-exposures-v1", JSON.stringify(exposures));
+  }, [exposures]);
+
+  useEffect(() => {
+    if (Object.keys(coverages).length) window.localStorage.setItem("embat-insurance-coverages-v1", JSON.stringify(coverages));
+  }, [coverages]);
 
   useEffect(() => {
     if (acceptanceReady) window.localStorage.setItem("embat-insurance-accepted-v2", JSON.stringify([...acceptedIds]));
@@ -270,7 +339,7 @@ export default function InsuranceDashboard() {
           <div>
             <Link href="/productos" className="text-xs font-medium text-accent hover:underline">← Todos los productos</Link>
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-good-dim px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-good">Simulación de producto</span>
+              <span className="rounded-full bg-good-dim px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-good">Gestión de seguro de crédito</span>
               <span className="rounded-full border border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-mute">Score financiero</span>
               <span className="rounded-full border border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-mute">Revisión mensual</span>
               <span className="rounded-full border border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-mute">Actualizado / {monthLabel(month)}</span>
@@ -281,9 +350,18 @@ export default function InsuranceDashboard() {
         </div>
       </section>
 
-      <aside className="mt-5 rounded-xl border border-warn/30 bg-warn-dim p-4 text-sm text-ink-dim" aria-label="Alcance de la simulación">
-        <strong className="text-ink">Demo con trayectorias de score reales.</strong> La exposición y las primas son simuladas. Marcar una póliza solo cambia esta demo y su historial se recalcula con la selección actual.
-        <details className="mt-2"><summary className="cursor-pointer">Supuestos de precio</summary><p className="mt-2">Conversión de estrés a impago: {pct(data.assumptions.stress_to_default)}. Pérdida en caso de impago: {pct(data.assumptions.loss_given_default)}. Cobertura base: {pct(data.assumptions.coverage)}. Gastos: {pct(data.assumptions.expenses_rate, 2)}. Margen: {pct(data.assumptions.capital_margin_rate, 2)}. Son hipótesis de producto, no una tarifa actuarial validada.</p></details>
+      <aside className="mt-5 rounded-xl border border-accent/30 bg-panel p-4 text-sm text-ink-dim" aria-label="Configuración de la política aseguradora">
+        <strong className="text-ink">Política aseguradora.</strong> El equipo responsable puede configurar los parámetros de tarificación con los valores estimados a partir de sus registros históricos de impagos, recuperaciones, costes y capital.
+        <div className="mt-4 border-t border-warn/20 pt-4">
+          <h2 className="font-semibold text-ink">Parámetros de tarificación</h2>
+          <p className="mt-1 text-xs">Valores definidos por el equipo de Seguros y Riesgos de Embat. Al modificarlos se recalculan las tarifas y primas de toda la cartera.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <AssumptionInput label="Estrés → impago" value={data.assumptions.stress_to_default} help="Estimación basada en el histórico de clientes en estrés que terminaron en impago." onChange={(value) => setAssumptions((a) => a && ({ ...a, stress_to_default: value }))} />
+            <AssumptionInput label="LGD" value={data.assumptions.loss_given_default} help="Pérdida neta histórica tras descontar recuperaciones de los importes impagados." onChange={(value) => setAssumptions((a) => a && ({ ...a, loss_given_default: value }))} />
+            <AssumptionInput label="Gastos anuales" value={data.assumptions.expenses_rate} help="Costes de contratación, administración, seguimiento y gestión de siniestros." onChange={(value) => setAssumptions((a) => a && ({ ...a, expenses_rate: value }))} />
+            <AssumptionInput label="Margen de capital" value={data.assumptions.capital_margin_rate} help="Margen definido para remunerar el capital y absorber la incertidumbre del riesgo." onChange={(value) => setAssumptions((a) => a && ({ ...a, capital_margin_rate: value }))} />
+          </div>
+        </div>
       </aside>
       <div className="mt-6 flex gap-2 border-b border-line-soft">
         {(["portfolio", "report"] as const).map((item) => <button key={item} onClick={() => setView(item)} className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${view === item ? "border-accent text-ink" : "border-transparent text-ink-mute hover:text-ink"}`}>{item === "portfolio" ? "Cartera asegurada" : "Informe de prima"}</button>)}
@@ -292,7 +370,7 @@ export default function InsuranceDashboard() {
       {view === "portfolio" ? <>
         <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Kpi label="Clientes asegurados" value={`${snapshot.rows.length} / ${snapshot.allRows.length}`} note={`${pct(snapshot.rows.length / Math.max(1, snapshot.allRows.length), 0)} de adopción en la base de clientes`} />
-          <Kpi label="Primas simuladas este mes" value={money(snapshot.premium)} note={`${signed(premiumDelta * 100)}% frente al mes anterior`} tone={premiumDelta > 0.01 ? "text-good" : "text-ink"} />
+          <Kpi label="Primas estimadas este mes" value={money(snapshot.premium)} note={`${signed(premiumDelta * 100)}% frente al mes anterior`} tone={premiumDelta > 0.01 ? "text-good" : "text-ink"} />
           <Kpi label="Volumen anualizado" value={money(snapshot.premium * 12, true)} note="Prima mensual actual × 12" tone="text-accent" />
           <Kpi label="Exposición protegida" value={money(snapshot.exposure, true)} note={`${snapshot.review.length} pólizas requieren revisión`} tone={snapshot.review.length ? "text-warn" : "text-good"} />
         </section>
@@ -352,9 +430,13 @@ export default function InsuranceDashboard() {
           </div>
         </section>
 
-      </> : <ClientReport data={data} company={selected} row={selectedRow} month={month} onSelect={setSelectedId} accepted={selected ? acceptedIds.has(selected.id) : false} onToggle={toggleAccepted} />}
+      </> : <ClientReport data={data} company={selected} row={selectedRow} month={month} onSelect={setSelectedId} accepted={selected ? acceptedIds.has(selected.id) : false} onToggle={toggleAccepted} onExposureChange={(id, value) => setExposures((current) => ({ ...current, [id]: value }))} onCoverageChange={(id, value) => setCoverages((current) => ({ ...current, [id]: value }))} />}
     </main>
   );
+}
+
+function AssumptionInput({ label, value, help, onChange }: { label: string; value: number; help: string; onChange: (value: number) => void }) {
+  return <label className="rounded-xl border border-line-soft bg-panel/70 p-3"><span className="block text-[10px] font-semibold uppercase tracking-wide text-ink-mute">{label}</span><span className="mt-2 flex items-center gap-2"><input type="number" min="0" max="100" step="0.05" value={(value * 100).toFixed(2)} onChange={(event) => { const next = Number(event.target.value) / 100; if (Number.isFinite(next)) onChange(Math.max(0, Math.min(1, next))); }} className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 font-mono text-sm text-ink" /><span>%</span></span><span className="mt-2 block text-[10px] leading-relaxed text-ink-mute">{help}</span></label>;
 }
 
 function SignalRow({ label, value, bad = false }: { label: string; value: string; bad?: boolean }) {
@@ -378,7 +460,7 @@ function riskBand(score: number) {
   return { label: "Riesgo bajo relativo", tone: "text-good", bg: "bg-good-dim" };
 }
 
-function ClientReport({ data, company, row, month, onSelect, accepted, onToggle }: {
+function ClientReport({ data, company, row, month, onSelect, accepted, onToggle, onExposureChange, onCoverageChange }: {
   data: InsuranceData;
   company: Company | null;
   row: HistoryRow | null;
@@ -386,6 +468,8 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
   onSelect: (id: string) => void;
   accepted: boolean;
   onToggle: (id: string) => void;
+  onExposureChange: (id: string, value: number) => void;
+  onCoverageChange: (id: string, value: number) => void;
 }) {
   if (!company || !row) return <section className="mt-6 rounded-2xl border border-line bg-panel p-8 text-center text-ink-mute">Selecciona un cliente para generar su informe de prima.</section>;
 
@@ -396,7 +480,8 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
   const scoreChange = previous ? row.score - previous.score : 0;
   const band = riskBand(row.score);
   const currentStatus = status(row);
-  const coverage = newCoverage(row, data.assumptions.coverage);
+  const baseCoverage = company.coverage ?? data.assumptions.coverage;
+  const coverage = newCoverage(row, baseCoverage);
   const overhead = data.assumptions.expenses_rate + data.assumptions.capital_margin_rate;
   const expectedLossRate = Math.max(0, row.indicated_annual_rate - overhead);
   const dimensions = (Object.entries(row.components) as [keyof Components, number | null][])
@@ -417,6 +502,12 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
         <select id="report-company" value={company.id} onChange={(e) => onSelect(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm text-ink outline-none focus:border-accent">
           {[...data.companies].sort((a, b) => a.name.localeCompare(b.name)).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
+        <label htmlFor="report-exposure" className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-ink-mute">Exposición asegurada pactada</label>
+        <div className="mt-2 flex items-center rounded-xl border border-line bg-panel-2 px-4"><span className="text-sm text-ink-mute">€</span><input id="report-exposure" type="number" min="0" step="10000" value={company.exposure} onChange={(event) => { const next = Number(event.target.value); if (Number.isFinite(next)) onExposureChange(company.id, Math.max(0, next)); }} className="w-full bg-transparent px-3 py-3 text-right font-mono text-sm text-ink outline-none" /></div>
+        <p className="mt-1 text-[10px] text-ink-mute">Límite negociado para esta contraparte. Cambiarlo recalcula su prima y los totales de cartera.</p>
+        <label htmlFor="report-coverage" className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-ink-mute">Cobertura base pactada</label>
+        <div className="mt-2 flex items-center rounded-xl border border-line bg-panel-2 px-4"><input id="report-coverage" type="number" min="0" max="100" step="1" value={(baseCoverage * 100).toFixed(0)} onChange={(event) => { const next = Number(event.target.value) / 100; if (Number.isFinite(next)) onCoverageChange(company.id, Math.max(0, Math.min(1, next))); }} className="w-full bg-transparent py-3 text-right font-mono text-sm text-ink outline-none" /><span className="ml-3 text-sm text-ink-mute">%</span></div>
+        <p className="mt-1 text-[10px] text-ink-mute">Porcentaje máximo de la pérdida cubierto para este cliente. Modifica su tarifa y su prima.</p>
         <button onClick={() => onToggle(company.id)} className={`mt-2 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${accepted ? "border border-line bg-panel-hi text-ink hover:bg-panel-2" : "bg-accent text-ground hover:opacity-90"}`}>{accepted ? "✓ Póliza aceptada / retirar de cartera" : "Añadir como póliza aceptada"}</button>
       </div>
     </div>
@@ -426,7 +517,7 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
       <Kpi label="Banda de riesgo" value={band.label} note={`Estrés observado: ${pct(row.stress_rate_6m)}`} tone={band.tone} />
       <Kpi label="Tarifa aplicada" value={pct(row.applied_annual_rate)} note={`${rateChange >= 0 ? "+" : ""}${pct(rateChange, 2)} frente al mes anterior`} tone={rateChange > 0 ? "text-warn" : "text-ink"} />
       <Kpi label="Prima mensual" value={money(row.monthly_premium)} note={`${premiumChange >= 0 ? "+" : ""}${money(premiumChange)} en un mes`} tone={premiumChange > 0 ? "text-bad" : "text-good"} />
-      <Kpi label="Cobertura futura" value={pct(coverage, 0)} note="Las facturas admitidas no cambian" tone={coverage < data.assumptions.coverage ? "text-warn" : "text-good"} />
+      <Kpi label="Cobertura futura" value={pct(coverage, 0)} note={`Base pactada: ${pct(baseCoverage, 0)}`} tone={coverage < baseCoverage ? "text-warn" : "text-good"} />
     </div>
 
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.05fr_0.95fr]">
@@ -477,7 +568,7 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
       <h3 className="mt-1 text-2xl font-semibold tracking-tight text-ink">Por qué la prima es {money(row.monthly_premium)} este mes</h3>
       <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-4">
         <PriceStep n="1" title="Riesgo observado" value={`${row.score.toFixed(1)} / ${band.label}`} text={`El score sitúa al cliente en una banda con ${pct(row.stress_rate_6m)} de eventos de estrés observados.`} />
-        <PriceStep n="2" title="Coste esperado del riesgo" value={pct(expectedLossRate)} text={`La política aseguradora convierte la banda en un coste esperado, considerando impago, recuperaciones y ${pct(data.assumptions.coverage, 0)} de cobertura.`} />
+        <PriceStep n="2" title="Coste esperado del riesgo" value={pct(expectedLossRate)} text={`La política aseguradora convierte la banda en un coste esperado, considerando impago, recuperaciones y ${pct(baseCoverage, 0)} de cobertura pactada para este cliente.`} />
         <PriceStep n="3" title="Tarifa indicada" value={pct(row.indicated_annual_rate)} text={`Incluye el coste esperado y ${pct(overhead, 2)} para operación y capital de la cobertura.`} />
         <PriceStep n="4" title="Tarifa aplicada" value={pct(row.applied_annual_rate)} text={`El ajuste se incorpora gradualmente para evitar que un único mes produzca un salto injustificado.`} />
       </div>
@@ -503,7 +594,7 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
           <li className="flex gap-2"><span className="text-good">✓</span><span>Los cambios se aplican al periodo futuro y quedan registrados.</span></li>
           <li className="flex gap-2"><span className="text-good">✓</span><span>Los casos sensibles pasan por revisión humana.</span></li>
         </ul>
-        <p className="mt-5 border-t border-line-soft pt-4 text-[11px] leading-relaxed text-ink-mute">La conversión de estrés a impago y la severidad son parámetros de demostración hasta disponer de siniestros y recuperaciones reales. Se muestran aquí para que Embat pueda distinguir una observación del modelo de una decisión de producto.</p>
+        <p className="mt-5 border-t border-line-soft pt-4 text-[11px] leading-relaxed text-ink-mute">La conversión de estrés a impago, la severidad, los gastos y el margen de capital son decisiones de política aseguradora. El equipo responsable debe revisarlas periódicamente utilizando sus registros históricos y criterios de riesgo vigentes.</p>
       </div>
     </div>
   </section>;
