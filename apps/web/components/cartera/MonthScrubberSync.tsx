@@ -13,7 +13,7 @@ const REFRESH_DEBOUNCE_MS = 150;
  * servidor a partir del mes (movimientos, bandeja): al cambiar de mes escribe la cookie global
  * y refresca los server components para que carguen el mes elegido.
  */
-export default function MonthScrubberSync({ months, initialIdx }: { months: string[]; initialIdx: number }) {
+export default function MonthScrubberSync({ months, initialIdx, hidePlay }: { months: string[]; initialIdx: number; hidePlay?: boolean }) {
   const [idx, setIdx] = useState(initialIdx);
   const [playing, setPlaying] = useState(false);
   const router = useRouter();
@@ -41,6 +41,7 @@ export default function MonthScrubberSync({ months, initialIdx }: { months: stri
       playing={playing}
       onScrub={(i) => { setPlaying(false); setIdx(i); }}
       onTogglePlay={() => setPlaying((p) => { if (!p && idx >= months.length - 1) setIdx(0); return !p; })}
+      hidePlay={hidePlay}
     />
   );
 }

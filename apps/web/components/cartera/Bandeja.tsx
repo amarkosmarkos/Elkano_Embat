@@ -31,7 +31,7 @@ export default function Bandeja({ alerts, month, months, initialIdx }: { alerts:
   const n = (s: Severity) => alerts.filter((a) => a.severity === s && !resolved.has(a.id)).length;
   return (
     <div className="flex flex-col gap-5">
-      <MonthScrubberSync months={months} initialIdx={initialIdx} />
+      <MonthScrubberSync months={months} initialIdx={initialIdx} hidePlay />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi icon="gauge" label="Avisos" value={formatCount(alerts.length - resolved.size)} sub={monthLabelLong(month)} />
         <Kpi icon="alert" label="Severidad alta" value={formatCount(n("high"))} tone="bad" sub="entra en el 20 % peor · alarma S1/S3/S8 · cae ≥ 15" />
