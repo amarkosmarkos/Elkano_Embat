@@ -2,7 +2,7 @@ import type { Tone } from "@/lib/score/colors";
 
 const TEXT: Record<Tone, string> = { neutral: "text-ink", good: "text-good", warn: "text-warn", bad: "text-bad", accent: "text-ink" };
 
-export type KpiIcon = "gauge" | "clock" | "trend-up" | "trend-down" | "alert";
+export type KpiIcon = "gauge" | "clock" | "trend-up" | "trend-down" | "alert" | "enter" | "exit";
 
 const ICON_STYLE: Record<KpiIcon, string> = {
   gauge: "bg-violet-400/15 text-violet-400",
@@ -10,6 +10,8 @@ const ICON_STYLE: Record<KpiIcon, string> = {
   "trend-up": "bg-good/15 text-good",
   "trend-down": "bg-neg/15 text-neg",
   alert: "bg-bad/15 text-bad",
+  enter: "bg-warn/15 text-warn",
+  exit: "bg-good/15 text-good",
 };
 
 const ICON_PATH: Record<KpiIcon, React.ReactNode> = {
@@ -42,6 +44,20 @@ const ICON_PATH: Record<KpiIcon, React.ReactNode> = {
       <path d="M12 3.5l9 15.5H3z" />
       <path d="M12 10v3.5" />
       <path d="M12 16.5h.01" />
+    </>
+  ),
+  enter: (
+    <>
+      <path d="M4 4h6v16H4" />
+      <path d="M11 12h9" />
+      <path d="M16.5 7.5l4.5 4.5-4.5 4.5" />
+    </>
+  ),
+  exit: (
+    <>
+      <path d="M20 4h-6v16h6" />
+      <path d="M13 12H4" />
+      <path d="M8.5 7.5L4 12l4.5 4.5" />
     </>
   ),
 };
