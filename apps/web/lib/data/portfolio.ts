@@ -30,7 +30,6 @@ export function rowsAt(store: Store, idx: number): Row[] {
   for (const c of store.companies) {
     const s = c.scores[idx];
     if (s == null) continue;
-    const fx = store.fixtures.get(c.id);
     const p1 = idx > 0 ? c.scores[idx - 1] : null;
     const p6 = idx >= 6 ? c.scores[idx - 6] : null;
     const comps = componentsAt(c, idx);
@@ -40,7 +39,7 @@ export function rowsAt(store: Store, idx: number): Row[] {
       id: c.id, name: c.name, group: c.group, score: s, prev1: p1,
       d1: p1 == null ? null : s - p1, d3: momentum(c.scores, idx), d6: p6 == null ? null : s - p6,
       tier: tier(s), trend: trend(c.scores, idx), alert: c.alerts[idx] === 1, nStress: c.stress[idx] ?? 0,
-      driver: mainDriver(comps), components: comps, history, erp: fx?.has_erp ?? false, debt: fx?.has_debt ?? false,
+      driver: mainDriver(comps), components: comps, history, erp: !!c.erp, debt: false,
     });
   }
   return out;

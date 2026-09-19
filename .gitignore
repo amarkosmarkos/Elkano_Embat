@@ -20,6 +20,8 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 ssh_key.txt
+__pycache__/
+*.pyc
 
 # output/: los datos crudos del reto (646 MB, se descomprimen de output_hackspain_data.zip) y
 # 01_preprocessed/ (regenerable con ./pipeline/run.sh, ~1 min) NO van al repo.
@@ -33,6 +35,7 @@ output/02_score/*
 !output/02_score/scores_v2.csv
 !output/02_score/scores_v3.csv
 !output/02_score/metrics_v1.parquet
+!output/02_score/cash_position.csv
 !output/03_validation/
 output/03_validation/*
 !output/03_validation/events_v1.csv
@@ -52,3 +55,5 @@ output/03_validation/*
 # derivados del EDA (se regeneran con ./eda/run.sh)
 eda/panel.csv
 eda/company_trend_features.csv
+
+AGENTS.md

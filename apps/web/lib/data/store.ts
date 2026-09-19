@@ -1,21 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { PATHS } from "./source";
-import type { CompanyDetail, CompanyIndex, EventRow, NetworkMeta, Signals } from "@/lib/score/types";
-
-export interface FixtureCompany {
-  company_id: string;
-  group_id: string | null;
-  display_name: string;
-  sector_hint: string | null;
-  currency: string | null;
-  has_erp: boolean;
-  has_debt: boolean;
-  first_month: string;
-  last_month: string;
-  n_months: number;
-  country: string | null;
-}
+import type { CompanyDetail, CompanyIndex, EventRow, NetworkMeta } from "@/lib/score/types";
 
 export interface Report {
   gini: Record<"h1" | "h3" | "h6", number>;
@@ -58,11 +44,10 @@ export interface Store {
   months: string[];
   companies: CompanyIndex[];
   byId: Map<string, CompanyIndex>;
-  fixtures: Map<string, FixtureCompany>;
   groups: Map<string, string[]>;
-  /** señales de tesorería por `${id}|${month}` (contrato de datos) */
-  signals: Map<string, Signals>;
-  signalMonths: string[];
+  /** caja real a fin de mes (EUR) por `${id}|${month}`: output/02_score/cash_position.csv, reconstruida desde balances + transactions (tools/export_cash_position.py) */
+  cash: Map<string, number>;
+  cashMonths: string[];
   events: Map<string, EventRow[]>;
   reports: Record<"v1" | "v2" | "v3", Report>;
   comparison: ComparisonRow[];
@@ -106,10 +91,9 @@ function parseComparison(md: string): ComparisonRow[] {
 }
 
 async function load(): Promise<Store> {
-  const [net, fixtures, scoresFx, eventsCsv, r1, r2, r3, comparisonMd, labels, eda] = await Promise.all([
+  const [net, cashCsv, eventsCsv, r1, r2, r3, comparisonMd, labels, eda] = await Promise.all([
     json<{ meta: NetworkMeta; companies: CompanyIndex[] }>(PATHS.network),
-    json<FixtureCompany[]>(path.join(PATHS.fixtures, "companies.json")),
-    json<{ company_id: string; month: string; signals: Signals }[]>(path.join(PATHS.fixtures, "scores.json")),
+    readFile(PATHS.cash, "utf8").catch(() => "company_id,month,cash_position\n"),
     readFile(path.join(PATHS.validation, "events_v1.csv"), "utf8"),
     json<Report>(path.join(PATHS.validation, "report_v1.json")),
     json<Report>(path.join(PATHS.validation, "report_v2.json")),
@@ -119,21 +103,25 @@ async function load(): Promise<Store> {
     json<Record<string, unknown>>(PATHS.eda),
   ]);
 
-  const fx = new Map(fixtures.map((f) => [f.company_id, f]));
-  // nombre de la plataforma: el del contrato de datos (Faker con semilla); el alias del ETL como respaldo
-  const companies = net.companies.map((c) => ({ ...c, name: fx.get(c.id)?.display_name ?? c.name }));
+  // el dataset es anónimo (COMP_xxxx): el nombre es el alias determinista del ETL del marketplace; el id se enseña siempre
+  const companies = net.companies;
   const byId = new Map(companies.map((c) => [c.id, c]));
 
   const groups = new Map<string, string[]>();
-  for (const f of fixtures) {
-    if (!f.group_id) continue;
-    if (!groups.has(f.group_id)) groups.set(f.group_id, []);
-    groups.get(f.group_id)!.push(f.company_id);
+  for (const c of companies) {
+    if (!c.group) continue;
+    if (!groups.has(c.group)) groups.set(c.group, []);
+    groups.get(c.group)!.push(c.id);
   }
 
-  const signals = new Map<string, Signals>();
-  const sm = new Set<string>();
-  for (const r of scoresFx) { signals.set(`${r.company_id}|${r.month}`, r.signals); sm.add(r.month); }
+  const cash = new Map<string, number>();
+  const cm = new Set<string>();
+  for (const r of parseCsv(cashCsv)) {
+    const v = Number(r.cash_position);
+    if (!r.company_id || !Number.isFinite(v)) continue;
+    cash.set(`${r.company_id}|${r.month}`, v);
+    cm.add(r.month);
+  }
 
   const events = new Map<string, EventRow[]>();
   for (const r of parseCsv(eventsCsv)) {
@@ -148,10 +136,9 @@ async function load(): Promise<Store> {
     months: net.meta.months,
     companies,
     byId,
-    fixtures: fx,
     groups,
-    signals,
-    signalMonths: [...sm].sort(),
+    cash,
+    cashMonths: [...cm].sort(),
     events,
     reports: { v1: r1, v2: r2, v3: r3 },
     comparison: parseComparison(comparisonMd),
@@ -193,6 +180,6 @@ export function getAllDetails(): Promise<Map<string, CompanyDetail>> {
   return globalThis.__xrayAllDetails;
 }
 
-export function signalsAt(store: Store, id: string, month: string): Signals | null {
-  return store.signals.get(`${id}|${month}`) ?? null;
+export function cashAt(store: Store, id: string, month: string): number | null {
+  return store.cash.get(`${id}|${month}`) ?? null;
 }

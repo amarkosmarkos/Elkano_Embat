@@ -82,19 +82,4 @@ export interface CompanyDetail {
   nStress: (number | null)[];
 }
 
-/** Señales de tesorería del contrato de datos (data/scores.json): valores crudos, no el score. */
-export interface Signals {
-  cash_position: number | null;
-  net_cash_flow: number | null;
-  runway_months: number | null;
-  dso_days: number | null;
-  dpo_days: number | null;
-  overdue_ar_ratio: number | null;
-  overdue_ap_ratio: number | null;
-  debt_utilization: number | null;
-  debt_service_ratio: number | null;
-  inflow_volatility: number | null;
-  top_customer_share: number | null;
-}
-
 export interface EventRow { month: string; D1: number; D2: number; D3: number; D4: number; event: number; cure: number }

@@ -14,7 +14,7 @@ export default async function GruposPage() {
   const { idx, month } = await currentMonth(store.months);
   const groups = groupsAt(store, idx).filter((g) => g.n > 1).sort((a, b) => b.n - a.n || (b.mean ?? 0) - (a.mean ?? 0));
   const snaps = new Map(groups.map((g) => [g.id, groupSnapshot(store, g.id, month)]));
-  const withBoth = groups.filter((g) => { const s = snaps.get(g.id); return s && s.totals.nSurplus > 0 && s.totals.nDeficit > 0; });
+  const withBoth = groups.filter((g) => { const s = snaps.get(g.id); return s && s.totals.surplusEur > 0 && s.totals.deficitEur > 0; });
   const totalSurplus = [...snaps.values()].reduce((s, x) => s + (x?.totals.surplusEur ?? 0), 0);
   const totalDeficit = [...snaps.values()].reduce((s, x) => s + (x?.totals.deficitEur ?? 0), 0);
   const cols = "grid-cols-[130px_60px_minmax(0,1fr)_70px_90px_70px_100px_100px]";

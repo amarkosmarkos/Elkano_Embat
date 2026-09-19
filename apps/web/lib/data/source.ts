@@ -8,7 +8,7 @@ const dataDir = process.env.XRAY_DATA_DIR ?? path.join(REPO_ROOT, "apps", "marke
 export const PATHS = {
   network: path.join(dataDir, "network.json"),
   companyDir: path.join(dataDir, "companies"),
-  fixtures: path.join(REPO_ROOT, "data"),
+  cash: path.join(REPO_ROOT, "output", "02_score", "cash_position.csv"),
   validation: path.join(REPO_ROOT, "output", "03_validation"),
   eda: path.join(REPO_ROOT, "eda", "eda_data.json"),
 };

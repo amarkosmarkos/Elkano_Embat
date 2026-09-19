@@ -4,7 +4,6 @@ import { currentMonth } from "@/lib/data/month";
 import { rowsAt } from "@/lib/data/portfolio";
 import { assessProvider, assessReceiver } from "@/lib/score/derived";
 import { groupSnapshot } from "@/lib/products/pooling";
-import { cuota, excedente, pagos } from "@/lib/products/tesoreria";
 import DecisionCards from "@/components/productos/DecisionCards";
 
 export default async function DecisionesPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,12 +16,12 @@ export default async function DecisionesPage({ params }: { params: Promise<{ id:
   const provider = assessProvider(c, idx, sorted);
   const receiver = assessReceiver(c, idx);
   const snap = c.group ? groupSnapshot(store, c.group, month) : null;
-  const pool = snap ? {
+  const me = snap?.entities.find((e) => e.companyId === id) ?? null;
+  const pool = snap && me ? {
     groupId: c.group as string,
-    role: snap.entities.find((e) => e.companyId === id)?.role ?? null,
-    entity: snap.entities.find((e) => e.companyId === id) ?? null,
-    proposals: snap.proposals.filter((p) => p.fromId === id || p.toId === id).map((p) => ({ ...p, from: snap.entities.find((e) => e.companyId === p.fromId)?.displayName ?? p.fromId, to: snap.entities.find((e) => e.companyId === p.toId)?.displayName ?? p.toId })),
+    entity: { role: me.role, policy: me.policy, reason: me.reason, cashEur: me.cashEur, spareEur: me.spareEur, needEur: me.needEur, receiveLimitEur: me.receiveLimitEur, reserveEur: me.reserveEur },
+    proposals: snap.proposals.filter((p) => p.fromId === id || p.toId === id).map((p) => ({ id: p.id, fromId: p.fromId, toId: p.toId, amountEur: p.amountEur, netSavingEur: p.netSavingEur, days: p.days, requiresReview: p.requiresReview })),
     totals: snap.totals,
   } : null;
-  return <DecisionCards company={{ id, name: c.name, score: c.scores[idx] }} month={month} provider={provider} receiver={receiver} pool={pool} exc={excedente(store, c, idx)} cuo={cuota(store, c, idx)} pag={pagos(store, c, idx)} />;
+  return <DecisionCards company={{ id, name: c.name }} provider={provider} receiver={receiver} pool={pool} />;
 }

@@ -47,8 +47,6 @@ export const NAV: NavItem[] = [
     children: [
       { href: "/productos/marketplace", label: "01 · Marketplace" },
       { href: "/productos/cash-pooling", label: "02 · Cash pooling" },
-      { href: "/productos/tesoreria", label: "03 · Tesorería" },
-      { href: "/productos/operaciones", label: "Operaciones" },
     ],
   },
 ];
@@ -61,8 +59,9 @@ export const COMPANY_TABS = (id: string) => [
   { href: `/empresas/${id}/decisiones`, label: "Decisiones" },
 ];
 
-export const TESORERIA_TABS = [
-  { href: "/productos/tesoreria", label: "Excedentes" },
-  { href: "/productos/tesoreria/cuotas", label: "Cuotas" },
-  { href: "/productos/tesoreria/pagos", label: "Pagos" },
+export const MARKETPLACE_TABS = [
+  { href: "/productos/marketplace", label: "Prestamistas" },
+  { href: "/productos/marketplace/receptores", label: "Receptores y cartera" },
+  { href: "/productos/marketplace/monitor", label: "Monitor" },
+  { href: "/productos/marketplace/acciones", label: "Acciones" },
 ];

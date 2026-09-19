@@ -34,8 +34,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
       <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi label="Score medio" value={mean == null ? "—" : mean.toFixed(0)} sub="filiales con score" />
         <Kpi label="En el 20 % peor" value={scored.filter((c) => rows.get(c.id)!.alert).length} tone="warn" />
-        <Kpi label="Sobra" value={snap ? fmtMoney(snap.totals.surplusEur) : "—"} tone="good" sub={snap ? `${snap.totals.nSurplus} filiales con excedente` : "sin señales de caja"} />
-        <Kpi label="Falta" value={snap ? fmtMoney(snap.totals.deficitEur) : "—"} tone="bad" sub={snap ? `${snap.totals.nDeficit} filiales en déficit` : ""} />
+        <Kpi label="Sobra" value={snap ? fmtMoney(snap.totals.surplusEur) : "—"} tone="good" sub={snap ? `${snap.entities.filter((e) => e.role === "surplus").length} filiales con excedente` : "sin caja reconstruida"} />
+        <Kpi label="Falta" value={snap ? fmtMoney(snap.totals.deficitEur) : "—"} tone="bad" sub={snap ? `${snap.entities.filter((e) => e.role === "deficit").length} filiales en déficit` : ""} />
       </div>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Card title="Filiales" sub="score, régimen, motivo, caja en EUR y papel en el grupo">
@@ -62,9 +62,9 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
             <div className="flex flex-col gap-2">
               {snap.proposals.map((p) => (
                 <div key={p.id} className="rounded-xl bg-panel-2 p-3.5">
-                  <div className="flex items-center justify-between text-[12.5px]"><span className="text-ink">{ent.get(p.fromId)?.displayName} → {ent.get(p.toId)?.displayName}</span><Pill tone={p.urgency === "alta" ? "bad" : p.urgency === "media" ? "warn" : "neutral"}>{p.urgency}</Pill></div>
+                  <div className="flex items-center justify-between text-[12.5px]"><span className="num text-ink">{store.byId.get(p.fromId)?.name ?? p.fromId} → {store.byId.get(p.toId)?.name ?? p.toId}</span><Pill tone={p.requiresReview ? "warn" : "good"}>{p.requiresReview ? "revisar" : "disponible"}</Pill></div>
                   <div className="num font-semibold mt-1 text-[18px] text-ink">{eur(p.amountEur)}</div>
-                  <div className="text-[11.5px] text-ink-dim">interno {p.internalRate} % · banco {p.bankRate} % · ahorra {eur(p.savingEurYear)}/año</div>
+                  <div className="text-[11.5px] text-ink-dim">{p.days} días · interés de banco evitado {eur(Math.round(p.bankInterestEur))} · ahorro neto {eur(Math.round(p.netSavingEur))}</div>
                 </div>
               ))}
             </div>

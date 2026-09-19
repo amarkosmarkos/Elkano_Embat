@@ -15,7 +15,7 @@ La app **no calcula nada ni necesita base de datos**: lee ficheros del repo en m
 | fichero | qué aporta |
 |---|---|
 | `apps/marketplace/public/data/network.json` + `companies/<id>.json` | el score v3 real, 5 contribuciones, 24 métricas × 24 meses, trayectoria, 8 alarmas, explicaciones v3/v2 (salida de `apps/marketplace/etl/build_dataset.py`) |
-| `data/companies.json`, `data/scores.json` | nombres, grupos, ERP/deuda y las **señales de tesorería** del contrato (caja, flujo, runway, DSO/DPO, deuda) para Caja, cash pooling y tesorería |
+| `output/02_score/cash_position.csv` | **caja real** a fin de mes por empresa, reconstruida desde `balances.csv` + `transactions.csv` (`tools/export_cash_position.py`); alimenta Caja, Grupos y el cash pooling |
 | `output/03_validation/*` | eventos de impago (D1–D4, cura), informes de validación, comparación de versiones |
 | `eda/eda_data.json` | agregados del EDA para las pestañas de Análisis |
 
@@ -26,8 +26,7 @@ docker run --rm -v "$PWD/output:/data:ro" -v "$PWD/apps/marketplace:/app" elkano
   python /app/etl/build_dataset.py --data /data --out /app/public/data
 ```
 
-Variables opcionales: `XRAY_DATA_DIR` (otra carpeta con `network.json` + `companies/`), `XRAY_REPO_ROOT`,
-`NEXT_PUBLIC_MARKETPLACE_URL` (por defecto `http://localhost:8080`, la app del marketplace embebida por iframe).
+Variables opcionales: `XRAY_DATA_DIR` (otra carpeta con `network.json` + `companies/`), `XRAY_REPO_ROOT`.
 
 ## Mes global
 
@@ -42,7 +41,15 @@ lo mueve también.
 /grupos         lista → /grupos/[id]
 /analisis       universo · ventanas · señal · dimensiones · flujos · facturas · deuda · bancos · calidad
 /score          árbol (1 → 5 → 24 → 105) · versiones · validación · calibración · evento · casos
-/productos      01 marketplace (iframe) · 02 cash pooling · 03 tesorería (excedentes · cuotas · pagos) · operaciones
+/productos      01 marketplace (prestamistas · receptores y cartera · monitor · acciones) · 02 cash pooling (decisiones · filiales · historial)
 ```
 
-`lib/db`, `lib/queries.ts` y `scripts/seed.ts` son el camino Postgres anterior (contrato heurístico); la UI ya no los usa.
+## Productos
+
+- **Marketplace** (`lib/products/marketplace/`, `components/marketplace/`): el motor de `apps/marketplace` (asignador, monitor,
+  centro de acciones) portado tal cual y las cuatro pantallas nativas. El estado (prestamista, configuración, cartera, mes del
+  monitor, acciones) vive en el navegador; la red se sirve en `/api/network`.
+- **Cash pooling** (`lib/cashpool.ts`, `components/cashpool/CashPoolApp.tsx`, de Luken): motor con política por filial y
+  propuestas con ahorro neto; `lib/products/pooling.ts` lo alimenta con el score v3 y la caja real. `pnpm test` corre sus tests.
+
+`lib/db`, `lib/queries.ts` y `scripts/seed.ts` son el camino Postgres (mismos datos); la UI lee ficheros y no los usa.
