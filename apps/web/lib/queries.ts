@@ -139,7 +139,7 @@ export async function listPoolingGroups(limit = 40) {
     from companies
     where group_id is not null
     group by group_id
-    having count(*) > 2
+    having count(*) > 1
     order by n_cur desc, n desc
     limit ${limit}
   `);
@@ -154,15 +154,16 @@ export async function getGroupSeries(groupId: string) {
     .orderBy(asc(companies.companyId));
   const ids = base.map((b) => b.companyId);
   if (ids.length === 0) return { base: [], rows: [] };
-  const rows = await db.execute<{ company_id: string; month: string; score: number; regime: string; cash_position: number | null }>(sql`
-    ${regimedCte} select r.company_id, r.month, r.score, r.regime, s.cash_position
-    from regimed r join scores s on s.company_id = r.company_id and s.month = r.month
-    where r.company_id in ${ids}
-    order by r.month asc
-  `);
+  const rows = await db.select({
+    companyId: scores.companyId,
+    month: scores.month,
+    score: scores.score,
+    cashLocal: scores.cashPosition,
+    explanation: scores.explanation,
+  }).from(scores).where(inArray(scores.companyId, ids)).orderBy(asc(scores.month));
   return {
-    base: base.map((b) => ({ ...b, currency: b.currency ?? "EUR" })),
-    rows: rows.map((r) => ({ companyId: r.company_id, month: r.month, score: r.score, regime: r.regime, cashLocal: r.cash_position })),
+    base: base.map((b) => ({ ...b, currency: b.currency ?? "" })),
+    rows,
   };
 }
 

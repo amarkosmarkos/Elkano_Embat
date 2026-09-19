@@ -14,6 +14,7 @@ const LINKS: { href: string; label: string }[] = [
 
 export default function Nav() {
   const pathname = usePathname();
+  if (pathname === "/productos/cash-pooling") return null;
   return (
     <header className="sticky top-0 z-40 border-b border-line-soft bg-white/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5">

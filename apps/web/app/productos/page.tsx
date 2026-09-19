@@ -21,10 +21,10 @@ export default function ProductosPage() {
         />
         <ProductSummaryCard
           num="02 · CASH POOLING"
-          title="Cash pooling automático"
-          desc="Dentro de un grupo, la filial con excedente presta y la que necesita pide — el score fija cuánto y a qué tipo, cada día."
-          statValue="85 M€"
-          statLabel="dispuestos en pólizas que otra filial del grupo podría cubrir"
+          title="Cash pooling"
+          desc="Cubre necesidades de tus filiales con liquidez del grupo. La trayectoria del score limita la exposición y cada propuesta protege una reserva de caja."
+          statValue="Decidir antes de mover"
+          statLabel="simula cobertura y ahorro neto entre filiales de la misma divisa"
           href="/productos/cash-pooling"
         />
         <ProductSummaryCard

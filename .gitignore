@@ -54,3 +54,5 @@ output/03_validation/*
 # derivados del EDA (se regeneran con ./eda/run.sh)
 eda/panel.csv
 eda/company_trend_features.csv
+
+AGENTS.md
