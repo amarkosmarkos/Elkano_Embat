@@ -110,8 +110,8 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
         {/* all metrics */}
         <div className="card flex min-h-0 min-w-0 flex-col p-3">
           <div className="flex items-center justify-between">
-            <Eyebrow>All computed metrics · 24 base metrics + trajectory, 8 stress flags</Eyebrow>
-            <div className="text-[10px] italic text-muted">latest value · ▲▼ change vs 3 and 12 months ago (green = better) · streak of months getting worse</div>
+            <Eyebrow>All computed metrics · 24 base metrics ({detail ? detail.metricMonths.length : "…"} months) + trajectory · 8 stress flags</Eyebrow>
+            <div className="text-[10px] italic text-muted">value at {fmtMonth(c.latest.month)} · sparkline = full history · ▲▼ = pipeline delta_3m / delta_12m (green = better) · racha = months worsening · n/a = not measurable (no invoices / debt data)</div>
           </div>
           {!detail ? (
             <div className="mt-2 grid flex-1 grid-cols-5 gap-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-full" />)}</div>
@@ -129,16 +129,13 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
                       {ids.map((m) => {
                         const meta = METRIC_META[m];
                         const series = detail.metrics[m];
-                        const last = series[series.length - 1];
-                        const prev3 = series.length >= 4 ? series[series.length - 4] : null;
-                        const prev12 = series.length >= 13 ? series[series.length - 13] : null;
-                        const d3 = prev3 != null && last != null ? last - prev3 : null;
-                        const d12 = prev12 != null && last != null ? last - prev12 : null;
+                        const li = detail.metricMonths.indexOf(c.latest.month);
+                        const last = li >= 0 ? series[li] : series[series.length - 1];
+                        // trajectory as computed by the pipeline (metrics_v1.parquet: __delta_3m, __delta_12m, __racha)
+                        const tr = detail.trajectory[m];
+                        const d3 = tr?.delta3 ?? null, d12 = tr?.delta12 ?? null, streak = tr?.streak ?? 0;
                         const good3 = d3 == null ? null : meta.higherIsBetter ? d3 > 0 : d3 < 0;
                         const good12 = d12 == null ? null : meta.higherIsBetter ? d12 > 0 : d12 < 0;
-                        // streak of consecutive months getting worse (the pipeline's "racha"), derived from the series
-                        let streak = 0;
-                        for (let i = series.length - 1; i > 0; i--) { const a = series[i], b = series[i - 1]; if (a == null || b == null) break; const worse = meta.higherIsBetter ? a < b : a > b; if (!worse) break; streak++; }
                         const vals = series.filter((v): v is number => v != null);
                         const lo = vals.length ? Math.min(...vals) : 0, hi = vals.length ? Math.max(...vals) : 1;
                         return (
@@ -154,7 +151,7 @@ export function CompanyPanel({ id, onClose, onLend }: Props) {
                                 <div className="flex min-w-0 flex-wrap gap-x-2 font-caps text-[9px] leading-none text-muted">
                                   <span>3m <span className="tnum" style={{ color: d3 == null ? undefined : good3 ? "#2d6a4f" : "#8b1e2d" }}>{d3 == null ? "—" : `${d3 > 0 ? "▲" : "▼"}${fmtMetric(m, Math.abs(d3))}`}</span></span>
                                   <span>12m <span className="tnum" style={{ color: d12 == null ? undefined : good12 ? "#2d6a4f" : "#8b1e2d" }}>{d12 == null ? "—" : `${d12 > 0 ? "▲" : "▼"}${fmtMetric(m, Math.abs(d12))}`}</span></span>
-                                  {streak >= 2 && <span className="text-negative">worse {streak}mo</span>}
+                                  {streak >= 2 && <span className="text-negative">worse {streak} mo</span>}
                                 </div>
                               </div>
                             )}

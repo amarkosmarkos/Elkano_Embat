@@ -82,7 +82,13 @@ export interface CompanyDetail {
   explanation: (string | null)[];
   explanationV2: (string | null)[];
   components: Record<Dimension, (number | null)[]>;
+  /** months of the metric series (the full parquet history, usually 24 months, longer than `months`) */
+  metricMonths: string[];
+  /** aligned to metricMonths */
   metrics: Record<MetricId, (number | null)[]>;
+  /** the pipeline's own trajectory features at the latest scored month: M_t − M_{t−3}, M_t − M_{t−12}, months worsening */
+  trajectory: Record<MetricId, { delta3: number | null; delta12: number | null; streak: number | null }>;
+  /** aligned to metricMonths */
   stress: Record<StressFlag, (0 | 1 | null)[]>;
   nStress: (number | null)[];
 }

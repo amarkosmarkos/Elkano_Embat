@@ -13,7 +13,8 @@ Inputs (repo `output/`):
 
 Outputs (`public/data/`):
   network.json                  index: one entry per scored company with its full score history
-  companies/<id>.json           detail: metric time series, explanations, stress flags
+  companies/<id>.json           detail: full 24-month metric series, pipeline trajectory (delta_3m/12m, racha),
+                                stress flags, explanations
 
 The dataset is anonymised (COMP_xxxx). Display names are deterministic aliases derived from the
 company id so the demo reads like a product; the real id is always kept alongside.
@@ -108,6 +109,7 @@ def main(data: Path, out: Path) -> None:
     s3 = s3.sort_values(["company_id", "month"])
     d = s3.merge(s2, on=["company_id", "month"], how="left")
     d = d.merge(met[["company_id", "month"] + BASE_METRICS + STRESS + ["n_stress"]], on=["company_id", "month"], how="left")
+    met = met.sort_values(["company_id", "month"])
     comp = comp.merge(groups[["group_id", "n_companies_in_sample"]], on="group_id", how="left").set_index("company_id")
 
     (out / "companies").mkdir(parents=True, exist_ok=True)
@@ -146,9 +148,23 @@ def main(data: Path, out: Path) -> None:
             },
         }
         index.append(entry)
+        # full metric history from the parquet (24 months, before the first score too) + the pipeline's own
+        # trajectory columns (delta_3m / delta_12m / racha) for the latest scored month
+        mh = met[met.company_id == cid].sort_values("month")
+        mlast = mh[mh.month == last.month]
+        mlast = mlast.iloc[0] if len(mlast) else None
         detail = {
             "id": cid,
             "months": g.month.tolist(),
+            "metricMonths": mh.month.tolist(),
+            "metrics": {k: [num(v, 4) for v in mh[k]] for k in BASE_METRICS},
+            "trajectory": {k: {
+                "delta3": None if mlast is None else num(mlast[f"{k}__delta_3m"], 4),
+                "delta12": None if mlast is None else num(mlast[f"{k}__delta_12m"], 4),
+                "streak": None if mlast is None or pd.isna(mlast[f"{k}__racha"]) else int(mlast[f"{k}__racha"]),
+            } for k in BASE_METRICS},
+            "stress": {k: [None if pd.isna(v) else int(v) for v in mh[k]] for k in STRESS},
+            "nStress": [None if pd.isna(v) else int(v) for v in mh.n_stress],
             "score": [num(v) for v in g.score],
             "scoreRaw": [num(v) for v in g.score_raw],
             "scoreV2": [num(v) for v in g.score_v2],
@@ -156,9 +172,6 @@ def main(data: Path, out: Path) -> None:
             "explanation": [None if pd.isna(v) else str(v) for v in g.explanation],
             "explanationV2": [None if pd.isna(v) else str(v) for v in g.explanation_v2],
             "components": {dim: [num(v) for v in g[f"c_{dim}"]] for dim in DIMS},
-            "metrics": {k: [num(v, 4) for v in g[k]] for k in BASE_METRICS},
-            "stress": {k: [None if pd.isna(v) else int(v) for v in g[k]] for k in STRESS},
-            "nStress": [None if pd.isna(v) else int(v) for v in g.n_stress],
         }
         (out / "companies" / f"{cid}.json").write_text(json.dumps(detail, separators=(",", ":")))
 
