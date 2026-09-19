@@ -208,3 +208,40 @@ export async function portfolioKpisByMonth(): Promise<{ months: MonthPortfolioKp
     defaultMonth: maxAlertRow?.month ?? null,
   };
 }
+
+export type RegimeCode = "i" | "s" | "d" | "p";
+const REGIME_CODE: Record<string, RegimeCode> = { improving: "i", stable: "s", deteriorating: "d", dip: "p" };
+
+export type CompanyScorePoint = { score: number; regime: RegimeCode | null };
+export type CompanyScoreSeries = { companyId: string; displayName: string; points: (CompanyScorePoint | null)[] };
+
+/**
+ * Serie mes a mes de TODAS las empresas (score + régimen), para el gráfico animado de distribución
+ * de /datos (una vez a la base, no una consulta por mes al mover el slider). `months` fija el orden
+ * — debe ser el mismo array que ya devuelve `portfolioKpisByMonth().months.map(m => m.month)`, para
+ * que el índice del slider apunte a la misma posición en ambos sitios.
+ */
+export async function companyScoreSeries(months: string[]): Promise<CompanyScoreSeries[]> {
+  const rows = await db.execute<{ company_id: string; display_name: string; month: string; score: number; regime: string | null }>(sql`
+    select c.company_id, c.display_name, s.month, s.score, s.regime
+    from scores s
+    join companies c on c.company_id = s.company_id
+    order by c.company_id, s.month
+  `);
+
+  const byCompany = new Map<string, { displayName: string; byMonth: Map<string, CompanyScorePoint> }>();
+  for (const r of rows) {
+    let entry = byCompany.get(r.company_id);
+    if (!entry) {
+      entry = { displayName: r.display_name, byMonth: new Map() };
+      byCompany.set(r.company_id, entry);
+    }
+    entry.byMonth.set(r.month, { score: r.score, regime: r.regime ? (REGIME_CODE[r.regime] ?? null) : null });
+  }
+
+  return Array.from(byCompany.entries()).map(([companyId, { displayName, byMonth }]) => ({
+    companyId,
+    displayName,
+    points: months.map((m) => byMonth.get(m) ?? null),
+  }));
+}
