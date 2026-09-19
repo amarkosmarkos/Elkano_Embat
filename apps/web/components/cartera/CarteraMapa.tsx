@@ -22,7 +22,7 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
   const [idx, setIdx] = useState(initialIdx);
   const [playing, setPlaying] = useState(false);
   const [axis, setAxis] = useState<Axis>("momentum");
-  const [layer, setLayer] = useState<"none" | "alert" | "stress">("alert");
+  const [layer, setLayer] = useState<"none" | "alert">("alert");
 
   useEffect(() => {
     if (!playing) return;
@@ -84,7 +84,7 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
         right={
           <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
             <Seg value={axis} onChange={(v) => setAxis(v as Axis)} options={[["momentum", "Y: momentum 3m"], ["lane", "Y: carril fijo"], ["stress", "Y: alarmas"]]} />
-            <Seg value={layer} onChange={(v) => setLayer(v as typeof layer)} options={[["alert", "Capa: 20 % peor"], ["stress", "Capa: estrés"], ["none", "Sin capa"]]} />
+            <Seg value={layer} onChange={(v) => setLayer(v as typeof layer)} options={[["alert", "Capa: 20 % peor"], ["none", "Sin capa"]]} />
           </div>
         }
       >

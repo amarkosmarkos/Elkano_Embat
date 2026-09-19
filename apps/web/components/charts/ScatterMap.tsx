@@ -18,7 +18,7 @@ function hashToUnit(id: string): number {
  * Mapa de la red: X = score, Y = momentum a 3 meses (o carril fijo por empresa, o nº de alarmas).
  * Transiciones CSS al cambiar de mes (migrado del CompanyScatter de /datos). Hover con ficha rápida.
  */
-export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; idx: number; axis: Axis; layer: "none" | "alert" | "stress" }) {
+export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; idx: number; axis: Axis; layer: "none" | "alert" }) {
   const W = 1100, H = 420, padL = 44, padR = 20, padT = 22, padB = 34;
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
@@ -79,7 +79,6 @@ export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; i
             >
               <circle r={9} fill="transparent" />
               {layer === "alert" && v.alert && <circle r={r + 3} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.7} />}
-              {layer === "stress" && v.n > 0 && <circle r={r + 2 + Math.min(4, v.n)} fill="#f59e0b" opacity={0.18} />}
               <circle r={r} fill={scoreScale(v.s)} stroke={hover === v.p.id ? "#fafafa" : "none"} strokeWidth={1.5} />
             </g>
           );
