@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Kpi } from "@/components/ui/Kpi";
 import { ScatterMap, type Axis } from "@/components/charts/ScatterMap";
 import { Card } from "@/components/ui/Card";
@@ -35,11 +34,6 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
   }, [idx, months]);
 
   const k = kpis[idx];
-  const movers = useMemo(() => {
-    if (idx === 0) return { up: [], down: [] };
-    const d = points.flatMap((p) => { const a = p.s[idx], b = p.s[idx - 1]; return a == null || b == null ? [] : [{ p, score: a, delta: a - b }]; });
-    return { up: [...d].sort((a, b) => b.delta - a.delta).slice(0, 6), down: [...d].sort((a, b) => a.delta - b.delta).slice(0, 6) };
-  }, [points, idx]);
   const meanSeries = kpis.map((x) => x.mean);
 
   return (
@@ -91,19 +85,22 @@ export default function CarteraMapa({ months, initialIdx, kpis, points }: { mont
         <ScatterMap points={points} idx={idx} axis={axis} layer={layer} />
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr_1fr]">
-        <Card title="Score medio de la cartera" sub="toda la serie · el mes elegido marcado">
-          <div className="flex items-end gap-4">
-            <Sparkline values={meanSeries} width={420} height={90} color="#e5e5e5" marker={idx} min={Math.min(...meanSeries) - 2} max={Math.max(...meanSeries) + 2} />
-            <div className="num text-[12px] text-ink-mute">{monthLabel(months[0])} → {monthLabel(months[months.length - 1])}</div>
+      <Card title="Score medio de la cartera" sub="toda la serie · el mes elegido marcado">
+        <div className="flex items-stretch gap-6">
+          <div className="min-w-0 flex-1">
+            <Sparkline values={meanSeries} responsive width={960} height={110} color="#e5e5e5" marker={idx} min={Math.min(...meanSeries) - 2} max={Math.max(...meanSeries) + 2} />
+            <div className="num mt-2 flex justify-between text-[12px] text-ink-mute">
+              <span>{monthLabel(months[0])}</span>
+              <span>{monthLabel(months[months.length - 1])}</span>
+            </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-3 text-[12px]">
-            <Stat l="Verde ≥ 70" v={k.nGreen} c="text-good" /><Stat l="Ámbar 40–70" v={k.nAmber} c="text-warn" /><Stat l="Rojo < 40" v={k.nRed} c="text-bad" />
+          <div className="flex w-[220px] shrink-0 flex-col justify-center gap-3 border-l border-line-soft pl-6">
+            <Stat l="Verde ≥ 70" v={k.nGreen} c="text-good" />
+            <Stat l="Ámbar 40–70" v={k.nAmber} c="text-warn" />
+            <Stat l="Rojo < 40" v={k.nRed} c="text-bad" />
           </div>
-        </Card>
-        <MoverList title="Más suben este mes" tone="good" items={movers.up} />
-        <MoverList title="Más caen este mes" tone="bad" items={movers.down} />
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -119,22 +116,5 @@ function Seg({ value, onChange, options }: { value: string; onChange: (v: string
         <button key={v} type="button" onClick={() => onChange(v)} className={`rounded-lg px-2.5 py-1 transition-colors ${value === v ? "bg-panel-hi text-ink" : "text-ink-mute hover:text-ink-dim"}`}>{l}</button>
       ))}
     </div>
-  );
-}
-
-function MoverList({ title, tone, items }: { title: string; tone: "good" | "bad"; items: { p: MapPoint; score: number; delta: number }[] }) {
-  return (
-    <Card title={title}>
-      {items.length === 0 ? <p className="text-[12px] text-ink-mute">Elige un mes con anterior para comparar.</p> : (
-        <div className="flex flex-col divide-y divide-line-soft">
-          {items.map((it) => (
-            <Link key={it.p.id} href={`/empresas/${it.p.id}`} className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-[13px] transition-colors hover:bg-panel-2">
-              <span className="min-w-0 truncate text-ink">{it.p.name}<span className="num ml-2 text-[10px] text-ink-mute">{it.p.id}</span></span>
-              <span className="num flex shrink-0 items-center gap-2 text-[12px]"><span className="text-ink-mute">{it.score.toFixed(0)}</span><span className={tone === "good" ? "text-good" : "text-bad"}>{it.delta >= 0 ? "+" : "−"}{Math.abs(it.delta).toFixed(1)}</span></span>
-            </Link>
-          ))}
-        </div>
-      )}
-    </Card>
   );
 }
