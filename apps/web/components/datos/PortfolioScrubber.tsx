@@ -251,7 +251,7 @@ function MoverList({ title, tone, items }: { title: string; tone: "good" | "bad"
                 <span className="text-ink-mute">{it.score}</span>
                 <span className={tone === "good" ? "text-good" : "text-bad"}>
                   {it.delta >= 0 ? "+" : ""}
-                  {it.delta}
+                  {it.delta.toFixed(2)}
                 </span>
               </span>
             </Link>
