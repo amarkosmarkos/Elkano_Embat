@@ -16,6 +16,7 @@ import { AutoSize } from "@/components/ui/AutoSize";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Badge, Button, Eyebrow, PanelHead, Segmented, Skeleton, Slider, Stat } from "@/components/ui/primitives";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { fmtDelta, fmtMoney, fmtMonth } from "@/lib/format";
 import { scoreColor } from "@/lib/colors";
 import { historyLength, TIER_LABEL, type Tier } from "@/lib/derived";
@@ -39,7 +40,7 @@ export function Borrowers() {
   const result = useEffectiveResult();
   const nav = useNavigate();
   const [phase, setPhase] = useState<Phase>(baseResult ? "done" : "idle");
-  const [view, setView] = useState<View>(baseResult ? "portfolio" : "candidates");
+  const [view, setView] = useState<View>("candidates");
   const [tab, setTab] = useState<Tab>("map");
   const [selected, setSelected] = useState<string | null>(null);
   const [preview, setPreview] = useState<PortfolioResult | null>(null);
@@ -167,10 +168,21 @@ export function Borrowers() {
             <motion.div key="cands" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="card flex min-h-0 flex-1 flex-col p-4">
               <PanelHead eyebrow={lender ? `Financing candidates for ${lender.c.name}` : "Financing candidates"} title={`${candidates.length} healthy companies with visible capital needs${excludedRelated - 1 > 0 ? ` · ${excludedRelated - 1} of the lender's group excluded` : ""}`}
                 right={<>
+                  <InfoTip>
+                    <div className="font-caps text-[10px] font-bold uppercase tracking-[0.12em] text-accent-2">Borrower threshold · dashed line at 60</div>
+                    <p className="mt-1">A company is a <b>financing candidate</b> when it is healthy enough to finance <i>and</i> shows a need for capital:</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                      <li><b>Score ≥ 60</b> (the floor; 40–70 is the pipeline's amber band) and not in the bottom 20% this month.</li>
+                      <li>At most one stress flag; pays suppliers ≤ 5 days late and ≤ 50% of payables late (when measurable).</li>
+                      <li><b>Need ≥ 25</b>: runway &lt; 12 mo, operating cash burn, cushion &lt; 0.5×, lines &gt; 50% drawn, little undrawn credit, DSO &gt; 30 d or collections growing &gt; 20% YoY.</li>
+                      {lender && <li>Never the lender itself or its business group.</li>}
+                    </ul>
+                    <p className="mt-1 text-muted">Bubble area = financing fit (√need × health). Rules in <span className="font-mono">src/lib/derived.ts</span>.</p>
+                  </InfoTip>
                   {shown && <Segmented value={view} onChange={setView} size="sm" options={[{ value: "candidates", label: "Candidates" }, { value: "portfolio", label: "Chest" }]} />}
                   {builtForOtherLender && <Badge tone="warn">Chest built for another lender</Badge>}
                 </>} />
-              <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <BubbleMap data={bubbles} width={w} height={h} onSelect={(id) => setOpenCompany(id)} sizeLabel="Fit" xThreshold={60} />}</AutoSize></div>
+              <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <BubbleMap data={bubbles} width={w} height={h} onSelect={(id) => setOpenCompany(id)} sizeLabel="Fit" xThreshold={60} thresholdLabel="FINANCING FLOOR 60" />}</AutoSize></div>
               <div className="mt-2 flex shrink-0 items-center justify-between"><Eyebrow>Best fit · healthy and in need of capital</Eyebrow><span className="text-[10px] italic text-muted">click a card for the spider chart and every metric</span></div>
               <div className="mt-1.5 grid shrink-0 grid-cols-4 gap-3">
                 {candidates.slice(0, 4).map((a, i) => <BorrowerCard key={a.c.id} a={a} index={i} onOpen={() => setOpenCompany(a.c.id)} inPortfolio={inChest.has(a.c.id)} />)}
@@ -200,8 +212,8 @@ export function Borrowers() {
 
               {tab === "map" && (
                 <div className="card flex min-h-0 flex-1 flex-col p-4">
-                  <PanelHead eyebrow="Allocation" title={`${shown.positions.length} borrowers · as of ${fmtMonth(shown.config.asOf, "long")}${lender ? ` · lent by ${lender.c.name}` : ""}`} right={<div className="text-[10px] italic text-muted">Tile area = capital · ink = score at allocation · click a company for its spider chart and metrics</div>} />
-                  <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <Treemap width={w} height={h} items={shown.positions.map((p) => ({ id: p.id, name: p.name, value: p.amount, score: p.score, sub: `${(p.weight * 100).toFixed(1)}%${p.overlap != null ? ` · overlap ${p.overlap.toFixed(2)}` : ""}`, dimmed: selected != null && selected !== p.id, mark: p.rank === 1 }))} onSelect={(id) => { setSelected(id); setOpenCompany(id); }} selected={selected} />}</AutoSize></div>
+                  <PanelHead eyebrow="Allocation" title={`${shown.positions.length} borrowers · as of ${fmtMonth(shown.config.asOf, "long")}${lender ? ` · lent by ${lender.c.name}` : ""}`} right={<div className="text-[10px] italic text-muted">Tile area = capital · ink = score at allocation · biggest tile = rank #1 · click a company for its spider chart and metrics</div>} />
+                  <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <Treemap width={w} height={h} items={shown.positions.map((p) => ({ id: p.id, name: p.name, value: p.amount, score: p.score, sub: `${(p.weight * 100).toFixed(1)}%${p.overlap != null ? ` · overlap ${p.overlap.toFixed(2)}` : ""}`, dimmed: selected != null && selected !== p.id }))} onSelect={(id) => { setSelected(id); setOpenCompany(id); }} selected={selected} />}</AutoSize></div>
                 </div>
               )}
 

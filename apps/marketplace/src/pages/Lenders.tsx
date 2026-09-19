@@ -10,6 +10,7 @@ import { Histogram } from "@/components/charts/Histogram";
 import { LenderCard } from "@/components/LenderCard";
 import { AutoSize } from "@/components/ui/AutoSize";
 import { Button, Eyebrow, Pager, Segmented, Skeleton, Slider } from "@/components/ui/primitives";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { fmtMonth } from "@/lib/format";
 import { scoreColor } from "@/lib/colors";
@@ -26,7 +27,7 @@ export function Lenders() {
   const setLender = useApp((s) => s.setLender);
   const setOpenCompany = useApp((s) => s.setOpenCompany);
   const nav = useNavigate();
-  const [view, setView] = useState<"cards" | "map">("cards");
+  const [view, setView] = useState<"cards" | "map">("map");
   const [minScore, setMinScore] = useState(0);
   const [trendFilter, setTrendFilter] = useState<"all" | Trend>("all");
   const [onlyQualified, setOnlyQualified] = useState(true);
@@ -119,8 +120,19 @@ export function Lenders() {
             <div className="truncate font-display text-xl leading-tight">{view === "cards" ? `${filtered.length} companies · strongest first` : "Area = lender capacity · gold ring = qualified · click to open"}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <InfoTip>
+              <div className="font-caps text-[10px] font-bold uppercase tracking-[0.12em] text-accent">Lender threshold · dashed line at 75</div>
+              <p className="mt-1">A company is a <b>qualified lender</b> when all of these hold this month:</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                <li><b>Score ≥ 75</b> — the pipeline's green band starts at 70 (quartiles of the last month: 53 / 67 / 77); 75 keeps roughly the top third.</li>
+                <li>Not in the bottom 20% of the network (no alert) and <b>no stress flags</b> active.</li>
+                <li>≥ 12 months of scored history and never below 60 in the last 6 months.</li>
+                <li>Liquidity not dragging the score (liquidity contribution ≥ −5 pts, or runway ≥ 12 mo with zero overdraft days).</li>
+              </ul>
+              <p className="mt-1 text-muted">Bubble area = capacity (45% score, 20% stability, 20% liquidity, 15% momentum). Rules in <span className="font-mono">src/lib/derived.ts</span>.</p>
+            </InfoTip>
             {view === "cards" && <Pager page={page} pageSize={PER_PAGE} total={filtered.length} onChange={setPage} />}
-            <Segmented value={view} onChange={setView} size="sm" options={[{ value: "cards", label: <span className="flex items-center gap-1.5"><LayoutGrid size={12} />Cards</span> }, { value: "map", label: <span className="flex items-center gap-1.5"><MapIcon size={12} />Map</span> }]} />
+            <Segmented value={view} onChange={setView} size="sm" options={[{ value: "map", label: <span className="flex items-center gap-1.5"><MapIcon size={12} />Map</span> }, { value: "cards", label: <span className="flex items-center gap-1.5"><LayoutGrid size={12} />Cards</span> }]} />
           </div>
         </div>
         {!data ? (
@@ -133,7 +145,7 @@ export function Lenders() {
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <BubbleMap data={bubbles} width={w} height={h} onSelect={(id) => setOpenCompany(id)} sizeLabel="Capacity" xThreshold={75} />}</AutoSize></div>
+          <div className="mt-2 min-h-0 flex-1"><AutoSize>{(w, h) => <BubbleMap data={bubbles} width={w} height={h} onSelect={(id) => setOpenCompany(id)} sizeLabel="Capacity" xThreshold={75} thresholdLabel="LENDER THRESHOLD 75" />}</AutoSize></div>
         )}
       </section>
     </div>

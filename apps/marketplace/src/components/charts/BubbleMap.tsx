@@ -22,10 +22,11 @@ interface Props {
   onSelect?: (id: string) => void;
   sizeLabel: string;
   xThreshold?: number;
+  thresholdLabel?: string;
 }
 
 /** The charted waters: x = score, y = 3-month momentum, area = derived index, gold ring = qualified. */
-export function BubbleMap({ data, width: W, height: H, onSelect, sizeLabel, xThreshold }: Props) {
+export function BubbleMap({ data, width: W, height: H, onSelect, sizeLabel, xThreshold, thresholdLabel }: Props) {
   const padL = 40, padR = 18, padT = 22, padB = 42;
   const [hover, setHover] = useState<BubbleDatum | null>(null);
   const x = useMemo(() => scaleLinear().domain([0, 100]).range([padL, W - padR]), [W]);
@@ -59,7 +60,12 @@ export function BubbleMap({ data, width: W, height: H, onSelect, sizeLabel, xThr
             <text x={padL - 6} y={y(t) + 4} textAnchor="end" fill="rgba(60,38,14,0.65)" fontSize={10} fontFamily="var(--font-caps)">{t > 0 ? `+${t}` : t}</text>
           </g>
         ))}
-        {xThreshold != null && <line x1={x(xThreshold)} x2={x(xThreshold)} y1={padT} y2={H - padB} stroke="#8a6512" strokeOpacity={0.8} strokeDasharray="5 4" />}
+        {xThreshold != null && (
+          <g>
+            <line x1={x(xThreshold)} x2={x(xThreshold)} y1={padT} y2={H - padB} stroke="#8a6512" strokeOpacity={0.9} strokeWidth={1.4} strokeDasharray="5 4" />
+            {thresholdLabel && <text x={x(xThreshold) - 6} y={H - padB - 8} textAnchor="end" fill="#8a6512" fontSize={9} fontFamily="var(--font-caps)" fontWeight={700} letterSpacing={1.5}>{thresholdLabel} ▸</text>}
+          </g>
+        )}
         <text x={W - padR} y={H - 8} textAnchor="end" fill="#4a3319" fontSize={9} fontFamily="var(--font-caps)" letterSpacing={2}>FINANCIAL HEALTH SCORE →</text>
         <text x={padL + 4} y={padT + 10} fill="#4a3319" fontSize={9} fontFamily="var(--font-caps)" letterSpacing={2}>↑ 3-MONTH MOMENTUM</text>
         <text x={x(70) + 8} y={padT + 10} fill="#2d6a4f" fontSize={9} fontFamily="var(--font-caps)" letterSpacing={2}>HEALTHY & RISING</text>
