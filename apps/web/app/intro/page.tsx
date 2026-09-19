@@ -51,6 +51,15 @@ export default function Intro() {
       });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    // ?p=0.5 salta a ese punto del viaje (para ensayar o para capturas)
+    try {
+      const q = new URLSearchParams(window.location.search).get("p");
+      const el = trackRef.current;
+      if (q && el) {
+        const target = Math.min(1, Math.max(0, parseFloat(q))) * (el.offsetHeight - window.innerHeight);
+        window.scrollTo({ top: target });
+      }
+    } catch {}
     onScroll();
     return () => {
       window.removeEventListener("scroll", onScroll);
@@ -87,8 +96,8 @@ export default function Intro() {
             style={{ opacity: 1 - seaOpacity, transition: "opacity .3s" }}
           />
 
-          {/* Cabecera */}
-          <div className="absolute left-10 top-8 z-10" style={{ opacity: p < 0.9 ? 1 : 0 }}>
+          {/* Cabecera: solo cuando el mar ya se ha ido (el mar lleva su propio título) */}
+          <div className="absolute left-10 top-8 z-10" style={{ opacity: seaOpacity < 0.2 && p < 0.9 ? 1 : 0, transition: "opacity .3s" }}>
             <div className="text-xs uppercase tracking-[0.3em] text-white/70">HackSpain 2026 · X Ray · Embat</div>
             <div className="mt-1 text-4xl font-semibold" style={{ fontFamily: "Georgia, serif" }}>
               Elkano
@@ -96,19 +105,26 @@ export default function Intro() {
             <div className="text-sm text-white/80">Un score que lee el rastro del dinero antes de que lo lea nadie.</div>
           </div>
 
-          {/* Tramo 0: presentación */}
+          {/* Tramo 0: el mar ya lleva título, cifras y leyenda; solo la invitación a bajar */}
           <div
-            className="absolute bottom-16 left-10 z-10 max-w-xl"
+            className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/40 px-4 py-1.5 text-sm text-white/80 backdrop-blur"
             style={{ opacity: seaOpacity, transition: "opacity .3s" }}
           >
-            <p className="text-lg leading-relaxed text-white/90">
+            Baja para zarpar ↓
+          </div>
+
+          {/* Tramo 1: presentación, sobre el barco */}
+          <div
+            className="absolute bottom-16 left-10 z-10 max-w-xl"
+            style={{ opacity: seaOpacity < 0.2 && p < 0.3 ? 1 : 0, transition: "opacity .4s" }}
+          >
+            <p className="rounded-xl bg-black/35 p-4 text-lg leading-relaxed text-white/95 backdrop-blur">
               Nos hemos subido al barco de Embat para navegar este mar:{" "}
               <b>{ov ? fmt.format(ov.n_companies) : "1.286"} empresas</b> en{" "}
               <b>{ov ? fmt.format(ov.n_groups) : "250"} grupos</b>, <b>{ov ? ov.months : 24} meses</b>,{" "}
               <b>{ov ? fmt.format(ov.n_tx) : "2.556.437"} movimientos</b> y{" "}
-              <b>{ov ? fmt.format(ov.n_invoices) : "897.894"} facturas</b>. Cada ola es el flujo de caja real de una empresa.
+              <b>{ov ? fmt.format(ov.n_invoices) : "897.894"} facturas</b>.
             </p>
-            <p className="mt-3 text-sm text-white/60">Baja para navegar ↓</p>
           </div>
 
           {/* Tramo 1: las siete ventanas */}
