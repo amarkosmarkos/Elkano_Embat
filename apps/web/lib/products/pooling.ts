@@ -1,9 +1,10 @@
 import type { Store } from "@/lib/data/store";
 import { buildSeries, DEFAULT_SETTINGS, groupHealth, poolEconomics, snapshot, type EntityBase, type SeriesRow, type Snapshot } from "@/lib/cashpool";
 import type { CompanyIndex } from "@/lib/score/types";
+import { companyName } from "@/lib/format";
 
 export type PoolingStore = Pick<Store, "groups" | "months" | "cash"> & {
-  byId: Map<string, Pick<CompanyIndex, "id" | "currency" | "country" | "scores">>;
+  byId: Map<string, Pick<CompanyIndex, "id" | "name" | "currency" | "country" | "scores">>;
 };
 
 export type PoolGroup = { group_id: string; n: number; n_cur: number; curs: string };
@@ -24,7 +25,7 @@ export function groupSeries(store: PoolingStore, groupId: string): { base: Entit
   const ids = store.groups.get(groupId) ?? [];
   const base: EntityBase[] = ids.map((id) => {
     const c = store.byId.get(id);
-    return { companyId: id, currency: c?.currency ?? "EUR", country: c?.country ?? null };
+    return { companyId: id, name: companyName(c), currency: c?.currency ?? "EUR", country: c?.country ?? null };
   });
   const rows: SeriesRow[] = [];
   for (const id of ids) {

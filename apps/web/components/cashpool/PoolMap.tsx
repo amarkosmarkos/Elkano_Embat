@@ -7,7 +7,7 @@ import type { Topology, GeometryCollection } from "topojson-specification";
 import world from "world-atlas/countries-110m.json";
 import type { Decision, Entity, Proposal } from "@/lib/cashpool";
 import { FX, GEO, resolveCountry } from "@/lib/fx";
-import { eur } from "@/lib/format";
+import { companyName, eur } from "@/lib/format";
 import { band } from "@/lib/score/colors";
 
 const W = 960, H = 470;
@@ -186,13 +186,13 @@ export default function PoolMap({ entities, proposals, decisions, onInspect }: {
             const r = radius(e);
             const faded = hover && hover !== e.companyId && !related.has(e.companyId);
             return (
-              <g key={e.companyId} data-company-id={e.companyId} role={onInspect ? "button" : undefined} tabIndex={onInspect ? 0 : undefined} aria-label={`Ver ${e.companyId}, ${e.countryName}`} opacity={faded ? 0.3 : 1}
+              <g key={e.companyId} data-company-id={e.companyId} role={onInspect ? "button" : undefined} tabIndex={onInspect ? 0 : undefined} aria-label={`Ver ${companyName(e)}, ${e.countryName}`} opacity={faded ? 0.3 : 1}
                 onMouseEnter={() => { if (!dragging) setHover(e.companyId); }} onMouseLeave={() => setHover(null)}
                 onFocus={() => { setHover(e.companyId); setTip({ x: camera.x + p.x * camera.k, y: camera.y + p.y * camera.k }); }} onBlur={() => setHover(null)}
                 onClick={() => { if (!moved.current) onInspect?.(e.companyId); }}
                 onKeyDown={(event) => { if (onInspect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onInspect(e.companyId); } }}
                 style={{ cursor: onInspect ? "pointer" : "grab" }}>
-                <title>{e.companyId} · {e.countryName}</title>
+                <title>{companyName(e)} · {e.countryName}</title>
                 <circle cx={p.x} cy={p.y} r={(Math.max(10, r) + 3) / camera.k} fill="transparent" />
                 <circle cx={p.x} cy={p.y} r={(r + 2.2) / camera.k} fill="none" stroke={e.score == null ? "var(--color-line)" : BAND_STROKE[band(e.score)]} strokeWidth={hover === e.companyId ? 2.5 : 1.2} vectorEffect="non-scaling-stroke" opacity={0.9} />
                 <circle cx={p.x} cy={p.y} r={r / camera.k} fill={ROLE_FILL[e.role]} opacity={e.role === "neutral" || e.role === "unknown" ? 0.55 : 0.92} />
@@ -204,7 +204,7 @@ export default function PoolMap({ entities, proposals, decisions, onInspect }: {
         </svg>
         {hovered && tip && (
           <div className="pointer-events-none absolute z-10 w-64 max-w-[calc(100%-16px)] rounded-lg border border-line bg-panel-hi/95 p-3 text-xs shadow-[var(--shadow-float)]" style={{ left: Math.max(8, Math.min(tip.x + 14, size.width - 264)), top: Math.max(8, Math.min(tip.y + 14, size.height - 240)) }}>
-            <div className="font-semibold text-ink">{hovered.companyId}</div>
+            <div className="font-semibold text-ink">{companyName(hovered)}</div>
             <div className="text-[11px] text-ink-mute">{hovered.countryName}{hovered.inferred ? " (por divisa)" : ""} · {hovered.currency}</div>
             <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
               <span className="text-ink-mute">caja</span><span className="num text-right text-ink">{hovered.cashLocal !== null ? local(hovered.cashLocal, hovered.currency) : "—"}</span>

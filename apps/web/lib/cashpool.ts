@@ -4,6 +4,7 @@ import { FX, toEur } from "./fx";
 
 export type EntityBase = {
   companyId: string;
+  name?: string;
   currency: string;
   country: string | null;
 };

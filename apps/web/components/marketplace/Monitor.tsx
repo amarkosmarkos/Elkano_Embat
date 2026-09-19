@@ -16,7 +16,7 @@ import { ComponentBars } from "./ComponentBars";
 import { Btn, Pager, Seg, Skeleton, Stat } from "./ui";
 import { scoreColor, DIM_COLOR } from "@/lib/score/colors";
 import { DIM_LABEL } from "@/lib/score/meta";
-import { fmtDelta, fmtMoney, monthLabel, monthLabelLong } from "@/lib/format";
+import { companyName, fmtDelta, fmtMoney, monthLabel, monthLabelLong } from "@/lib/format";
 
 const STATUS: Record<PositionStatus, { label: string; tone: "bad" | "good" | "warn" | "neutral" }> = { deteriorating: { label: "Deteriorando", tone: "bad" }, improving: { label: "Mejorando", tone: "good" }, watch: { label: "Vigilar", tone: "warn" }, stable: { label: "Estable", tone: "neutral" } };
 const PER_PAGE = 4;
@@ -157,7 +157,7 @@ export default function Monitor({ dealId, initialTab }: { dealId: string | null;
             <div className="mt-4 text-[13px] text-ink-mute">Registro</div>
             <div className="mt-1 space-y-1">
               {deal.executed.length === 0 && <div className="text-[12px] text-ink-mute">Las órdenes que ejecutes aparecen aquí.</div>}
-              {deal.executed.slice().reverse().map((e, i) => { const p = base.positions.find((x) => x.id === e.id); const tone = ACTION_META[e.kind].tone; return <div key={`${e.id}-${e.month}-${i}`} className="flex items-center gap-2 text-[12.5px]"><span className={`w-16 shrink-0 font-medium ${tone === "good" ? "text-good" : tone === "warn" ? "text-warn" : "text-bad"}`}>{ACTION_META[e.kind].verb}</span><span className="truncate text-ink-dim">{p?.name ?? e.id}</span><span className="num ml-auto shrink-0 text-[11px] text-ink-mute">{monthLabel(e.month)} · {e.multiplier < 1 ? `−${Math.round((1 - e.multiplier) * 100)} %` : `+${Math.round((e.multiplier - 1) * 100)} %`}</span></div>; })}
+              {deal.executed.slice().reverse().map((e, i) => { const p = base.positions.find((x) => x.id === e.id); const tone = ACTION_META[e.kind].tone; return <div key={`${e.id}-${e.month}-${i}`} className="flex items-center gap-2 text-[12.5px]"><span className={`w-16 shrink-0 font-medium ${tone === "good" ? "text-good" : tone === "warn" ? "text-warn" : "text-bad"}`}>{ACTION_META[e.kind].verb}</span><span className="truncate text-ink-dim">{companyName(byId.get(e.id) ?? p)}</span><span className="num ml-auto shrink-0 text-[11px] text-ink-mute">{monthLabel(e.month)} · {e.multiplier < 1 ? `−${Math.round((1 - e.multiplier) * 100)} %` : `+${Math.round((e.multiplier - 1) * 100)} %`}</span></div>; })}
             </div>
           </Card>
         </div>
@@ -167,7 +167,7 @@ export default function Monitor({ dealId, initialTab }: { dealId: string | null;
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={() => setExpanded(null)}>
           <div className="card flex h-full w-[560px] max-w-full flex-col overflow-y-auto rounded-none p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
-              <div><Pill tone={STATUS[exp.status].tone}>{STATUS[exp.status].label}</Pill><div className="mt-2 text-[20px] font-semibold text-ink">{exp.position.name}</div><div className="num text-[12px] text-ink-mute">{exp.position.id} · {fmtMoney(exp.position.amount)} · {(exp.position.weight * 100).toFixed(1)} % del capital</div></div>
+              <div><Pill tone={STATUS[exp.status].tone}>{STATUS[exp.status].label}</Pill><div className="mt-2 text-[20px] font-semibold text-ink">{exp.position.name}</div><div className="num text-[12px] text-ink-mute">{fmtMoney(exp.position.amount)} · {(exp.position.weight * 100).toFixed(1)} % del capital</div></div>
               <div className="flex items-start gap-3"><div className="text-right"><div className="flex items-baseline gap-2"><span className="num text-[16px] text-ink-mute line-through">{exp.scoreAtAllocation.toFixed(0)}</span><span className="num text-[32px] font-semibold" style={{ color: scoreColor(exp.scoreNow) }}>{exp.scoreNow.toFixed(0)}</span></div><div className={`num text-[12px] ${exp.delta >= 0 ? "text-good" : "text-bad"}`}>{fmtDelta(exp.delta)} desde el cierre</div></div><button type="button" onClick={() => setExpanded(null)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-mute hover:text-ink">✕</button></div>
             </div>
             <PriceDelta amount={exp.position.amount} before={exp.scoreAtAllocation} after={exp.scoreNow} term={base.config.term} cal={cal} />
@@ -233,7 +233,7 @@ function RecRow({ r, done, onRun, cal, term }: { r: Recommendation; done: boolea
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-panel-2 text-[16px] ${meta.tone === "good" ? "text-good" : meta.tone === "warn" ? "text-warn" : meta.tone === "bad" ? "text-bad" : "text-ink-mute"}`}>{ICON[r.kind]}</div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2"><span className="text-[14px] font-semibold text-ink">{meta.label}</span><Pill>{meta.effect}</Pill>{collect && <Pill tone="warn">adelantar cobro de {fmtMoney(t.position.amount * (1 - r.multiplier))}</Pill>}</div>
-        <Link href={`/empresas/${r.id}`} className="mt-0.5 block text-[13px] text-ink-dim hover:text-ink">{t.position.name} <span className="num text-ink-mute">{r.id} · {fmtMoney(t.position.amount)}</span></Link>
+        <Link href={`/empresas/${r.id}`} className="mt-0.5 block text-[13px] text-ink-dim hover:text-ink">{t.position.name} <span className="num text-ink-mute">· {fmtMoney(t.position.amount)}</span></Link>
         <ul className="mt-1.5 space-y-0.5 text-[12px] text-ink-mute">{r.reasons.slice(0, 3).map((x) => <li key={x}>· {x}</li>)}<li>· PD {pct(p0.pd, 0)} → <span className={p1.pd > p0.pd ? "text-bad" : "text-good"}>{pct(p1.pd, 0)}</span> · pérdida esperada {fmtMoney(p0.expectedLoss)} → <span className={p1.expectedLoss > p0.expectedLoss ? "text-bad" : "text-good"}>{fmtMoney(p1.expectedLoss)}</span></li></ul>
         <div className="mt-2 rounded-lg bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink-mute"><span className="font-medium text-ink-dim">Cómo se calcula · </span><span className="num">{r.rule}</span>{r.multiplier !== 1 && <> · <span className="num">{fmtMoney(t.position.amount)} × {r.multiplier.toFixed(2).replace(".", ",")} = <span className="text-ink">{fmtMoney(t.position.amount * r.multiplier)}</span> ({r.multiplier < 1 ? "−" : "+"}{fmtMoney(Math.abs(t.position.amount * (1 - r.multiplier)))})</span></>}</div>
       </div>

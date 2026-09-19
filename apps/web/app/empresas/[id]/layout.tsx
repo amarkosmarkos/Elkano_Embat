@@ -32,7 +32,7 @@ export default async function CompanyLayout({ children, params }: { children: Re
         <div className="flex items-start gap-6">
           <ScoreRing score={s} size={128} label={s == null ? "sin score" : TIER_LABEL[t]} sub={`${monthLabelLong(month).slice(0, 3).toLowerCase()} ${month.slice(0, 4)}`} />
           <div className="min-w-0 pt-1">
-            <div className="num text-[11.5px] text-ink-mute">{c.id}{c.group ? <> · <Link href={`/grupos/${c.group}`} className="hover:text-accent">{c.group}</Link>{c.groupSize ? ` (${c.groupSize} empresas)` : ""}</> : null}{c.erp ? ` · ${c.erp}` : ""}{c.country ? ` · ${c.country}` : ""}{c.currency && c.currency !== "EUR" ? ` · ${c.currency}` : ""}</div>
+            <div className="num text-[11.5px] text-ink-mute">Ficha de empresa{c.group ? <> · <Link href={`/grupos/${c.group}`} className="hover:text-accent">{c.group}</Link>{c.groupSize ? ` (${c.groupSize} empresas)` : ""}</> : null}{c.erp ? ` · ${c.erp}` : ""}{c.country ? ` · ${c.country}` : ""}{c.currency && c.currency !== "EUR" ? ` · ${c.currency}` : ""}</div>
             <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-[-0.6px] text-ink">{c.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Pill tone={tr === "improving" ? "good" : tr === "deteriorating" ? "bad" : "neutral"}>{TREND_LABEL[tr]}</Pill>

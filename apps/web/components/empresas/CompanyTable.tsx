@@ -50,7 +50,7 @@ export default function CompanyTable({ rows }: { rows: Row[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="card flex flex-wrap items-center gap-3 px-4 py-3">
-        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Buscar empresa, id o grupo…" className="h-9 w-64 rounded-lg border border-line bg-ground px-4 text-[13px] text-ink outline-none placeholder:text-ink-mute focus:border-accent" />
+        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Buscar empresa o grupo…" className="h-9 w-64 rounded-lg border border-line bg-ground px-4 text-[13px] text-ink outline-none placeholder:text-ink-mute focus:border-accent" />
         {seg(tier, setTier, [["all", "Todas"], ["prime", "Prime ≥80"], ["healthy", "Sana 70–80"], ["watch", "Vigilar 40–70"], ["risk", "Riesgo <40"]])}
         {seg(trend, setTrend, [["all", "Régimen"], ["improving", "Mejorando"], ["stable", "Estable"], ["deteriorating", "Deteriorando"]])}
         {seg(dim, setDim, [["all", "Motivo"], ...DIMENSIONS.map((d) => [d, DIM_LABEL[d]] as [Dimension, string])])}
@@ -68,7 +68,7 @@ export default function CompanyTable({ rows }: { rows: Row[] }) {
             <Link key={r.id} href={`/empresas/${r.id}`} className="grid grid-cols-[minmax(0,2fr)_90px_120px_140px_64px_64px_64px_64px_56px] items-center gap-3 px-5 py-2.5 text-[12.5px] transition-colors hover:bg-panel-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2"><span className="h-1.5 w-1.5 shrink-0 rounded-lg" style={{ background: scoreColor(r.score) }} /><span className="truncate text-ink">{r.name}</span></div>
-                <div className="num ml-3.5 text-[10.5px] text-ink-mute">{r.id}{r.group ? ` · ${r.group}` : ""}{r.alert ? <span className="ml-2 text-bad">20 % peor</span> : null}</div>
+                <div className="num ml-3.5 text-[10.5px] text-ink-mute">{r.group ?? "Sin grupo"}{r.alert ? <span className="ml-2 text-bad">20 % peor</span> : null}</div>
               </div>
               <Pill tone={TIER_TONE[r.tier]}>{TIER_LABEL[r.tier]}</Pill>
               <Pill tone={TREND_TONE[r.trend]}>{TREND_LABEL[r.trend]}</Pill>

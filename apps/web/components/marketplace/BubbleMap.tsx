@@ -41,7 +41,6 @@ export function BubbleMap({ data, onSelect, selected, sizeLabel, xThreshold, thr
       {hover && (
         <div className="pointer-events-none absolute z-10 w-[220px] rounded-lg border border-line bg-panel-hi/95 p-3 text-[12px] shadow-[var(--shadow-float)]" style={{ left: `min(calc(${(100 * x(hover.score)) / W}% + 12px), calc(100% - 230px))`, top: `${(100 * y(hover.momentum)) / H}%` }}>
           <div className="text-[13px] font-medium text-ink">{hover.name}</div>
-          <div className="num text-ink-mute">{hover.id}</div>
           <div className="mt-1 flex items-center gap-3"><span className="num text-[16px] font-semibold text-ink">{hover.score.toFixed(0)}</span><span className={`num ${hover.momentum >= 0 ? "text-good" : "text-bad"}`}>{hover.momentum > 0 ? "+" : ""}{hover.momentum.toFixed(1)} / 3m</span></div>
           <div className="text-ink-mute">{sizeLabel}: <span className="num text-ink">{hover.sizeText ?? Math.round(hover.size)}</span>{hover.qualified && <span className="ml-2 text-good">✦ cualificada</span>}</div>
         </div>

@@ -12,7 +12,7 @@ import { CompanyLink } from "@/components/ui/CompanyLink";
 import { LineChart } from "@/components/charts/LineChart";
 import { TREND_LABEL, TIER_LABEL } from "@/lib/score/derived";
 import { DIM_LABEL } from "@/lib/score/meta";
-import { eur, fmtMoney, monthLabelLong } from "@/lib/format";
+import { companyName, eur, fmtMoney, monthLabelLong } from "@/lib/format";
 
 const PALETTE = ["#e5e5e5", "#3b82f6", "#10b981", "#ef4444", "#a855f7", "#f59e0b", "#34d399", "#f87171", "#3b82f6", "#fbbf24"];
 
@@ -62,7 +62,7 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
             <div className="flex flex-col gap-2">
               {snap.proposals.map((p) => (
                 <div key={p.id} className="rounded-xl bg-panel-2 p-3.5">
-                  <div className="flex items-center justify-between text-[12.5px]"><span className="num text-ink">{store.byId.get(p.fromId)?.name ?? p.fromId} → {store.byId.get(p.toId)?.name ?? p.toId}</span><Pill tone={p.requiresReview ? "warn" : "good"}>{p.requiresReview ? "revisar" : "disponible"}</Pill></div>
+                  <div className="flex items-center justify-between text-[12.5px]"><span className="num text-ink">{companyName(store.byId.get(p.fromId))} → {companyName(store.byId.get(p.toId))}</span><Pill tone={p.requiresReview ? "warn" : "good"}>{p.requiresReview ? "revisar" : "disponible"}</Pill></div>
                   <div className="num font-semibold mt-1 text-[18px] text-ink">{eur(p.amountEur)}</div>
                   <div className="text-[11.5px] text-ink-dim">{p.days} días · interés de banco evitado {eur(Math.round(p.bankInterestEur))} · ahorro neto {eur(Math.round(p.netSavingEur))}</div>
                 </div>

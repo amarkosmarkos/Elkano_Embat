@@ -45,7 +45,7 @@ export default function DealClose() {
           <div className="divide-y divide-line-soft">
             {result.positions.map((p) => (
               <button type="button" key={p.id} onClick={() => setOpenCompany(p.id)} className={`grid w-full grid-cols-[minmax(0,1.6fr)_54px_100px_70px_100px_100px_100px] items-center gap-2 py-2 text-left text-[12.5px] hover:bg-panel-2 ${openCompany === p.id ? "bg-panel-2" : ""}`}>
-                <span className="min-w-0"><span className="block truncate text-ink">{p.name}</span><span className="num block text-[11px] text-ink-mute">{p.id}{p.group ? ` · ${p.group}` : ""} · {(p.weight * 100).toFixed(1)} %</span></span>
+                <span className="min-w-0"><span className="block truncate text-ink">{p.name}</span><span className="num block text-[11px] text-ink-mute">{p.group ? `${p.group} · ` : ""}{(p.weight * 100).toFixed(1)} %</span></span>
                 <span className="num text-right font-medium" style={{ color: scoreColor(p.score) }}>{p.score.toFixed(0)}</span>
                 <span className="num text-right font-medium text-ink">{fmtMoney(p.amount)}</span>
                 <span className="num text-right text-ink">{pct(p.pricing.rate, 1)}</span>

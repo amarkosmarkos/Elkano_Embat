@@ -337,7 +337,7 @@ export default function InsuranceDashboard() {
                   const st = status(row);
                   const insured = acceptedIds.has(company.id);
                   return <tr key={company.id} onClick={() => { setSelectedId(company.id); setView("report"); }} className={`cursor-pointer transition-colors hover:bg-panel-2 ${selectedId === company.id ? "bg-panel-2" : ""}`}>
-                    <td className="px-6 py-3.5"><div className="font-medium text-ink">{company.name}</div><div className="font-mono text-[10px] text-ink-mute">{company.id}</div></td>
+                    <td className="px-6 py-3.5"><div className="font-medium text-ink">{company.name}</div></td>
                     <td className="px-4 py-3.5" onClick={(event) => event.stopPropagation()}><label className="inline-flex cursor-pointer items-center gap-2"><input aria-label={`${insured ? "Retirar" : "Aceptar"} póliza de ${company.name}`} type="checkbox" checked={insured} onChange={() => toggleAccepted(company.id)} className="h-4 w-4 accent-accent" /><span className={`text-xs font-medium ${insured ? "text-good" : "text-ink-mute"}`}>{insured ? "Sí" : "No"}</span></label></td>
                     <td className="px-4 py-3.5 font-mono text-xs">{money(company.exposure)}</td>
                     <td className={`px-4 py-3.5 font-mono font-semibold ${scoreTone(row.score)}`}>{row.score.toFixed(0)}</td>
@@ -410,12 +410,12 @@ function ClientReport({ data, company, row, month, onSelect, accepted, onToggle 
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">Informe explicativo de prima / {monthLabel(month)}</div>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink">{company.name}</h2>
-        <p className="mt-1 font-mono text-xs text-ink-mute">{company.id} / revisión mensual de la póliza</p>
+        <p className="mt-1 font-mono text-xs text-ink-mute">Revisión mensual de la póliza</p>
       </div>
       <div className="w-full lg:w-[370px]">
         <label htmlFor="report-company" className="text-[10px] font-semibold uppercase tracking-wide text-ink-mute">Seleccionar cliente</label>
         <select id="report-company" value={company.id} onChange={(e) => onSelect(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm text-ink outline-none focus:border-accent">
-          {[...data.companies].sort((a, b) => a.name.localeCompare(b.name)).map((item) => <option key={item.id} value={item.id}>{item.name} / {item.id}</option>)}
+          {[...data.companies].sort((a, b) => a.name.localeCompare(b.name)).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <button onClick={() => onToggle(company.id)} className={`mt-2 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${accepted ? "border border-line bg-panel-hi text-ink hover:bg-panel-2" : "bg-accent text-ground hover:opacity-90"}`}>{accepted ? "✓ Póliza aceptada / retirar de cartera" : "Añadir como póliza aceptada"}</button>
       </div>

@@ -7,7 +7,7 @@ import { eur, fmtMoney } from "@/lib/format";
 type PoolInfo = {
   groupId: string;
   entity: { role: string; policy: string; reason: string; cashEur: number | null; spareEur: number; needEur: number; receiveLimitEur: number; reserveEur: number };
-  proposals: { id: string; fromId: string; toId: string; amountEur: number; netSavingEur: number; days: number; requiresReview: boolean }[];
+  proposals: { id: string; fromId: string; toId: string; fromName: string; toName: string; amountEur: number; netSavingEur: number; days: number; requiresReview: boolean }[];
   totals: { surplusEur: number; deficitEur: number; unknown: number };
 };
 
@@ -51,7 +51,7 @@ export default function DecisionCards({ company, provider, receiver, pool }: { c
               {pool.proposals.length === 0 && <p className="text-[13px] text-ink-mute">Sin propuestas que la impliquen este mes.</p>}
               {pool.proposals.map((p) => (
                 <div key={p.id} className="flex items-center justify-between rounded-lg border border-line-soft p-3.5 text-[13px]">
-                  <div><div className="num text-ink">{p.fromId} → {p.toId}</div><div className="text-ink-mute">{p.days} días · ahorro neto {eur(Math.round(p.netSavingEur))}{p.requiresReview ? " · requiere revisión" : ""}</div></div>
+                  <div><div className="num text-ink">{p.fromName} → {p.toName}</div><div className="text-ink-mute">{p.days} días · ahorro neto {eur(Math.round(p.netSavingEur))}{p.requiresReview ? " · requiere revisión" : ""}</div></div>
                   <div className="num text-[18px] font-semibold text-ink">{eur(p.amountEur)}</div>
                 </div>
               ))}

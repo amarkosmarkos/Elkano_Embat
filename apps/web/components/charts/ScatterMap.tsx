@@ -86,7 +86,7 @@ export function ScatterMap({ points, idx, axis, layer }: { points: MapPoint[]; i
       {hov && (
         <div className="pointer-events-none absolute z-10 w-[240px] rounded-xl border border-line bg-panel-hi/95 p-3 shadow-[var(--shadow-float)] backdrop-blur" style={{ left: `min(calc(${(100 * hov.cx) / W}% + 12px), calc(100% - 250px))`, top: `${(100 * hov.cy) / H}%` }}>
           <div className="text-[13px] font-medium text-ink">{hov.p.name}</div>
-          <div className="num text-[10.5px] text-ink-mute">{hov.p.id}{hov.p.group ? ` · ${hov.p.group}` : ""}</div>
+          {hov.p.group && <div className="num text-[10.5px] text-ink-mute">{hov.p.group}</div>}
           <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
             <div><div className="text-ink-mute">Score</div><div className="num text-[15px] text-ink">{hov.s.toFixed(0)}</div></div>
             <div><div className="text-ink-mute">3 meses</div><div className={`num text-[15px] ${hov.mom == null ? "text-ink-mute" : hov.mom >= 0 ? "text-good" : "text-bad"}`}>{hov.mom == null ? "—" : `${hov.mom >= 0 ? "+" : "−"}${Math.abs(hov.mom).toFixed(1)}`}</div></div>

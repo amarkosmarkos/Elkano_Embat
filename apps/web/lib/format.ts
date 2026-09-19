@@ -2,6 +2,7 @@ import type { MetricId } from "./score/types";
 import { METRICS } from "./score/meta";
 
 export const eur = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+export const companyName = (company: { name?: string | null } | null | undefined) => company?.name?.trim() || "Empresa sin nombre";
 
 /** Los datos sintéticos traen algún importe disparatado (ver pipeline/config.py AMOUNT_OUTLIER_ABS). */
 export const sane = (n: number | null | undefined, cap = 5_000_000): number | null => {

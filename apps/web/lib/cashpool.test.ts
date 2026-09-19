@@ -221,12 +221,25 @@ const poolingStore = (count = 2): PoolingStore => {
     const ids = [`LENDER_${i}`, `BORROWER_${i}`];
     store.groups.set(`GROUP_${i}`, ids);
     for (const id of ids) {
-      store.byId.set(id, { id, currency: "EUR", country: "ES", scores: [75, 75] });
+      store.byId.set(id, { id, name: id.startsWith("LENDER") ? "Atlas Textiles" : "Boreal Logística", currency: "EUR", country: "ES", scores: [75, 75] });
       for (const month of store.months) store.cash.set(`${id}|${month}`, id.startsWith("LENDER") ? 300_000 : -20_000);
     }
   }
   return store;
 };
+
+test("pooling carries display names through snapshots without changing proposal identifiers", () => {
+  const store = poolingStore(1);
+  const data = groupSeries(store, "GROUP_0");
+  assert.equal(data.base[0].companyId, "LENDER_0");
+  assert.equal(data.base[0].name, "Atlas Textiles");
+  const current = buildSeries(data.base, data.rows).at(-1)!;
+  assert.equal(current.entities[1].name, "Boreal Logística");
+  assert.equal(current.proposals[0].fromId, "LENDER_0");
+  assert.equal(current.proposals[0].toId, "BORROWER_0");
+  const renamed = data.base.map((entity) => ({ ...entity, name: "Nombre actualizado" }));
+  assert.deepEqual(buildSeries(renamed, data.rows).at(-1)!.proposals, current.proposals);
+});
 
 test("group overview includes all multi-company groups, not only the old selector's first forty", () => {
   const store = poolingStore(45);

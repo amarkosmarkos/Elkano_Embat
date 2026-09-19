@@ -41,7 +41,7 @@ export default function CompanyViewer({ mode, term = 6 }: { mode: "lender" | "bo
     <div className="card flex flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="num text-[11px] text-ink-mute">{c.id}{c.group ? ` · ${c.group}` : ""}{c.country ? ` · ${c.country}` : ""}</div>
+          <div className="num text-[11px] text-ink-mute">{[c.group, c.country].filter(Boolean).join(" · ")}</div>
           <div className="truncate text-[18px] font-semibold text-ink">{c.name}</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5"><TrendPill trend={trend(c.scores, idx)} delta={momentum(c.scores, idx)} />{c.latest.alert === 1 && <Pill tone="bad">20 % peor</Pill>}{(c.latest.nStress ?? 0) > 0 && <Pill tone="warn">{c.latest.nStress} alarma{(c.latest.nStress ?? 0) > 1 ? "s" : ""}</Pill>}{isLender && <Pill tone="accent">Prestamista</Pill>}{related && <Pill tone="warn">Grupo del prestamista</Pill>}</div>
         </div>

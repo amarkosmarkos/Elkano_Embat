@@ -58,7 +58,7 @@ export default function Bandeja({ alerts, month, months, initialIdx }: { alerts:
                 <div key={a.id} className={`grid grid-cols-[76px_minmax(0,1fr)_auto] items-start gap-4 py-3 ${done ? "opacity-45" : ""}`}>
                   <div className="flex flex-col gap-1"><Pill tone={SEV[a.severity].tone}>{SEV[a.severity].label}</Pill><span className="text-[10.5px] text-ink-mute">{KIND[a.kind]}</span></div>
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline gap-x-2"><span className="text-[13.5px] font-medium text-ink">{a.title}</span><CompanyLink id={a.companyId} name={a.company} className="text-[12px] text-ink-dim" showId={a.kind !== "regimen"} /></div>
+                    <div className="flex flex-wrap items-baseline gap-x-2"><span className="text-[13.5px] font-medium text-ink">{a.title}</span><CompanyLink id={a.companyId} name={a.company} className="text-[12px] text-ink-dim" /></div>
                     <div className="mt-0.5 text-[12px] text-ink-dim">{a.message}</div>
                   </div>
                   <div className="flex items-center gap-3">

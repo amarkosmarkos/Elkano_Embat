@@ -20,7 +20,7 @@ export function LenderCard({ a, selected, viewing, onLend, onOpen }: { a: Assess
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-[15px] font-semibold text-ink">{c.name}</div>
-          <div className="num text-[11px] text-ink-mute">{c.id}{c.country ? ` · ${c.country}` : ""}{c.groupSize && c.groupSize > 1 ? ` · grupo de ${c.groupSize}` : ""}</div>
+          <div className="num text-[11px] text-ink-mute">{[c.country, c.groupSize && c.groupSize > 1 ? `grupo de ${c.groupSize}` : null].filter(Boolean).join(" · ")}</div>
         </div>
         <div className="shrink-0 text-right">
           <div className="num text-[32px] font-semibold leading-none" style={{ color }}>{c.latest.score.toFixed(0)}</div>

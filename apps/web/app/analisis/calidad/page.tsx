@@ -2,7 +2,7 @@ import { getStore } from "@/lib/data/store";
 import { eda } from "@/lib/data/eda";
 import { Card } from "@/components/ui/Card";
 import { BarList } from "@/components/charts/BarChart";
-import { formatCount, fmtMoney } from "@/lib/format";
+import { companyName, formatCount, fmtMoney } from "@/lib/format";
 
 const LABELS: Record<string, { l: string; fix: string; bad?: boolean }> = {
   tx_category_dash: { l: "Movimientos sin categoría", fix: "→ uncategorized; el 25 % condiciona D2/D4", bad: true },
@@ -35,14 +35,14 @@ export default async function CalidadPage() {
           <BarList items={Object.entries(dr).map(([k, v]) => ({ label: k.replace(/_/g, " "), value: v }))} fmt={(v) => formatCount(v)} color="#f59e0b" />
         </Card>
         <Card title="Outliers de importe" sub="movimientos ≥ 100 M excluidos de todo agregado (500 tx, 159 facturas)">
-          <div className="divide-y divide-line-soft">{e.transactions.outliers_top.slice(0, 8).map((o, i) => <div key={i} className="flex items-center justify-between py-1.5 text-[12px]"><span className="num text-ink-dim">{o.company_id} · {o.date}</span><span className="num text-bad">{fmtMoney(o.amount)}</span></div>)}</div>
+          <div className="divide-y divide-line-soft">{e.transactions.outliers_top.slice(0, 8).map((o, i) => <div key={i} className="flex items-center justify-between py-1.5 text-[12px]"><span className="num text-ink-dim">{companyName(store.byId.get(o.company_id))} · {o.date}</span><span className="num text-bad">{fmtMoney(o.amount)}</span></div>)}</div>
         </Card>
         <Card title="Placeholders en descripciones" sub="la anonimización colapsa transacciones distintas">
           <BarList items={e.transactions.placeholders.slice(0, 8).map((p) => ({ label: String(p.k), value: p.n }))} fmt={(v) => formatCount(v)} color="#a855f7" />
         </Card>
       </div>
       <Card title="Saldos disparatados" sub="|balance| ≥ 1.000 M → inválido">
-        <div className="divide-y divide-line-soft">{e.balances.outliers.map((o) => <div key={o.product_id} className="flex items-center justify-between py-1.5 text-[12px]"><span className="num text-ink-dim">{o.company_id} · {o.product_id} · {o.type}</span><span className="num text-bad">{fmtMoney(o.balance)}</span></div>)}</div>
+        <div className="divide-y divide-line-soft">{e.balances.outliers.map((o) => <div key={o.product_id} className="flex items-center justify-between py-1.5 text-[12px]"><span className="num text-ink-dim">{companyName(store.byId.get(o.company_id))} · {o.product_id} · {o.type}</span><span className="num text-bad">{fmtMoney(o.balance)}</span></div>)}</div>
       </Card>
     </div>
   );
