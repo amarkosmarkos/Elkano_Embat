@@ -6,7 +6,7 @@ import type { PoolProposal } from "@/lib/cashpool";
 import { eur } from "@/lib/format";
 import { band } from "@/components/ScoreBadge";
 
-const BAND_FILL = { good: "#2f9e6e", warn: "#b8890f", bad: "#d6455a" } as const;
+const BAND_FILL = { good: "#1d8a44", warn: "#b56a00", bad: "#d3273e" } as const;
 
 type Status = "pendiente" | "aprobada" | "rechazada";
 
@@ -23,27 +23,27 @@ export default function CashPoolDemo({ siblings, proposals: initial }: { sibling
   return (
     <div className="flex flex-col gap-8">
       {/* -------- cabecera con el toggle de modelo -------- */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-sm border border-line bg-panel p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-panel p-5 shadow-sm">
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-ink-mute">Modelo de reparto</div>
+          <div className="text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Modelo de reparto</div>
           <div className="mt-1 text-sm text-ink-dim">
             {mode === "fondo"
               ? "Fondo común, estilo Mondragón Corporation: todos aportan a un fondo intercooperativo; quien lo necesita saca de ahí, según su score."
               : "Bilateral: cada filial con caja presta directamente a la que la necesita — más simple, menos redistributivo."}
           </div>
         </div>
-        <div className="flex gap-2 font-mono text-xs">
+        <div className="flex gap-1 rounded-full bg-panel-2 p-1 text-sm">
           <button
             onClick={() => setMode("fondo")}
-            className={`rounded-sm border px-3 py-1.5 ${mode === "fondo" ? "border-accent text-accent" : "border-line text-ink-mute"}`}
+            className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${mode === "fondo" ? "bg-white text-ink shadow-sm" : "text-ink-mute"}`}
           >
-            fondo común
+            Fondo común
           </button>
           <button
             onClick={() => setMode("bilateral")}
-            className={`rounded-sm border px-3 py-1.5 ${mode === "bilateral" ? "border-accent text-accent" : "border-line text-ink-mute"}`}
+            className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${mode === "bilateral" ? "bg-white text-ink shadow-sm" : "text-ink-mute"}`}
           >
-            bilateral
+            Bilateral
           </button>
         </div>
       </div>
@@ -51,15 +51,15 @@ export default function CashPoolDemo({ siblings, proposals: initial }: { sibling
       <GroupFlowMap siblings={siblings} proposals={initial} status={status} mode={mode} />
 
       {/* -------- cola del gestor -------- */}
-      <div className="rounded-sm border border-line bg-panel">
+      <div className="rounded-2xl border border-line bg-panel shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft p-5">
           <div>
-            <div className="font-display text-lg font-bold">Bandeja de esta mañana</div>
+            <div className="text-lg font-semibold tracking-tight text-ink">Bandeja de esta mañana</div>
             <div className="text-xs text-ink-mute">{pending} propuestas pendientes · {eur(approvedTotal)} ya movidos hoy</div>
           </div>
           {pending > 0 && (
-            <button onClick={approveAll} className="rounded-sm bg-accent px-4 py-2 font-mono text-xs font-medium text-[#03181f]">
-              aprobar todas
+            <button onClick={approveAll} className="rounded-full bg-accent px-4 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90">
+              Aprobar todas
             </button>
           )}
         </div>
@@ -80,31 +80,31 @@ function ProposalRow({ p, status, onApprove, onReject }: { p: PoolProposal; stat
     <div className={`flex flex-wrap items-center justify-between gap-4 p-5 ${status !== "pendiente" ? "opacity-50" : ""}`}>
       <div className="min-w-[240px]">
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-semibold">{p.fromName}</span>
+          <span className="font-medium text-ink">{p.fromName}</span>
           <span className="text-ink-mute">→</span>
-          <span className="font-semibold">{p.toName}</span>
-          <span className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${urgencyColor}`}>{p.urgency}</span>
+          <span className="font-medium text-ink">{p.toName}</span>
+          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${urgencyColor}`}>{p.urgency}</span>
         </div>
-        <div className="mt-1 font-mono text-xs text-ink-mute">
+        <div className="mt-1 text-xs text-ink-mute">
           {p.fromName} tiene {eur(p.fromCash)} en caja · {p.toName} score {p.toScore}
         </div>
       </div>
       <div className="flex items-center gap-5">
         <div className="text-right">
-          <div className="font-mono text-lg font-semibold text-accent">{eur(p.amount)}</div>
+          <div className="font-mono text-lg font-semibold text-ink">{eur(p.amount)}</div>
           <div className="font-mono text-[10px] text-ink-mute">{p.rate}% interno/año</div>
         </div>
         {status === "pendiente" ? (
           <div className="flex gap-2">
-            <button onClick={onApprove} className="rounded-sm border border-good px-3 py-1.5 font-mono text-xs text-good">
-              aprobar
+            <button onClick={onApprove} className="rounded-full border border-good px-3 py-1.5 text-xs font-medium text-good transition-colors hover:bg-good-dim">
+              Aprobar
             </button>
-            <button onClick={onReject} className="rounded-sm border border-line px-3 py-1.5 font-mono text-xs text-ink-mute">
-              rechazar
+            <button onClick={onReject} className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-mute transition-colors hover:bg-panel-2">
+              Rechazar
             </button>
           </div>
         ) : (
-          <span className={`font-mono text-xs ${status === "aprobada" ? "text-good" : "text-bad"}`}>{status}</span>
+          <span className={`text-xs font-medium ${status === "aprobada" ? "text-good" : "text-bad"}`}>{status}</span>
         )}
       </div>
     </div>
@@ -142,7 +142,7 @@ function GroupFlowMap({
   const active = proposals.filter((p) => status[p.id] !== "rechazada");
 
   return (
-    <div className="rounded-sm border border-line bg-panel-2 p-4">
+    <div className="rounded-2xl border border-line bg-panel-2 p-4">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Mapa de caja del grupo">
         {mode === "fondo" && active.length > 0 && (
           <circle cx={cx} cy={cy} r={22} fill="none" stroke="var(--color-accent)" strokeWidth={1.5} strokeDasharray="3 3" />
@@ -180,14 +180,14 @@ function GroupFlowMap({
 
         {nodes.map((n) => (
           <g key={n.companyId}>
-            <circle cx={n.x} cy={n.y} r={n.r} fill={BAND_FILL[band(n.score)]} opacity={0.85} />
-            <text x={n.x} y={n.y - n.r - 5} textAnchor="middle" fontFamily="var(--font-mono)" fontSize={8.5} fill="var(--color-ink-dim)">
+            <circle cx={n.x} cy={n.y} r={n.r} fill={BAND_FILL[band(n.score)]} opacity={0.9} />
+            <text x={n.x} y={n.y - n.r - 5} textAnchor="middle" fontFamily="var(--font-body)" fontSize={9} fill="var(--color-ink-dim)">
               {n.displayName.length > 14 ? n.displayName.slice(0, 13) + "…" : n.displayName}
             </text>
           </g>
         ))}
       </svg>
-      <div className="mt-2 flex gap-4 font-mono text-[10px] text-ink-mute">
+      <div className="mt-2 flex gap-4 text-[11px] text-ink-mute">
         <span>● tamaño = caja</span>
         <span>● color = score (verde/ámbar/rojo)</span>
         <span>┄ línea = propuesta activa</span>

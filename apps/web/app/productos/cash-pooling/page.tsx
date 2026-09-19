@@ -14,8 +14,8 @@ export default async function CashPoolingPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
-      <div className="mb-3 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Producto 02</div>
-      <h1 className="max-w-3xl font-display text-4xl font-extrabold sm:text-5xl">
+      <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Producto 02</div>
+      <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-ink sm:text-5xl">
         El grupo ya tiene el dinero. Solo hay que moverlo.
       </h1>
       <p className="mt-5 max-w-2xl text-ink-dim">
@@ -29,9 +29,9 @@ export default async function CashPoolingPage() {
 
       {groupId ? (
         <>
-          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 rounded-sm border border-line bg-panel px-6 py-4 font-mono text-xs text-ink-mute">
+          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 rounded-2xl border border-line bg-panel px-6 py-4 text-xs text-ink-mute shadow-sm">
             <span>
-              grupo de demo: <span className="text-accent">{groupId}</span>
+              grupo de demo: <span className="font-mono text-accent">{groupId}</span>
             </span>
             <span>{siblings.length} filiales</span>
             <span>{eur(totalCash)} de caja conjunta</span>
@@ -47,12 +47,12 @@ export default async function CashPoolingPage() {
 
       {/* --------------------------------------------------------------- ideas locas / backlog */}
       <section className="mt-20 border-t border-line-soft pt-12">
-        <div className="mb-2 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Backlog · ideas para llevar esto más lejos</div>
-        <h2 className="font-display text-2xl font-extrabold">Por dónde seguir</h2>
+        <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Backlog · ideas para llevar esto más lejos</div>
+        <h2 className="text-2xl font-bold tracking-tight text-ink">Por dónde seguir</h2>
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           {IDEAS.map((idea) => (
-            <div key={idea.t} className="rounded-sm border border-dashed border-line p-5">
-              <div className="font-display text-base font-bold">{idea.t}</div>
+            <div key={idea.t} className="rounded-2xl border border-dashed border-line p-5">
+              <div className="text-base font-semibold text-ink">{idea.t}</div>
               <p className="mt-2 text-sm text-ink-dim">{idea.d}</p>
             </div>
           ))}

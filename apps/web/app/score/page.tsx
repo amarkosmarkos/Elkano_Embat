@@ -15,32 +15,32 @@ const VERSIONS = [
 export default function ScorePage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
-      <div className="mb-3 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Método</div>
-      <h1 className="max-w-2xl font-display text-4xl font-extrabold">24 métricas. 5 dimensiones. Un número.</h1>
+      <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Método</div>
+      <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-ink">24 métricas. 5 dimensiones. Un número.</h1>
       <p className="mt-4 max-w-2xl text-ink-dim">
         Cada métrica se convierte en percentil frente al resto de empresas ese mes, se agrupa en cinco dimensiones y
         se combina en un score — penalizado por alarmas de estrés, empujado por la tendencia, suavizado para que un
         mes malo no lo hunda. <span className="text-ink">score = 100 − probabilidad (%) de un evento de impago en los próximos 3–6 meses.</span>
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-px border border-line-soft bg-line-soft sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line-soft bg-line-soft sm:grid-cols-2 lg:grid-cols-5">
         {DIMS.map((d) => (
           <div key={d.t} className="flex flex-col gap-2 bg-panel p-5">
-            <div className="font-mono text-xl text-accent">{d.w}</div>
-            <div className="font-display text-base font-bold">{d.t}</div>
+            <div className="font-mono text-xl font-semibold text-accent">{d.w}</div>
+            <div className="text-base font-semibold text-ink">{d.t}</div>
             <div className="text-xs leading-relaxed text-ink-dim">{d.d}</div>
           </div>
         ))}
       </div>
 
-      <h2 className="mt-16 font-display text-2xl font-extrabold">Trayectoria, no foto</h2>
+      <h2 className="mt-16 text-2xl font-bold tracking-tight text-ink">Trayectoria, no foto</h2>
       <p className="mt-3 max-w-2xl text-ink-dim">
         Cada métrica lleva además su cambio a 3 y 12 meses, y cuántos meses seguidos lleva empeorando (la racha) —
         72 columnas más. Es lo que separa una empresa que pasa de 45 a 65 puntos de otra que va de 82 a 68: hoy
         pueden valer casi lo mismo, pero van en direcciones opuestas.
       </p>
 
-      <h2 className="mt-16 font-display text-2xl font-extrabold">El evento: qué es &quot;le fue mal&quot;</h2>
+      <h2 className="mt-16 text-2xl font-bold tracking-tight text-ink">El evento: qué es &quot;le fue mal&quot;</h2>
       <p className="mt-3 max-w-2xl text-ink-dim">
         Nadie da una lista de empresas que quiebran. Se define con cuatro reglas sobre lo que la empresa debe:
         factura recibida vencida y grande (D1), falta la nómina/SS/impuesto que siempre pagaba (D2), 5+ días del
@@ -48,26 +48,26 @@ export default function ScorePage() {
         <em> siguientes</em>, nunca en el mismo mes que la métrica — si no, el número sería trampa.
       </p>
 
-      <h2 className="mt-16 font-display text-2xl font-extrabold">Tres versiones, cada una mejor que la anterior</h2>
-      <div className="mt-6 overflow-x-auto rounded-sm border border-line">
+      <h2 className="mt-16 text-2xl font-bold tracking-tight text-ink">Tres versiones, cada una mejor que la anterior</h2>
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-line shadow-sm">
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-line-soft font-mono text-[11px] uppercase tracking-wide text-ink-mute">
-              <th className="px-4 py-3 text-left font-normal">Versión</th>
-              <th className="px-4 py-3 text-left font-normal">Qué es</th>
-              <th className="px-4 py-3 text-right font-normal">Gini h1</th>
-              <th className="px-4 py-3 text-right font-normal">Gini h3</th>
-              <th className="px-4 py-3 text-right font-normal">Gini h6</th>
+            <tr className="border-b border-line-soft text-[11px] font-semibold uppercase tracking-wide text-ink-mute">
+              <th className="px-4 py-3 text-left font-semibold">Versión</th>
+              <th className="px-4 py-3 text-left font-semibold">Qué es</th>
+              <th className="px-4 py-3 text-right font-semibold">Gini h1</th>
+              <th className="px-4 py-3 text-right font-semibold">Gini h3</th>
+              <th className="px-4 py-3 text-right font-semibold">Gini h6</th>
             </tr>
           </thead>
           <tbody>
             {VERSIONS.map((v) => (
-              <tr key={v.name} className={`border-b border-line-soft last:border-none ${v.best ? "bg-panel" : ""}`}>
+              <tr key={v.name} className={`border-b border-line-soft last:border-none ${v.best ? "bg-panel-2" : ""}`}>
                 <td className="px-4 py-3 font-mono font-semibold text-accent">{v.name}</td>
                 <td className="px-4 py-3 text-ink-dim">{v.desc}</td>
-                <td className={`px-4 py-3 text-right font-mono ${v.best ? "text-accent" : ""}`}>{v.g1}</td>
-                <td className={`px-4 py-3 text-right font-mono ${v.best ? "text-accent" : ""}`}>{v.g3}</td>
-                <td className={`px-4 py-3 text-right font-mono ${v.best ? "text-accent" : ""}`}>{v.g6}</td>
+                <td className={`px-4 py-3 text-right font-mono ${v.best ? "font-semibold text-accent" : "text-ink"}`}>{v.g1}</td>
+                <td className={`px-4 py-3 text-right font-mono ${v.best ? "font-semibold text-accent" : "text-ink"}`}>{v.g3}</td>
+                <td className={`px-4 py-3 text-right font-mono ${v.best ? "font-semibold text-accent" : "text-ink"}`}>{v.g6}</td>
               </tr>
             ))}
           </tbody>

@@ -19,8 +19,8 @@ export default async function DatosPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-14">
-      <div className="mb-3 font-mono text-[11.5px] uppercase tracking-widest text-ink-mute">Visión de datos</div>
-      <h1 className="max-w-2xl font-display text-4xl font-extrabold">Lo que dicen 1.282 empresas juntas</h1>
+      <div className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Visión de datos</div>
+      <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-ink">Lo que dicen 1.282 empresas juntas</h1>
       <p className="mt-4 max-w-2xl text-ink-dim">
         Base mínima conectada a Postgres — de aquí sale el resto del análisis exploratorio y las gráficas en
         movimiento.
@@ -30,14 +30,14 @@ export default async function DatosPage() {
         <PortfolioScrubber monthsData={portfolioMonths} defaultMonth={defaultMonth} />
       </div>
 
-      <div className="mt-6 rounded-sm border border-line bg-panel p-6">
-        <div className="mb-4 font-mono text-[11px] uppercase tracking-widest text-ink-mute">Score medio por mes (p20–p80)</div>
+      <div className="mt-6 rounded-2xl border border-line bg-panel p-6 shadow-sm">
+        <div className="mb-4 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Score medio por mes (p20–p80)</div>
         <div className="flex h-40 items-end gap-1">
           {stats.map((s) => {
             const h = ((s.avg - minAvg) / (maxAvg - minAvg || 1)) * 100;
             return (
               <div key={s.month} className="group relative flex-1">
-                <div className="rounded-t-sm bg-accent/70 transition-colors group-hover:bg-accent" style={{ height: `${20 + h * 0.8}%` }} />
+                <div className="rounded-t-md bg-accent/70 transition-colors group-hover:bg-accent" style={{ height: `${20 + h * 0.8}%` }} />
                 <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] text-ink-dim opacity-0 group-hover:opacity-100">
                   {s.month} · {s.avg.toFixed(0)}
                 </div>
@@ -52,8 +52,8 @@ export default async function DatosPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-sm border border-line bg-panel p-6">
-          <div className="mb-4 font-mono text-[11px] uppercase tracking-widest text-ink-mute">Régimen · {lastMonth}</div>
+        <div className="rounded-2xl border border-line bg-panel p-6 shadow-sm">
+          <div className="mb-4 text-[13px] font-semibold uppercase tracking-wide text-ink-mute">Régimen · {lastMonth}</div>
           <div className="flex flex-col gap-2">
             {regimes.map((r) => (
               <div key={r.regime ?? "null"} className="flex items-center gap-3 text-sm">
@@ -70,7 +70,7 @@ export default async function DatosPage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center rounded-sm border border-dashed border-line p-6 text-sm text-ink-mute">
+        <div className="flex flex-col justify-center rounded-2xl border border-dashed border-line p-6 text-sm text-ink-mute">
           [placeholder] Aquí las gráficas animadas: distribución de score, evolución por sector, lo que salga del
           EDA. <code className="text-accent">lib/queries.ts</code> ya conecta a Postgres.
         </div>

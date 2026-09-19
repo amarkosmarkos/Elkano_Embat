@@ -1,6 +1,6 @@
 import { band } from "@/components/ScoreBadge";
 
-const COLOR = { good: "#2f9e6e", warn: "#b8890f", bad: "#d6455a" } as const;
+const COLOR = { good: "#1d8a44", warn: "#b56a00", bad: "#d3273e" } as const;
 
 /**
  * Línea de score mes a mes, SVG puro (sin librería, sin cliente). Pensado como plantilla:
@@ -23,8 +23,8 @@ export default function ScoreLine({ series }: { series: { month: string; score: 
   const col = COLOR[band(last.score)];
   const ref = (v: number) => (
     <g key={v}>
-      <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="#22303f" strokeWidth={1} strokeDasharray="2 4" />
-      <text x={padL - 8} y={y(v) + 3} fontFamily="var(--font-mono)" fontSize={9} fill="#5c7082" textAnchor="end">
+      <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="#e8e8ed" strokeWidth={1} strokeDasharray="2 4" />
+      <text x={padL - 8} y={y(v) + 3} fontFamily="var(--font-mono)" fontSize={9} fill="#86868b" textAnchor="end">
         {v}
       </text>
     </g>
@@ -36,7 +36,7 @@ export default function ScoreLine({ series }: { series: { month: string; score: 
       <path d={path} fill="none" stroke={col} strokeWidth={2.4} />
       <circle cx={x(n - 1)} cy={y(last.score)} r={4} fill={col} />
       {ticks.map((i) => (
-        <text key={i} x={x(i)} y={H - 8} fontFamily="var(--font-mono)" fontSize={9.5} fill="#5c7082" textAnchor="middle">
+        <text key={i} x={x(i)} y={H - 8} fontFamily="var(--font-mono)" fontSize={9.5} fill="#86868b" textAnchor="middle">
           {series[i].month}
         </text>
       ))}

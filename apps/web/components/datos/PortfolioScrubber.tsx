@@ -22,10 +22,10 @@ function Arrow({ direction, className }: { direction: "up" | "down"; className?:
 
 function Kpi({ label, value, tone = "neutral", arrow }: { label: string; value: string; tone?: Tone; arrow?: "up" | "down" }) {
   return (
-    <div className="rounded-sm border border-line bg-panel-2 p-4">
+    <div className="rounded-2xl border border-line bg-panel-2 p-4">
       <div className="mb-2 flex items-center gap-2">
         <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${TONE_BADGE[tone]}`}>●</span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-ink-mute">{label}</span>
+        <span className="text-[12px] font-medium text-ink-mute">{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
         <span className={`font-mono text-2xl font-semibold ${TONE_TEXT[tone]}`}>{value}</span>
@@ -74,12 +74,12 @@ export function PortfolioScrubber({ monthsData, defaultMonth }: { monthsData: Mo
   const delta = kpis.portfolioScoreDelta6m;
 
   return (
-    <div className="rounded-sm border border-line bg-panel p-6">
+    <div className="rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-8">
       <div className="mb-6 flex items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent text-xs font-bold text-ground">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-xs font-bold text-white">
           E
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-widest text-ink-mute">
+        <span className="text-[13px] font-semibold uppercase tracking-wide text-ink-mute">
           Embat · Salud financiera de la cartera
         </span>
       </div>
@@ -90,7 +90,7 @@ export function PortfolioScrubber({ monthsData, defaultMonth }: { monthsData: Mo
             type="button"
             onClick={togglePlay}
             aria-label={isPlaying ? "Pausar" : "Reproducir"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-ground transition-opacity hover:opacity-90"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[image:var(--brand-gradient)] text-white shadow-sm transition-opacity hover:opacity-90"
           >
             {isPlaying ? (
               <svg viewBox="0 0 14 14" width={13} height={13} aria-hidden="true">
@@ -119,12 +119,12 @@ export function PortfolioScrubber({ monthsData, defaultMonth }: { monthsData: Mo
             aria-valuetext={monthLabelLong(kpis.month)}
           />
 
-          <span className="shrink-0 font-mono text-xs text-ink-mute">
-            Mostrando <span className="text-ink">{monthLabelLong(kpis.month)}</span>
+          <span className="shrink-0 text-[13px] text-ink-mute">
+            Mostrando <span className="font-medium text-ink">{monthLabelLong(kpis.month)}</span>
           </span>
         </div>
 
-        <p className="text-xl font-semibold leading-snug text-ink sm:text-2xl">
+        <p className="text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
           {formatCount(kpis.deterioratingCompanies)} empresas se tuercen y {formatCount(kpis.improvingCompanies)}{" "}
           mejoran en {monthLabel(kpis.month)}
         </p>

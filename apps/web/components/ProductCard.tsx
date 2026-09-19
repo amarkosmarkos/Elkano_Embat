@@ -6,9 +6,9 @@ const FIT_COLOR = (fit: number) => (fit >= 70 ? "text-good border-good" : fit >=
 /** Tarjeta de producto recomendado para una empresa concreta — usa la razón que da el motor de reglas. */
 export function RecommendationCard({ r }: { r: Recommendation }) {
   return (
-    <div className="flex flex-col gap-2 rounded-sm border border-line bg-panel p-5">
+    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="font-display text-lg font-bold">{r.title}</h4>
+        <h4 className="text-lg font-semibold tracking-tight text-ink">{r.title}</h4>
         <span className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${FIT_COLOR(r.fit)}`}>encaje {r.fit}</span>
       </div>
       <p className="text-sm text-ink-dim">{r.reason}</p>
@@ -33,12 +33,15 @@ export function ProductSummaryCard({
   href: string;
 }) {
   return (
-    <Link href={href} className="group flex flex-col gap-3 rounded-sm border border-line bg-panel p-6 transition-colors hover:border-accent">
-      <div className="font-mono text-[11px] tracking-wide text-accent">{num}</div>
-      <h3 className="font-display text-xl font-bold group-hover:underline">{title}</h3>
+    <Link
+      href={href}
+      className="group flex flex-col gap-3 rounded-2xl border border-line bg-panel p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <div className="font-mono text-[11px] font-medium tracking-wide text-accent">{num}</div>
+      <h3 className="text-xl font-semibold tracking-tight text-ink group-hover:text-accent">{title}</h3>
       <p className="text-sm text-ink-dim">{desc}</p>
-      <div className="mt-auto border-t border-dashed border-line pt-3">
-        <div className="font-mono text-xl font-semibold text-accent">{statValue}</div>
+      <div className="mt-auto border-t border-line-soft pt-3">
+        <div className="font-mono text-xl font-semibold text-ink">{statValue}</div>
         <div className="text-[11px] text-ink-mute">{statLabel}</div>
       </div>
     </Link>
