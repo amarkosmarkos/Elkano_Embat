@@ -14,13 +14,11 @@ export const presentationHref = (path: string) => `${path}/?present=1`;
 export const platformBase = "https://elkano-embat-web.vercel.app";
 export const platformUrl = `${platformBase}/`;
 export const platformHref = (path: string) => `${platformBase}${path}`;
-/** Demo mode swaps these routes for a full-slide Loom recording. Paste the share or embed URL of each video.
- *  The current link is Loom's public "How to share your video" clip, a stand-in until the real demos are recorded. */
-const placeholderLoom = "https://www.loom.com/share/31f430c1a1e744b8a7b6c18a26982c71";
+/** Demo mode swaps these routes for a full-slide Loom recording. Paste the share or embed URL of each video. */
 export const demoMedia: Record<string, { loom: string; title: string }> = {
   "/producto/1": { loom: "https://www.loom.com/share/60f1634ed14847afb8fbe437ba48653a", title: "Marketplace de crédito" },
   "/producto/2": { loom: "https://www.loom.com/share/48968ba057c745e888510af5b2393709", title: "Cash pooling" },
-  "/producto/3": { loom: placeholderLoom, title: "Seguro de crédito" },
+  "/producto/3": { loom: "https://www.loom.com/share/12adba74e2be4a2eaad5646271ae77ce", title: "Seguro de crédito" },
 };
 /** Accepts loom.com/share/<id> or loom.com/embed/<id> and returns the embed URL without Loom's chrome. */
 export const loomEmbed = (url: string) => {
