@@ -18,8 +18,11 @@ cd apps/web
 npx tsc --noEmit -p .                      # 1. sin errores de tipos
 npx next build                             # 2. genera apps/web/out (unos 20 s, 1.500 páginas estáticas)
 cd out
-vercel deploy --prod --yes --scope xubanceccons-projects   # 3. sube y publica en elkano-embat-deck.vercel.app
+vercel link --yes --project elkano-embat-deck --scope xubanceccons-projects   # 3. obligatorio: el build borra out/.vercel
+vercel deploy --prod --yes --scope xubanceccons-projects                      # 4. sube y publica en elkano-embat-deck.vercel.app
 ```
+
+El paso 3 no es opcional. `next build` vacía `out/` y con ella el enlace al proyecto; si se despliega sin volver a enlazar, la CLI crea un proyecto nuevo llamado `out` y publica en una URL equivocada. Si pasa, borrarlo con `printf 'y\n' | vercel project rm out --scope xubanceccons-projects` (el comando no admite `--yes`).
 
 Comprobar después:
 
@@ -33,7 +36,7 @@ Todo debe devolver 200. Las URL de preview (`elkano-embat-deck-xxxx-xubanceccons
 
 Detalles que importan:
 
-- La primera vez en una máquina nueva: `vercel login`, y dentro de `apps/web/out` ejecutar `vercel link --yes --project elkano-embat-deck --scope xubanceccons-projects`. Esto crea `apps/web/out/.vercel/` y un `.env.local`; `out/` está en `.gitignore`, así que no ensucian el repo.
+- La primera vez en una máquina nueva: `vercel login` con la cuenta de Xuban. El `vercel link` del paso 3 crea `apps/web/out/.vercel/` y un `.env.local`; `out/` está en `.gitignore`, así que no ensucian el repo.
 - `next.config.mjs` usa `output: "export"`, `trailingSlash: true` e `images.unoptimized`. No cambiar a SSR: el deck no tiene servidor.
 - El servidor de desarrollo es `pnpm --filter web dev` (puerto 4321) y escribe en `.next-dev`, así que se puede hacer `next build` con el dev server encendido.
 - Si hace falta que un push despliegue solo: conectar el repo al proyecto desde el panel de Vercel (Root Directory `apps/web`, Production Branch `xubranch`). Requiere que la cuenta de GitHub de quien conecta tenga acceso al repo de Markos a través de la app de Vercel.
