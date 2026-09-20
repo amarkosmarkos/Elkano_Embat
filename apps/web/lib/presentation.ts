@@ -4,11 +4,12 @@ export const presentation = [
   ["/escena/3", "El problema"], ["/calculo-score", "Cálculo del score"],
   ["/escena/4", "El cofre"], ["/producto/1", "Marketplace de crédito"],
   ["/producto/3", "Seguro de crédito"], ["/producto/2", "Cash pooling"],
+  ["/escena/6", "Gracias"],
+  ["/anexo", "Anexo"],
   ["/escena/8", "Dos empresas"],
   ["/caso/a", "Atlas Motors"], ["/caso/b", "Harbor Foods"],
-  ["/escena/6", "Gracias"],
 ] as const;
-export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"11 / FIN",8:"08 / DOS EMPRESAS"};
+export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÓN / LA ISLA",3:"02 / EL PROBLEMA",4:"04 / EL COFRE",5:"ARCHIVO / EL PUERTO",6:"08 / FIN",8:"10 / DOS EMPRESAS"};
 export const presentationHref = (path: string) => `${path}/?present=1`;
 /** Deployed platform (main). The deck links out to it; product routes do not exist on this branch. */
 export const platformBase = "https://elkano-embat-web.vercel.app";

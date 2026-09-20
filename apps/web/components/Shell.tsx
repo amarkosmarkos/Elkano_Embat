@@ -22,7 +22,7 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const path = usePathname() ?? "/";
-  if (/^\/(intro|escena|cierre|calculo-score|producto|caso)(\/|$)/.test(path)) {
+  if (/^\/(intro|escena|cierre|calculo-score|producto|caso|anexo)(\/|$)/.test(path)) {
     return <>{children}<BoatTransition/><DemoPlayers/><footer className="presentation-footer on-film"><PresentationBrand/></footer><PresentationNav /></>;
   }
   return (
