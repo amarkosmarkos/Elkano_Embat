@@ -1,12 +1,11 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import Link from "next/link";
 import styles from "./ContentSlides.module.css";
 import { PresentationIcon } from "./PresentationIcons";
 import { CompanyBoat } from "./CompanyBoat";
 import { DemoSlide } from "./DemoSlide";
-import { demoMedia } from "@/lib/presentation";
+import { demoMedia, platformHref } from "@/lib/presentation";
 import { useDemoMode } from "@/lib/demo-mode";
 
 type Block = { figure: string; name: string; text: string; accent?: boolean };
@@ -159,7 +158,7 @@ function SlideBody({ item }: { item: SlideContent }) {
       </Fragment>)}
       {item.method.links && <>
         <h3>En la plataforma</h3>
-        <ul className={styles.links}>{item.method.links.map(([label, href]) => <li key={href}><Link href={href}>{label}<PresentationIcon name="arrowRight"/></Link></li>)}</ul>
+        <ul className={styles.links}>{item.method.links.map(([label, href]) => <li key={href}><a href={platformHref(href)} target="_blank" rel="noopener">{label}<PresentationIcon name="arrowRight"/></a></li>)}</ul>
       </>}
       <p className={styles.source}>{item.method.source}</p>
     </aside>}

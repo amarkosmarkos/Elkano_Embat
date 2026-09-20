@@ -155,18 +155,20 @@ body{overscroll-behavior:none}
 
 /* Closing-slide CTA: the entry point to the standalone platform. */
 .closing-platform{margin-top:32px}
-.closing-platform-button{display:inline-flex;align-items:center;justify-content:center;gap:24px;min-height:68px;padding:12px 14px 12px 28px;border:1px solid #ffffff;border-radius:8px;background:#ffffff;color:var(--embat-navy);font-family:var(--font-sans);font-size:19px;font-weight:600;box-shadow:0 6px 24px #050b2c40;text-decoration:none}
-.closing-platform-button:hover{background:var(--embat-blue-light);border-color:var(--embat-blue-inverse)}
-.closing-platform-arrow{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;border-radius:5px;background:var(--embat-blue);color:#fff;font-size:27px;line-height:1}
-.closing-platform-button:focus-visible{outline:3px solid var(--embat-blue-inverse);outline-offset:5px}
-.closing-platform-invite{animation:closing-invite 2.4s ease-out 2;box-shadow:0 0 0 6px #ffffff18,0 12px 40px #050b2c70;transition:box-shadow .2s ease,transform .2s ease}
-.closing-platform-invite:hover{transform:translateY(-3px);box-shadow:0 0 0 8px #ffffff26,0 16px 48px #050b2c90}
-@keyframes closing-invite{0%,100%{box-shadow:0 0 0 6px #ffffff18,0 12px 40px #050b2c70}50%{box-shadow:0 0 0 14px #ffffff08,0 12px 48px #3878f655}}
-@media(prefers-reduced-motion:reduce){.closing-platform-invite{animation:none;transition:none}.closing-platform-invite:hover{transform:none}}
+/* Liquid glass: a translucent pill that refracts the film behind it. Blur + saturation give the glass body,
+   the inset shadows draw the rim, ::before is the specular highlight on the upper edge, ::after the sheen. */
+.closing-platform-button{position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:60px;padding:16px 26px 16px 30px;border:1px solid #ffffff59;border-radius:999px;background:linear-gradient(160deg,#ffffff33 0%,#ffffff14 45%,#ffffff1f 100%);color:#fff;font-family:var(--font-sans);font-size:17px;font-weight:500;line-height:1;letter-spacing:.01em;text-decoration:none;-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -1px 0 #ffffff1f,inset 1px 0 0 #ffffff33,inset -1px 0 0 #ffffff33,0 14px 40px #050b2c66,0 2px 6px #050b2c40;transition:background .3s ease,transform .3s ease,box-shadow .3s ease,border-color .3s ease}
+.closing-platform-button::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(140% 90% at 30% -20%,#ffffff4d,#ffffff00 55%);pointer-events:none}
+.closing-platform-button::after{content:"";position:absolute;inset:-40% -60%;background:linear-gradient(105deg,#ffffff00 42%,#ffffff40 50%,#ffffff00 58%);transform:translateX(-45%) rotate(4deg);pointer-events:none;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.closing-platform-button svg{position:relative;z-index:1;width:20px;height:20px;flex-shrink:0;transition:transform .3s ease}
+.closing-platform-button:hover{background:linear-gradient(160deg,#ffffff47 0%,#ffffff21 45%,#ffffff2e 100%);border-color:#ffffff80;transform:translateY(-2px);box-shadow:inset 0 1px 0 #ffffffa6,inset 0 -1px 0 #ffffff26,inset 1px 0 0 #ffffff40,inset -1px 0 0 #ffffff40,0 18px 48px #050b2c80,0 2px 6px #050b2c40}
+.closing-platform-button:hover::after{transform:translateX(45%) rotate(4deg)}
+.closing-platform-button:hover svg{transform:translateX(4px)}
+.closing-platform-button:active{transform:translateY(0) scale(.985)}
+.closing-platform-button:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-button::after,.closing-platform-button svg{transition:none}.closing-platform-button:hover{transform:none}.closing-platform-button:hover svg{transform:none}.closing-platform-button::after{display:none}}
 @media(max-width:600px){.scene-number-6 .scene-center{top:16%}.closing-platform{margin-top:24px}.closing-platform-button{max-width:100%;font-size:16px}}
 @media(max-height:600px){.scene-number-6 .scene-center{top:6%;max-height:calc(100svh - 120px);overflow:auto}.scene-number-6 h1.story-thanks{font-size:36px;margin:12px 0}.scene-number-6 .scene-credits{margin:12px 0}.closing-platform{margin-top:16px}}
-@media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-arrow{transition:none}.closing-platform-button:hover .closing-platform-arrow{transform:none}}
-
 /* Fixed player geometry: route titles and video availability never move controls. */
 .presentation-nav{width:432px;max-width:90vw}
 .presentation-controls{display:grid;grid-template-columns:32px 32px 32px minmax(0,1fr) 32px 32px 32px;width:100%}
