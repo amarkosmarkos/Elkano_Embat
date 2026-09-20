@@ -1,0 +1,13 @@
+Image edit with the built-in image generation tool.
+Source: user-supplied painting, images.jpeg. Original preserved as elkano-portrait.jpg.
+Saved asset: elkano-head.png.
+
+Use case: background-extraction. Edit target: the supplied historical painting.
+Create a small website identity asset by isolating ONLY the man's head, his black
+cap and a little of his white collar. Preserve this exact painted face, expression,
+gaze, cap shape, colors and brushwork. Do not modernize, caricature, redraw into a
+different person or add graphic decorations. Crop tightly around head and collar
+with small safe margin so the full cap is included. Remove the entire landscape,
+torso and all other objects. Genuinely transparent background with clean alpha
+edges, no white rectangle, no border, no badge and no text. Square output suitable
+for a recognizable 48px head portrait icon.

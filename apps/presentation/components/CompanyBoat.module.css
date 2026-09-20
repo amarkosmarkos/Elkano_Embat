@@ -1,0 +1,6 @@
+.boat{width:min(320px,100%);margin:0}
+.boat img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.boat figcaption{margin-top:18px;color:var(--embat-inverse);font:400 18px/1.5 Manrope,Arial,sans-serif}
+.compact{width:100px;margin:0;flex-shrink:0}
+.compact img{border-radius:8px}
+@media(max-width:640px){.boat{width:min(260px,100%)}.compact{width:76px}}

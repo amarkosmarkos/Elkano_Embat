@@ -1,6 +1,6 @@
-<p align="center">
+# Presentación de Elkano
   <h1 align="center">⛵ Elkano</h1>
-  <p align="center"><strong>Estimamos cómo está una empresa y hacia dónde va.</strong><br>HackSpain 2026, reto X Ray de Embat</p>
+  <p align="center"><strong>Estimamos cómo está una empresa y hacia dónde va.</strong><br>HackSpain 2026, reto de Embat</p>
 </p>
 
 <p align="center">
@@ -45,9 +45,10 @@ Node 22.12 o superior y pnpm 11. La app lee el score y las métricas de los fich
 
 ## Más
 
+- [Presentación](apps/presentation): el código del deck (Next.js estático, vídeos, modo demo). Cómo desplegarlo, en su [README](apps/presentation/README.md).
+- [Plataforma](apps/web/README.md): qué lee cada pantalla.
 - [Documentación](docs/README.md): reto, mapa de datos, métricas, score y validación.
 - [Pipeline](pipeline/README.md) y [analytics](analytics/README.md): de los CSV al score y su evaluación.
 - [Resultados](output/README.md): `scores_v3.csv` y el informe de validación.
-- [Plataforma](apps/web/README.md): qué lee cada pantalla.
 
 <p align="center"><sub>Luken, Nagore, Markos, David y Xuban</sub></p>

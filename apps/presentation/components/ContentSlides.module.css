@@ -1,0 +1,78 @@
+/* Shared by every content slide: score, products and company cases.
+   One family, three sizes: 52 / 24 / 18 px. Weights 500 and 400. */
+.slide{--score-title:52px;--score-heading:24px;--score-body:18px;--score-gap:56px;position:relative;isolation:isolate;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:48px max(28px,6vw) 112px;background:var(--embat-navy);color:#fff;font-family:Manrope,Arial,sans-serif;font-size:var(--score-body);font-weight:400;font-style:normal;line-height:1.5;background-image:linear-gradient(105deg,#050b2c66,#050b2c28 65%,#050b2c44),url('/images/score-navy-cardstock-v2.png');background-size:cover;background-position:center}
+/* Trial: open sea from the closing frame under a heavier navy veil. Only on the score slide for now. */
+.sea{background-image:linear-gradient(105deg,#050b2cd9,#050b2cbf 65%,#050b2cd9),url('/images/score-navy-sea.jpg')}
+.content{width:100%;max-width:1200px;margin:0 auto}
+
+/* Header, flow and evidence share one grid: data, arrow, model, arrow, result. */
+.header,.flow,.validation{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;column-gap:32px}
+.header h1{grid-column:1/6;font:500 var(--score-title)/1.2 Manrope,Arial,sans-serif;letter-spacing:-.035em;margin:0;color:#fff;text-wrap:balance}
+.subtitle{grid-column:1/4;max-width:720px;font:inherit;color:var(--embat-inverse);margin:12px 0 0;text-wrap:pretty}
+/* Company cases: the boat sits in the result column, level with the title. */
+.headerWithBoat h1{grid-column:1/4;grid-row:1}
+.headerBoat{grid-column:5;grid-row:1/3;display:flex;justify-content:flex-end;align-items:start}
+.headerBoat figure{width:104px}
+
+.flow{margin-top:var(--score-gap);align-items:start}
+.step{min-width:0}
+.figure{font:500 var(--score-title)/1.2 Manrope,Arial,sans-serif;letter-spacing:-.035em;font-variant-numeric:tabular-nums;margin:0;color:#fff;white-space:nowrap}
+.step h2{font:500 var(--score-heading)/1.5 Manrope,Arial,sans-serif;letter-spacing:-.025em;margin:6px 0 0;color:#fff;text-wrap:balance}
+.step p:not(.figure){font:inherit;color:var(--embat-inverse);margin:18px 0 0;text-wrap:pretty}
+.result .figure,.accent{color:var(--embat-blue-inverse)}
+.arrow{width:28px;height:28px;margin-top:17px;color:var(--embat-inverse)}
+.arrow path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+.validation{margin-top:var(--score-gap);align-items:start}
+.proof{grid-column:1/4;max-width:720px}
+.proof h2{font:500 var(--score-heading)/1.5 Manrope,Arial,sans-serif;letter-spacing:-.025em;margin:0;color:#fff}
+.proof p{font:inherit;color:var(--embat-inverse);margin:6px 0 0;text-wrap:pretty}
+.proof button{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:4px 0;border:0;background:none;color:#fff;font:inherit;cursor:pointer}
+.proof button svg{width:18px;height:18px;transition:transform .18s ease}
+.proof button:hover svg{transform:translateX(3px)}
+.results{grid-column:5;display:flex;gap:36px;list-style:none;margin:0;padding:0}
+.results li{display:flex;flex-direction:column;min-width:0}
+.results strong{font:500 var(--score-heading)/1.5 Manrope,Arial,sans-serif;letter-spacing:-.025em;font-variant-numeric:tabular-nums;color:#fff;white-space:nowrap}
+.results span{font:inherit;color:var(--embat-inverse);white-space:nowrap;margin-top:6px}.slide button:focus-visible{outline:2px solid var(--embat-blue-inverse);outline-offset:5px}
+
+/* Demo mode: recordings live in a fixed layer under the widget so they preload and survive slide changes.
+   The active one sits where the slide content would be: 16:9, centered between the top padding and the 112 px bottom clearance. */
+.demo{justify-content:flex-start}
+.demoLayer{position:fixed;inset:0;z-index:40;pointer-events:none}
+/* Free area: below the title row (padding + 62 px title + 32 px gap) and above the 112 px bottom clearance. */
+.demoFrame{position:absolute;left:50%;top:calc(50% + 15px);transform:translate(-50%,-50%);width:min(100vw - 2 * max(28px,6vw),1200px,calc((100svh - 270px) * 16 / 9));aspect-ratio:16/9;border:0;border-radius:8px;background:#000;box-shadow:0 12px 40px #00000059;pointer-events:auto}
+.demoHidden{visibility:hidden;pointer-events:none}
+.demoMissing{max-width:640px;margin-top:var(--score-gap)}
+.demoMissing h2{font:500 var(--score-heading)/1.5 Manrope,Arial,sans-serif;letter-spacing:-.025em;margin:0 0 12px}
+.demoMissing p{font:inherit;color:var(--embat-inverse);margin:0}
+.demoMissing code{font:inherit;color:#fff}
+
+.method{position:fixed;z-index:60;bottom:88px;right:5vw;width:min(680px,90vw);max-height:70svh;overflow:auto;padding:28px;background:var(--embat-navy);border:1px solid #696d80;border-radius:8px;box-shadow:0 8px 32px #0005}
+.method>button{float:right;display:flex;width:36px;height:36px;align-items:center;justify-content:center;margin:-6px -6px 0 0;border:0;border-radius:6px;background:none;color:#fff;cursor:pointer}
+.method>button svg{width:22px;height:22px}
+.method>button:hover{background:#ffffff14}
+.method h2{font:500 var(--score-heading)/1.5 Manrope,Arial,sans-serif;letter-spacing:-.025em;margin:0 0 20px}
+.method p{font:inherit;color:var(--embat-inverse);margin:16px 0}
+.method h3{font:500 var(--score-body)/1.5 Manrope,Arial,sans-serif;margin:24px 0 8px;color:#fff}
+.method ul{margin:0;padding-left:22px;color:var(--embat-inverse)}
+.method li{margin:8px 0}
+.method .links{list-style:none;padding:0}
+.method .links a{display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none}
+.method .links a:hover{text-decoration:underline;text-underline-offset:4px}
+.method .links svg{flex-shrink:0;width:18px;height:18px}
+.method .source{overflow-wrap:anywhere}
+
+@media(max-height:800px){.slide{--score-gap:44px;padding-top:36px;padding-bottom:100px}}
+@media(max-width:1100px){.header,.flow,.validation{column-gap:22px}.results{gap:26px}}
+@media(max-width:750px){
+  .slide{--score-title:38px;--score-gap:36px;justify-content:flex-start;padding:30px 24px 150px}
+  .header,.flow,.validation{display:block}
+  .subtitle{margin:14px 0 0}
+  .flow{display:flex;flex-direction:column;gap:22px}
+  .arrow{transform:rotate(90deg);margin:0}
+  .step p:not(.figure){margin-top:12px}
+  .proof{max-width:none}
+  .results{margin-top:22px;gap:0;justify-content:space-between}
+  .results li{flex:1}
+  .method{padding:24px}
+}
