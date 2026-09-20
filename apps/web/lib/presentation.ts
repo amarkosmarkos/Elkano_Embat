@@ -12,7 +12,7 @@ export const sectionLabel: Record<number, string> = {1:"01 / INTRO",2:"TRANSICIÃ
 export const presentationHref = (path: string) => `${path}/?present=1`;
 /** Deployed platform (main). The deck links out to it; product routes do not exist on this branch. */
 export const platformBase = "https://elkano-embat-web.vercel.app";
-export const platformUrl = `${platformBase}/productos/seguro`;
+export const platformUrl = `${platformBase}/`;
 export const platformHref = (path: string) => `${platformBase}${path}`;
 /** Demo mode swaps these routes for a full-slide Loom recording. Paste the share or embed URL of each video.
  *  The current link is Loom's public "How to share your video" clip, a stand-in until the real demos are recorded. */
