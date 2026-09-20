@@ -1,51 +1,53 @@
-# Elkano — Embat · HackSpain 2026
+<p align="center">
+  <h1 align="center">⛵ Elkano</h1>
+  <p align="center"><strong>Estimamos cómo está una empresa y hacia dónde va.</strong><br>HackSpain 2026, reto X Ray de Embat</p>
+</p>
 
-## Enunciado — Track Embat
+<p align="center">
+  <img src="docs/media/elkano-intro.gif" alt="Presentación de Elkano: un barco con las velas de Embat navega mientras entra el texto" width="720" />
+</p>
 
-> **Tesorería en tiempo real con IA para equipos financieros de medianas y grandes empresas.** Automatiza hasta el 80% del trabajo manual, con 400 clientes en Europa y una Serie B de 30M€ liderada por Cathay Innovation.
->
-> Sponsor: <https://www.embat.io> · Track: <https://hackspain.com/tracks>
+<p align="center">
+  <a href="https://elkano-embat-deck.vercel.app/intro/?present=1"><strong>Presentación</strong></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="https://elkano-embat-web.vercel.app/"><strong>Plataforma</strong></a>
+</p>
 
-## Stack
+---
 
-- Next.js 15 (App Router) + React 19 + TypeScript
-- Postgres (Docker) + Drizzle ORM
-- Tailwind CSS v4
+<!-- Cuando esté el vídeo: sustituir por [![Ver la demo](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID) -->
+<p align="center">
+  <img src="docs/media/demo-placeholder.jpg" alt="Vídeo de la demo, próximamente" width="720" />
+</p>
 
-## Arrancar la plataforma
+---
 
-Requisitos: Node ≥ 22.12, pnpm 11.x.
+## Qué es
+
+Embat nos dio 1.286 empresas, 24 meses de movimientos bancarios y 900.000 facturas. Con eso construimos un **score de 0 a 100** por empresa: 105 variables (24 métricas, su tendencia y 9 señales de estrés), un modelo a 3 y 6 meses, y una validación fuera de muestra con Gini de 0,54 a un mes. El score no predice quiebras: ordena las empresas por el estrés financiero que aparece después.
+
+Sobre el score, tres productos que solo Embat puede ofrecer porque ve la caja de todas a la vez:
+
+| | Producto | Qué hace |
+|---|---|---|
+| 1 | **Marketplace de crédito** | Una empresa con caja presta a las que la necesitan. El score elige a quién y reparte la exposición. |
+| 2 | **Seguro de crédito continuo** | Asegura los cobros de una empresa y ajusta la prima cada mes según el score de sus clientes. |
+| 3 | **Cash pooling** | Antes de pedir al banco, una filial cubre a otra con la liquidez del grupo. |
+
+## Cómo arrancar
 
 ```bash
 pnpm install
-pnpm dev                # http://localhost:4321
+pnpm dev          # http://localhost:4321
 ```
 
-La plataforma (`apps/web`) lee el score real y las métricas directamente de los ficheros del repo — no necesita
-Postgres. Qué lee cada pestaña y cómo regenerar el dataset: [`apps/web/README.md`](apps/web/README.md).
-(`docker compose up -d` sigue levantando el Postgres del contrato heurístico para quien lo use.)
+Node 22.12 o superior y pnpm 11. La app lee el score y las métricas de los ficheros del repo; no necesita base de datos. Los datos crudos (646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
 
-## Marketplace demo (frontend)
+## Más
 
-```bash
-docker compose --profile marketplace up --build   # → http://localhost:8080
-```
+- [Documentación](docs/README.md): reto, mapa de datos, métricas, score y validación.
+- [Pipeline](pipeline/README.md) y [analytics](analytics/README.md): de los CSV al score y su evaluación.
+- [Resultados](output/README.md): `scores_v3.csv` y el informe de validación.
+- [Plataforma](apps/web/README.md): qué lee cada pantalla.
 
-Credit marketplace built on the v3 score: network of qualified companies → lender / receiver profiles → portfolio
-builder → monitoring over real score history → action center. Ver [`apps/marketplace/README.md`](apps/marketplace/README.md).
-
-## Knowledge base
-
-Documentación del reto y de los datos en [`docs/`](docs/README.md):
-
-- [Reto X Ray](docs/reto-xray.md) — enunciado, requisitos de entrega, evaluación e ideas de producto.
-- [Mapa de datos](docs/data-map.md) — relaciones entre CSV, volúmenes, tipos de columna y avisos de calidad ([versión visual](docs/data-map.html)).
-- [Salud](docs/salud.md) — métricas con fórmula y cómo se combinan en el score.
-- [Validación](docs/validacion_salud.md) — evento de impago, Gini, lead time, out-of-sample y criterios de aceptación.
-- [EDA](eda/report.html) — análisis exploratorio completo con ~70 gráficos (`open eda/report.html`; regenerar con `./eda/run.sh`, ver [eda/README.md](eda/README.md)).
-- [Pipeline](pipeline/README.md) — `./pipeline/run.sh`: RAW → preprocesamiento (bronze/silver/gold) → etiquetas → score → validación, con checkpoints en `output/0{1,2,3}_*` (solo re-ejecuta lo que cambió).
-- [Analytics](analytics/README.md) — una función por métrica de `docs/salud.md`, tres generadores de score (v1 scorecard, v2 ∝ Gini, v3 GBM) y el evaluador de `docs/validacion_salud.md`.
-
-Los datos crudos (`output/*.csv`, 646 MB) no van al repo: descomprimir `output_hackspain_data.zip` en la raíz.
-**Los resultados del score sí van**: `output/02_score/scores_v3.csv` (+ v1, v2, las 105 métricas) y la validación en
-`output/03_validation/`. Qué contiene cada fichero y cómo usarlo: [`output/README.md`](output/README.md).
+<p align="center"><sub>Luken, Nagore, Markos, David y Xuban</sub></p>
