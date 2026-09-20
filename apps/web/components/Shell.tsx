@@ -5,6 +5,7 @@ import { Nav } from "@/components/Nav";
 import { PresentationNav } from "@/components/PresentationNav";
 import { PresentationBrand } from "@/components/PresentationBrand";
 import { BoatTransition } from "@/components/BoatTransition";
+import { DemoPlayers } from "@/components/DemoPlayers";
 
 /** Envuelve las páginas con la barra y el ancho de lectura, salvo la intro del barco, que va a pantalla completa. */
 export function Shell({
@@ -22,8 +23,7 @@ export function Shell({
 }) {
   const path = usePathname() ?? "/";
   if (/^\/(intro|escena|cierre|calculo-score|producto|caso)(\/|$)/.test(path)) {
-    const paper=path.startsWith("/producto")||path.startsWith("/caso");
-    return <>{children}<BoatTransition/><footer className={`presentation-footer ${paper?"on-paper":"on-film"}`}><PresentationBrand/></footer><PresentationNav /></>;
+    return <>{children}<BoatTransition/><DemoPlayers/><footer className="presentation-footer on-film"><PresentationBrand/></footer><PresentationNav /></>;
   }
   return (
     <>

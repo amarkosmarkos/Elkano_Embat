@@ -1,6 +1,6 @@
 # Slide del score
 
-Una sola slide: 105 variables → modelo predictivo → score de 0–100. «SCORE VALIDADO» es el titular dominante; «Estado actual. Tendencia futura.» describe la lectura buscada, con una aclaración visible de que se trata de estimaciones. Gini queda como evidencia secundaria.
+Una sola slide en tres filas sobre la misma retícula de cinco columnas. Cabecera: «SCORE VALIDADO» a la izquierda y, debajo, el subtítulo «Estimamos cómo está una empresa y hacia dónde va.». Flujo: 105 variables estadísticas, 3 y 6 meses de horizonte con gradient boosting, y un score de 0 a 100, con las tres cifras a 52 px sobre una misma línea base y flechas SVG centradas en esa línea. Evidencia: «Comprobado con Gini», el tamaño de la muestra y el desplegable «Método y alcance» a la izquierda; los tres Gini bajo el score. La única superficie de color es la cifra «0 a 100» en azul Embat inverso; no hay paneles ni tarjetas. Gini es evidencia secundaria.
 
 La textura actual se generó con la herramienta integrada `image_gen` y se conserva en `apps/web/public/images/score-navy-cardstock-v2.png`. El velo oscuro es ligero para que la textura rugosa sea visible. La versión anterior permanece en `score-navy-cardstock.png`. Todo el texto y las cifras son HTML editables. El modelo se identifica como gradient boosting.
 

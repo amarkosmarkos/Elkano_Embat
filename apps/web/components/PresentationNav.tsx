@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PresentationIcon } from "@/components/PresentationIcons";
-import { presentation, presentationHref, sceneMedia } from "@/lib/presentation";
+import { presentation, presentationHref, sceneMedia, demoMedia } from "@/lib/presentation";
+import { useDemoMode } from "@/lib/demo-mode";
 
 let developmentWarmup: Promise<void> | undefined;
 
@@ -11,6 +12,10 @@ export function PresentationNav() {
   const pathname=usePathname(); const router=useRouter();
   const [enabled,setEnabled]=useState(false); const [open,setOpen]=useState(false);
   const [playing,setPlaying]=useState(false);
+  const [demo,setDemo]=useDemoMode();
+  const [fullscreen,setFullscreen]=useState(false);
+  useEffect(()=>{const sync=()=>setFullscreen(Boolean(document.fullscreenElement));sync();document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync);},[]);
+  const toggleFullscreen=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.().catch(()=>{});};
   const path=(pathname??"").replace(/\/$/,"");
   const scene=path.startsWith("/escena")||path.startsWith("/producto")||path.startsWith("/caso/")||path==="/calculo-score"||path==="/intro"||path==="/cierre";
   const canonical=path==="/intro"?"/escena/1":path==="/cierre"?"/escena/6":path;
@@ -53,7 +58,7 @@ export function PresentationNav() {
     if(!enabled||index<0)return;
     const key=(e:KeyboardEvent)=>{
       const el=e.target as HTMLElement;
-      if(e.altKey||e.ctrlKey||e.metaKey||el.closest("input,textarea,select,video,[contenteditable=true],[role=slider]"))return;
+      if(e.altKey||e.ctrlKey||e.metaKey||el.closest("input:not([type=checkbox]),textarea,select,video,[contenteditable=true],[role=slider]"))return;
       const offset=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
       const next=presentation[index+offset];
       if(offset){e.preventDefault();if(e.repeat)return;if(next)router.push(presentationHref(next[0]));}
@@ -71,7 +76,11 @@ export function PresentationNav() {
       <button onClick={()=>setOpen(!open)} aria-expanded={open} aria-controls="presentation-index" className="presentation-current"><span>{String(index+1).padStart(2,"0")} / {presentation.length}</span> <span className="presentation-title">{presentation[index][1]}</span> <span><PresentationIcon name="menu"/></span></button>
       {next?<Link href={presentationHref(next[0])} onClick={e=>{if(scene&&!paper&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey){e.preventDefault();window.dispatchEvent(new Event("elkano:advance"));}}} title={scene&&!paper?"Reproducir la escena y continuar":"Siguiente sección"} aria-label={`Siguiente: ${next[1]}`} className="presentation-arrow"><PresentationIcon name="right"/></Link>:<Link href={presentationHref(presentation[0][0])} className="presentation-arrow" aria-label="Volver al principio"><PresentationIcon name="restart"/></Link>}
       {next?<Link href={`${presentationHref(next[0])}${next[0].startsWith("/caso/")?"&boat=skip":""}`} className="presentation-arrow presentation-skip" title="Siguiente sección sin animación" aria-label={`Saltar sin animación: ${next[1]}`}><PresentationIcon name="skipRight"/></Link>:<Link href={presentationHref(presentation[0][0])} className="presentation-arrow presentation-skip" aria-label="Volver a la primera sección"><PresentationIcon name="skipRight"/></Link>}
+      <button type="button" onClick={toggleFullscreen} className="presentation-arrow presentation-fullscreen" title={fullscreen?"Salir de pantalla completa":"Pantalla completa"} aria-label={fullscreen?"Salir de pantalla completa":"Pantalla completa"} aria-pressed={fullscreen}><PresentationIcon name={fullscreen?"exitFullscreen":"fullscreen"}/></button>
     </div>
-    {open&&<div id="presentation-index" className="presentation-index">{presentation.map(([route,label],i)=><Link key={route} href={presentationHref(route)} aria-current={i===index?"step":undefined}><span>{String(i+1).padStart(2,"0")}</span>{label}</Link>)}</div>}
+    {open&&<div id="presentation-index" className="presentation-index">
+      <label className="presentation-mode"><input type="checkbox" checked={demo} onChange={e=>setDemo(e.target.checked)}/>Modo demo<small>{demo?"vídeo en las slides marcadas":"solo slides"}</small></label>
+      {presentation.map(([route,label],i)=><Link key={route} href={presentationHref(route)} aria-current={i===index?"step":undefined}><span>{String(i+1).padStart(2,"0")}</span>{label}{demo&&demoMedia[route]&&<em className="presentation-demo-tag">demo</em>}</Link>)}
+    </div>}
   </nav>;
 }

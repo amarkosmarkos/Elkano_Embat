@@ -54,6 +54,18 @@ body{overscroll-behavior:none}
 .story-overlay-placeholder>span,.story-logo-placeholder,.story-video-pending span{color:#b6ceff}
 .scene-lead{font-size:clamp(17px,1.7vw,22px);line-height:1.5}
 .scene-number-6 .scene-shade{background:linear-gradient(180deg,#050b2c80,#050b2c66 55%,#050b2c99)}
+/* Escena 4: al abrirse el cofre, una viñeta cierra el plano sobre el cofre (que sigue iluminado) y el título entra arriba. */
+.scene-dim{position:absolute;inset:0;z-index:1;background:var(--embat-navy);pointer-events:none}
+.scene-vignette{background:radial-gradient(ellipse 58% 52% at 50% 64%,transparent 22%,#050b2cb3 62%,var(--embat-navy) 100%),linear-gradient(180deg,#050b2cf2 0%,#050b2c99 26%,transparent 52%)}
+.scene-number-4 .scene-center{inset:11% 8% auto;display:flex;justify-content:center;max-width:none;margin:0}
+.scene-stage h1.scene-section-title{font:500 clamp(44px,6.5vw,88px)/1 var(--font-sans);letter-spacing:.06em;margin:0;color:#fff;text-shadow:0 4px 32px #050b2c99}
+/* Callouts: one per scroll, a leader line growing from the roll's end to the label. */
+.chest-callouts{position:absolute;inset:0;z-index:2;margin:0;padding:0;list-style:none;pointer-events:none}
+.chest-callouts li{position:absolute;display:flex;align-items:center;gap:14px;transform:translateY(-50%);white-space:nowrap}
+.chest-leader{display:block;width:clamp(48px,7vw,110px);height:1px;background:#fff;opacity:.7;transform-origin:left center}
+.chest-label{display:flex;align-items:baseline;gap:12px;font:500 clamp(18px,1.9vw,26px)/1.2 var(--font-sans);letter-spacing:-.02em;color:#fff;text-shadow:0 2px 14px #050b2c}
+.chest-label>span{font-variant-numeric:tabular-nums;color:var(--embat-blue-inverse)}
+@media(max-width:800px){.chest-callouts{inset:auto 6% 24% 6%}.chest-callouts li{position:static;transform:none;margin-top:12px}.chest-leader{display:none}}
 .scene-number-6 .scene-center{top:28%;text-shadow:none}
 .scene-stage h1.story-thanks{font-size:clamp(38px,6vw,80px);line-height:1.15}
 .scene-credits{font-size:16px;letter-spacing:0;color:white}
@@ -73,6 +85,13 @@ body{overscroll-behavior:none}
 .presentation-index a{font-size:13px}
 .presentation-index a:hover,.presentation-index a[aria-current]{background:#3878f633;color:white}
 .presentation-index a span{color:#a5c4ff}
+.presentation-mode{display:flex;align-items:center;gap:10px;padding:10px 12px 12px;margin-bottom:6px;border-bottom:1px solid #696d8040;font-size:13px;font-weight:500;cursor:pointer;user-select:none}
+.presentation-mode input{width:16px;height:16px;margin:0;accent-color:var(--embat-blue);cursor:pointer}
+.presentation-mode small{margin-left:auto;font-size:11px;font-weight:400;color:#a5c4ff}
+.presentation-demo-tag{margin-left:auto;font-size:11px;font-style:normal;color:var(--embat-blue-inverse)}
+.on-product .presentation-mode{border-color:#e8e8ed}
+.on-product .presentation-mode small{color:var(--embat-muted)}
+.on-product .presentation-demo-tag{color:var(--embat-blue)}
 .scene-stage a:focus-visible,.scene-stage button:focus-visible,.presentation-nav :focus-visible,.story-placeholder :focus-visible{outline:2px solid var(--embat-blue-inverse);outline-offset:4px}
 
 /* White product/story pages alternate with the dark cinematic footage. */
@@ -149,14 +168,15 @@ body{overscroll-behavior:none}
 @media(prefers-reduced-motion:reduce){.closing-platform-button,.closing-platform-arrow{transition:none}.closing-platform-button:hover .closing-platform-arrow{transform:none}}
 
 /* Fixed player geometry: route titles and video availability never move controls. */
-.presentation-nav{width:400px;max-width:90vw}
-.presentation-controls{display:grid;grid-template-columns:32px 32px 32px minmax(0,1fr) 32px 32px;width:100%}
+.presentation-nav{width:432px;max-width:90vw}
+.presentation-controls{display:grid;grid-template-columns:32px 32px 32px minmax(0,1fr) 32px 32px 32px;width:100%}
+.presentation-fullscreen{border:0;border-left:1px solid #696d8033;background:none;color:inherit;cursor:pointer;padding:0}
 .presentation-controls .presentation-arrow,.presentation-controls .presentation-play{width:100%}
 .presentation-current{min-width:0;width:100%;gap:10px}
 .presentation-current>span{flex-shrink:0;white-space:nowrap}
 .presentation-current .presentation-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:inherit;color:inherit}
 .presentation-play-placeholder{visibility:hidden}
-@media(max-width:640px){.presentation-nav{width:90vw}.presentation-controls{grid-template-columns:28px 28px 30px minmax(0,1fr) 28px 28px}.presentation-current{gap:6px}}
+@media(max-width:640px){.presentation-nav{width:90vw}.presentation-controls{grid-template-columns:28px 28px 30px minmax(0,1fr) 28px 28px 28px}.presentation-current{gap:6px}}
 
 /* Closing copy is immediately visible, including before hydration or video load. */
 .scene-number-6 .closing-copy{opacity:1;transform:none;animation:none;transition:none;will-change:auto}

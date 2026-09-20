@@ -1,8 +1,8 @@
 import styles from "./CompanyBoat.module.css";
 
 const boats={
-  a:{src:"/images/company-a-small-boat.png",alt:"Pequeño velero de madera sobre el mar",caption:"Cash pooling y seguros de David"},
-  b:{src:"/images/company-b-luxury-ship.png",alt:"Barco de vela de lujo sobre el mar",caption:"Colocación de excedentes"},
+  a:{src:"/images/company-a-small-boat.png",alt:"Pequeño velero de madera sobre el mar",caption:"Atlas Motors. Cash pooling y marketplace"},
+  b:{src:"/images/company-b-luxury-ship.png",alt:"Barco de vela de lujo sobre el mar",caption:"Harbor Foods. Marketplace y seguro de crédito"},
 };
 
 export function CompanyBoat({company,compact=false}:{company:"a"|"b";compact?:boolean}){

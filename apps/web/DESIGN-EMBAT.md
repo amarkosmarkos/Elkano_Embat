@@ -129,7 +129,7 @@ Mantener titulares comerciales de 32–52 px en portada; proponer 24–32 px en 
 - `components/Escena.tsx`: escenas y CTA de cierre.
 - `components/Nav.tsx`, `Shell.tsx`, `ui.tsx`: navegación y componentes de la aplicación.
 - `app/plataforma/page.tsx`: entrada a la plataforma; reutiliza el dashboard existente.
-- `components/CelestialScore.tsx` y `CelestialScore.module.css`: referencia implementada para las slides de contenido.
+- `components/ContentSlides.module.css`: hoja compartida por todas las slides de contenido. La usan `CelestialScore.tsx` (score), `ContentSlides.tsx` (productos) y `app/caso/[company]/page.tsx` (casos A y B).
 - `components/PresentationIcons.tsx`: iconos SVG compartidos del recorrido.
 
 La sección 9 recoge las decisiones del proyecto para las slides de contenido. Son una adaptación de la referencia de Embat, no una especificación de su aplicación autenticada.
@@ -144,72 +144,67 @@ La sección 9 recoge las decisiones del proyecto para las slides de contenido. S
 6. Presentación y plataforma comparten marca, con densidad apropiada a cada uso.
 7. Distinguir siempre valores medidos de decisiones adaptadas para Elkano.
 
-## 9. Diseño elegido para las slides de contenido
+## 9. Sistema de las slides de contenido
 
-Decisiones acordadas durante la revisión de la presentación, 19 de septiembre de 2026. Aplicar esta sección al score, las explicaciones de producto y los casos de las empresas A y B. Las escenas de vídeo mantienen su composición cinematográfica.
+Decidido en la revisión del 19 de septiembre de 2026 y aplicado primero a la slide 3. La misma noche se extendió a los tres productos (`components/ContentSlides.tsx`) y a los casos A y B (`app/caso/[company]/page.tsx`); las tres comparten `components/ContentSlides.module.css`. Las escenas de vídeo conservan su composición cinematográfica.
 
-La referencia implementada es la slide 3: `components/CelestialScore.tsx` y `components/CelestialScore.module.css`. Reutilizar su lenguaje visual; no diseñar cada slide con una tipografía, una escala o unos iconos distintos. Estas decisiones sustituyen los experimentos anteriores de caligrafía, brillo y mezclas de fuentes.
+La idea es simple: una slide cuenta una sola idea, con una familia tipográfica, tres tamaños y una retícula que se repite de arriba abajo. Lo que no cabe con letra legible se acorta o pasa a un desplegable. No se compensa con tarjetas, líneas ni efectos.
 
-### Tipografía: una familia y tres tamaños
+### Escala tipográfica
 
-Usar **Manrope**, ya alojada en el proyecto, en toda la slide. La fuente original de Embat es HafferSQXH; Manrope es la sustituta elegida para esta presentación. No descargar ni introducir otra fuente para una slide concreta.
+Manrope en todo, ya alojada en el proyecto. Haffer es la fuente de Embat; Manrope es la sustituta autorizada en esta presentación. No se añade ninguna otra fuente, ni cursivas, ni texto metalizado, ni gradientes en las letras.
 
-| Uso | Escritorio | Peso | Regla |
-| --- | --- | --- | --- |
-| Titular y cifras protagonistas | 52 px, interlineado 1,2 | 500 | Un mensaje principal. Las cifras protagonistas pueden compartir este tamaño. |
-| Títulos de bloque y cifras secundarias | 24 px, interlineado 1,5 | 500 | La misma jerarquía en todos los bloques. |
-| Subtítulos, explicaciones, etiquetas y evidencia | 18 px, interlineado 1,5 | 400 | Texto legible durante una presentación, sin letra pequeña para hacer sitio. |
+| Nivel | Escritorio | Móvil | Peso | Interlineado | Uso |
+| --- | --- | --- | --- | --- | --- |
+| Protagonista | 52 px | 38 px | 500 | 1,2 | El titular y las cifras que sostienen el argumento. Comparten tamaño. |
+| Bloque | 24 px | 24 px | 500 | 1,5 | Nombre de cada bloque, cifras secundarias, título del desplegable. |
+| Lectura | 18 px | 18 px | 400 | 1,5 | Subtítulo, explicaciones, etiquetas y evidencia. |
 
-En móvil, el titular pasa a 38 px; bloques y texto mantienen 24 y 18 px. Se apila el contenido y se permite scroll vertical.
+Letter-spacing de -0,035 em en el nivel protagonista y -0,025 em en el de bloque. Cifras con `font-variant-numeric: tabular-nums`. Blanco para lo que se lee primero (titular, cifras, nombres de bloque); `--embat-inverse` (#D2D2DB) para las explicaciones. El azul `--embat-blue-inverse` (#5C92FE) se reserva para una sola cosa por slide, el destino del argumento. En el score es la cifra «0 a 100».
 
-No usar cursivas, familias caligráficas, serif alternativas, texto metalizado ni gradientes dentro de las letras. No mezclar negritas de 700/900 con texto ligero. Reservar 500 para titulares y 400 para la lectura normal. Si falta sitio, acortar el texto o llevar el detalle a una explicación desplegable; no añadir tamaños intermedios ni reducir el cuerpo a 10–13 px.
+Si falta sitio, se acorta el texto o se lleva el detalle al desplegable. No se crean tamaños intermedios ni se baja el cuerpo a 10 o 13 px.
 
-### Fondo y color
+### Fondo
 
-Mantener los colores de Embat: navy `#050B2C`, blanco `#FFFFFF`, azul de acción `#3878F6` y texto secundario sobre oscuro `#D2D2DB`.
+Colores de Embat: navy `#050B2C`, blanco, azul de acción `#3878F6`, `#D2D2DB` para texto secundario sobre oscuro. Las slides oscuras de contenido usan la cartulina rugosa `public/images/score-navy-cardstock-v2.png` con un velo navy ligero (gradiente de 105º entre `#050b2c66` y `#050b2c28`). La textura tiene que verse; el texto tiene prioridad. Las slides claras mantienen el blanco con texto navy. Sin dorados, resplandores, partículas ni paletas nuevas.
 
-La slide del score conserva la cartulina azul rugosa aprobada: `public/images/score-navy-cardstock-v2.png`, con un velo navy ligero. La textura debe verse, pero el texto tiene prioridad. Puede reutilizarse en otras slides oscuras de contenido. Las slides claras pueden mantener el fondo blanco ya usado en la presentación, con texto navy. No añadir dorado, resplandores, nuevas paletas ni efectos decorativos al texto.
+### Retícula
 
-### Composición y espacio
+Una sola retícula de cinco columnas para toda la slide: dato, flecha, proceso, flecha, resultado (`1fr 28px 1fr 28px 1fr`, separación de 32 px, ancho máximo 1200 px, márgenes `max(28px, 6vw)`). Las tres filas de la slide se cuelgan de esa retícula:
 
-- Una slide contiene la idea completa. No esconder partes del argumento en pasos automáticos o pestañas internas.
-- Empezar directamente por el titular. No añadir un rótulo redundante como «03 / CÓMO CALCULAMOS EL SCORE»; la navegación ya indica la posición.
-- Usar un área de contenido de hasta 1200 px y márgenes laterales generosos: `max(28px, 6vw)` en escritorio y 24 px en móvil.
-- Separar bloques con espacio, no con líneas horizontales, bordes punteados o una tarjeta alrededor de cada párrafo.
-- Para un flujo, alinear de izquierda a derecha los datos, el proceso y el resultado. Mantener la misma jerarquía en las tres columnas.
-- Reservar espacio inferior para la marca y el widget. A 1280 × 720 y 1440 × 900, la slide debe caber sin scroll ni contenido tapado por los controles.
+1. Cabecera: el titular ocupa las cinco columnas y cabe en una línea; si no cabe, se acorta el texto. El subtítulo va debajo, en las columnas de dato y proceso, a 12 px y con un ancho máximo de 720 px. El acento azul puede ir en la cola del titular («con quien lo necesita.») cuando la slide no tiene una cifra de destino.
+2. Flujo: tres bloques con la misma estructura, cifra protagonista, nombre del bloque y explicación. Las cifras comparten línea base y las flechas se centran sobre esa línea, no sobre el bloque entero.
+3. Evidencia: el enunciado y el desplegable a la izquierda, ocupando dato y proceso (máximo 720 px); las cifras de evidencia en la columna de resultado, sin partir nunca una cifra. Si no hay cifras, la columna queda vacía.
 
-En la slide del score, «SCORE VALIDADO» es el mensaje principal. El flujo es 105 variables, modelo predictivo y score de 0 a 100. Los resultados de Gini son evidencia secundaria y se muestran con menor tamaño. No reintroducir el dibujo de red neuronal: se retiró a petición del usuario.
+Así la columna de la derecha forma una línea vertical con el resultado y su prueba, y la lectura de izquierda a derecha coincide con el flujo del argumento. Las filas se separan con 56 px de espacio (44 px si la ventana mide menos de 800 px de alto). El conjunto se centra verticalmente en la pantalla, dejando 112 px libres abajo para la marca y el widget.
 
-La composición actual destaca únicamente el resultado con una superficie azul Embat. Los datos y la explicación permanecen sobre el fondo, sin tarjetas. Así se distingue el destino del flujo sin añadir más estilos tipográficos. La evidencia queda debajo; no compite con el resultado.
+Prohibido: rótulos de sección redundantes («03 / CÓMO CALCULAMOS EL SCORE»), líneas separadoras, bordes punteados, tarjetas o paneles de color alrededor de un bloque, diagramas de nodos o redes, pestañas, pasos ocultos y carruseles. La navegación ya indica en qué slide estamos.
+
+En móvil (hasta 750 px) todo se apila en una columna, las flechas giran 90º y se permite scroll vertical. Nada puede desbordar en horizontal a 390 px.
 
 ### Flechas e iconos
 
-Usar iconos SVG sencillos, de trazo uniforme y extremos redondeados. Para enlaces y controles, usar 18–24 px; las flechas entre bloques pueden medir 28 px. Referencia de trazo: 1,5–1,6 unidades en un `viewBox` de 24.
-
-No usar caracteres Unicode como sustituto visual de flechas. La forma de un carácter depende de la fuente y no coincide con los demás controles. Reutilizar `PresentationIcons.tsx`; mantener las etiquetas accesibles y el foco visible.
+Iconos SVG de `PresentationIcons.tsx`: trazo 1,5 a 1,6 sobre un `viewBox` de 24, extremos redondeados, `currentColor`. Flechas de flujo a 28 px; iconos de control y de enlace a 18 px. Ningún carácter de texto hace de icono: ni flechas Unicode, ni «+», «−» o «×». El desplegable abre con un chevron y cierra con el icono `close`.
 
 ### Texto
 
-Aplicar la skill `humanizer` al redactar o revisar el contenido. Mantener las cifras y el alcance de las afirmaciones. Escribir frases que el presentador pueda decir en voz alta, como «Comprobado con Gini» o «Con grupos que el modelo no había visto».
+Pasar la skill `humanizer`. Frases que el presentador pueda decir en voz alta, en el orden en que las diría. Sin puntos centrados como separador; se usan comas, «y», puntos o saltos de línea. Sin lemas abstractos ni repetir el titular en cada bloque.
 
-No usar puntos centrados para separar conceptos. Utilizar comas, «y», frases completas o saltos de línea. Evitar lemas abstractos, frases de relleno y repetir lo mismo en el titular y en cada bloque.
+Las cifras salen de una fuente comprobada y se citan igual en la slide y en el desplegable. En el score: 105 variables (24 métricas, 72 cambios y rachas, 9 columnas de estrés), gradient boosting, estimación a 3 y 6 meses, Gini 0,54, 0,44 y 0,38, 1.282 empresas y 15.803 registros. Las limitaciones (datos sintéticos, grupos excluidos, Gini a 6 meses por debajo del mínimo, anticipación mediana de 0 meses) viven en «Método y alcance». Ni la slide ni el desplegable inventan una arquitectura, una cifra o una capacidad validada.
 
-Cuando una precisión técnica no quepa con letra legible, conservarla en «Método y alcance». En el score, ese apartado explica los eventos de estrés, los datos sintéticos, la validación por grupos y las limitaciones. El diagrama o la frase comercial no deben inventar una arquitectura, una cifra o una capacidad validada.
+### Movimiento y controles
 
-### Movimiento y navegación
+El contenido está completo al entrar. Sin animaciones de escritura, sin ligar el texto al progreso de un vídeo. Si hay entrada, es breve, respeta `prefers-reduced-motion` y no cambia la geometría. Nada sigue consumiendo recursos cuando ya no aporta nada.
 
-El contenido esencial debe estar disponible al entrar. No ligarlo al progreso de un vídeo ni darle una larga animación de escritura. Si se usa una entrada, que sea breve y no cambie la geometría de la slide. Respetar movimiento reducido. Evitar brillo en nodos, partículas decorativas y animaciones que sigan consumiendo recursos cuando ya no aportan nada.
+Dos modos, elegidos con la casilla «Modo demo» del índice del widget y recordados en el navegador: presentación (por defecto) y demo, que sustituye las slides listadas en `demoMedia` (`lib/presentation.ts`) por el nombre del producto a 52 px y su grabación de Loom debajo, 16:9, centrada sobre el mismo fondo y sin tapar marca ni widget. Los reproductores viven en una capa fija (`DemoPlayers.tsx`) que se monta desde `Shell`, así se cargan en segundo plano al activar el modo y sobreviven al cambio de slide. El resto de slides no cambia.
 
-En el footer, centrar «Elkano» y «Plataforma» por su texto. Usar `line-height: 1` y alineación flex. Dibujar el subrayado de hover fuera del flujo, con un pseudo-elemento absoluto, para que no altere la altura ni la alineación.
+Footer: «Elkano» y «Plataforma» centrados por su texto, `line-height: 1`, subrayado de hover como pseudo-elemento absoluto para que no altere la altura. Widget: 432 px en escritorio, 90 vw en móvil, posición fija entre slides, contador y nombre una sola vez («02 / 11 El problema»), y un botón de pantalla completa en el extremo derecho. Las flechas del teclado cambian de slide; los controles de reproducción son otra función.
 
-El widget conserva el mismo ancho entre slides: 400 px en escritorio, limitado a 90 vw en móvil. Mantener fijas las posiciones de los controles. Mostrar el contador y el nombre una sola vez: «02 / 11 El problema», sin otro «2.» delante del título. Las flechas izquierda/derecha del teclado cambian de slide directamente. Los controles de reproducción tienen una función separada.
+### Lista de comprobación
 
-### Comprobación antes de dar una slide por terminada
-
-1. Una sola familia tipográfica, tres niveles y solo pesos 400/500.
-2. Ninguna cursiva, rótulo redundante, línea separadora o punto centrado en el contenido visible.
-3. Flechas SVG coherentes, sin caracteres usados como iconos.
-4. Sin scroll en escritorio a 1280 × 720 y 1440 × 900; sin desbordamiento horizontal a 390 px.
-5. Contenido y controles separados, foco visible y navegación por teclado funcionando.
-6. Cifras trazables y las precisiones técnicas conservadas donde corresponda.
+1. Una familia, tres tamaños, pesos 400 y 500. Un solo acento azul por slide.
+2. Sin rótulo redundante, líneas, tarjetas, nodos, cursivas ni puntos centrados.
+3. Flechas e iconos SVG; ningún carácter usado como icono.
+4. Sin scroll a 1280 × 720 ni a 1440 × 900; sin desbordamiento horizontal a 390 px.
+5. Marca y widget no tapan contenido. Foco visible. Teclado funcionando.
+6. Cifras trazables; limitaciones conservadas en el desplegable.
