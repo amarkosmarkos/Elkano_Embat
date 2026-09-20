@@ -15,9 +15,8 @@
 
 ---
 
-<!-- Cuando esté el vídeo: sustituir por [![Ver la demo](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID) -->
 <p align="center">
-  <img src="docs/media/demo-placeholder.jpg" alt="Vídeo de la demo, próximamente" width="720" />
+  <a href="https://youtu.be/Z-8mgZ1eJy8"><img src="https://img.youtube.com/vi/Z-8mgZ1eJy8/maxresdefault.jpg" alt="Ver el vídeo de la demo en YouTube" width="720" /></a>
 </p>
 
 ---
