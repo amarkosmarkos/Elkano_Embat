@@ -60,7 +60,7 @@ export default function CashPoolApp({ groupId, base, rows, groups, initialMonth 
   const summary = summarize(cur, decisions);
   const byId = new Map(cur.entities.map((e) => [e.companyId, e]));
   const active = cur.proposals.filter((p) => decisions[p.id] !== "rejected");
-  const selected = byId.get(selectedCompany ?? "") ?? cur.entities.find((e) => e.policy === "review") ?? cur.entities[0];
+  const selected = byId.get(selectedCompany ?? "");
   const review = cur.entities.filter((e) => e.policy === "review");
   const covered = cur.totals.deficitEur > 0 ? Math.min(100, summary.proposedEur / cur.totals.deficitEur * 100) : 0;
   const availableCash = cur.entities.filter((e) => e.role !== "unknown").length;
@@ -197,7 +197,7 @@ export default function CashPoolApp({ groupId, base, rows, groups, initialMonth 
                 <thead className="border-b border-line-soft bg-panel-2 text-ink-dim"><tr>{["Filial", "Caja", "Reserva", "Score / 100", "Trayectoria · 3 meses", "Decisión"].map((label) => <th key={label} scope="col" className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
                 <tbody className="divide-y divide-line-soft">{cur.entities.map((e) => (
                   <tr key={e.companyId} className={selected?.companyId === e.companyId ? "bg-accent/5" : "hover:bg-panel-2/50"}>
-                    <td className="px-4 py-4"><button onClick={() => setSelectedCompany(e.companyId)} aria-pressed={selected?.companyId === e.companyId} className="font-semibold text-accent hover:underline">{companyName(e)}</button><div className="mt-1 text-[10px] text-ink-mute">{e.currency}{e.country ? ` · ${e.country}` : " · país sin informar"}</div></td>
+                    <td className="px-4 py-4"><Link href={`/empresas/${encodeURIComponent(e.companyId)}`} aria-label={`Ver ficha de ${companyName(e)}`} className="font-semibold text-accent hover:underline">{companyName(e)}</Link><div className="mt-1 text-[10px] text-ink-mute">{e.currency}{e.country ? ` · ${e.country}` : " · país sin informar"}</div></td>
                     <td className="px-4 py-4 font-mono">{e.cashEur === null ? "Sin dato válido" : eur(e.cashEur)}</td>
                     <td className="px-4 py-4 font-mono">{eur(e.reserveEur)}</td>
                     <td className="px-4 py-4 font-mono font-medium">{scoreText(e.score)}</td>
@@ -207,7 +207,6 @@ export default function CashPoolApp({ groupId, base, rows, groups, initialMonth 
                 ))}</tbody>
               </table>
             </div>
-            {selected && <EntityDetail entity={selected} snaps={snaps.filter((s) => s.month <= cur.month)} after={afterPlan(selected)} />}
           </section>
         )}
 
@@ -341,23 +340,6 @@ function ScenarioSettings({ settings, onApply }: { settings: PoolSettings; onApp
 
 function NumberField({ name, label, value, max, step }: { name: string; label: string; value: number; max: number; step: number }) {
   return <label className="text-xs text-ink-dim">{label}<input required name={name} type="number" min={0} max={max} step={step} defaultValue={value} className="mt-1.5 block w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" /></label>;
-}
-
-function EntityDetail({ entity: e, snaps, after }: { entity: Entity; snaps: Snapshot[]; after: number | null }) {
-  const history = snaps.slice(-12).map((s) => ({ month: s.month, entity: s.entities.find((row) => row.companyId === e.companyId) }));
-  const x = (i: number) => 12 + i / Math.max(1, history.length - 1) * 456;
-  const y = (score: number) => 100 - score * 0.85;
-  const segments = history.slice(1).flatMap((point, i) => {
-    const previous = history[i].entity?.score;
-    const current = point.entity?.score;
-    return previous != null && current != null ? [<line key={point.month} x1={x(i)} x2={x(i + 1)} y1={y(previous)} y2={y(current)} stroke="var(--color-accent)" strokeWidth={2} />] : [];
-  });
-  return (
-    <div className="grid gap-6 rounded-2xl border border-line bg-panel p-6 md:grid-cols-2">
-      <div><div className="flex flex-wrap items-center gap-3"><h3 className="text-lg font-semibold">{companyName(e)}</h3><TrendBadge entity={e} /></div><p className="mt-4 text-sm leading-relaxed">{e.reason}</p><p className="mt-3 text-xs leading-relaxed text-ink-dim"><strong>Explicación del modelo:</strong> {e.explanation || "Sin explicación disponible para este mes."}</p><dl className="mt-5 space-y-2 text-xs"><AmountRow label="Reserva del escenario" value={e.reserveEur} /><AmountRow label="Mayor caída de caja mensual reciente" value={e.recentDrawdownEur} /><div className="flex justify-between gap-4"><dt>Caja si se aplicara el plan activo</dt><dd className="font-mono">{after === null ? "—" : eur(after)}</dd></div></dl></div>
-      <div><div className="flex items-center justify-between text-xs"><span className="font-medium">Evolución del score · escala 0–100</span><span className="text-ink-dim">{e.delta3m === null ? "Sin comparación a 3 meses" : `${signed(e.delta3m)} puntos / 3 meses`}</span></div><svg viewBox="0 0 480 120" className="mt-4 w-full" role="img" aria-label={`Evolución del score de ${companyName(e)}; score actual ${scoreText(e.score)}`}><line x1={12} x2={468} y1={100} y2={100} stroke="var(--color-line-soft)" /><line x1={12} x2={468} y1={15} y2={15} stroke="var(--color-line-soft)" />{segments}{history.map((point, i) => point.entity?.score == null ? null : <circle key={point.month} cx={x(i)} cy={y(point.entity.score)} r={3} fill="var(--color-accent)"><title>{monthLabel(point.month)}: {scoreText(point.entity.score)}</title></circle>)}</svg><div className="flex justify-between font-mono text-[10px] text-ink-mute"><span>{history[0] ? monthLabel(history[0].month) : ""}</span><span>{history.at(-1) ? monthLabel(history.at(-1)!.month) : ""}</span></div><p className="mt-4 text-xs leading-relaxed text-ink-dim">Solo historia disponible hasta el mes seleccionado. “Posible bache” es una regla de trayectoria, no una recuperación confirmada ni una promesa de anticipación.</p></div>
-    </div>
-  );
 }
 
 function TrendBadge({ entity: e }: { entity: Entity }) {
